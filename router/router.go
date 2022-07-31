@@ -26,5 +26,11 @@ func New() *fiber.App {
 		appUser.Get("", apis.GetAllUsers)
 		appUser.Get(":id", apis.GetUser)
 	}
+	{
+		appTag := appWithAuth.Group("/tag")
+		appTag.Get("", apis.GetTags)
+		appTag.Get(":id", apis.GetTagDetail)
+		appTag.Post("", apis.CreateTag)
+	}
 	return app
 }
