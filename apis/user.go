@@ -2,6 +2,7 @@ package apis
 
 import (
 	"fiberLearn/model"
+	"fiberLearn/pkg/snowflake"
 	"fiberLearn/services"
 	"fmt"
 	"time"
@@ -12,7 +13,7 @@ import (
 )
 
 func GetAllUsers(c *fiber.Ctx) error {
-	var users []model.User
+	var users []services.User
 	if err := model.DB.Find(&users).Error; err != nil {
 		return err
 	}
@@ -35,8 +36,9 @@ func Regist(c *fiber.Ctx) error {
 		return err
 	}
 	user := model.User{
-		Name:  service.Name,
-		Email: service.Email,
+		UserID: snowflake.GenID(),
+		Name:   service.Name,
+		Email:  service.Email,
 	}
 	if err := user.HashAndSalt(service.Password); err != nil {
 		return err
