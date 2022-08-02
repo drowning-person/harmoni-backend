@@ -21,7 +21,7 @@ func NewResponse(ctx *fiber.Ctx) *Response {
 	return &Response{Ctx: ctx}
 }
 
-func (r *Response) ToResponse(data interface{}) {
+func (r *Response) ToResponse(data interface{}) error {
 	if data == nil {
 		data = fiber.Map{
 			"code": 0,
@@ -34,11 +34,11 @@ func (r *Response) ToResponse(data interface{}) {
 			"data": data,
 		}
 	}
-	r.Ctx.Status(http.StatusOK).JSON(data)
+	return r.Ctx.Status(http.StatusOK).JSON(data)
 }
 
-func (r *Response) ToResponseList(list interface{}, total int64) {
-	r.ToResponse(fiber.Map{
+func (r *Response) ToResponseList(list interface{}, total int64) error {
+	return r.ToResponse(fiber.Map{
 		"list": list,
 		"pager": Pager{
 			Page:     GetPage(r.Ctx),
@@ -48,12 +48,12 @@ func (r *Response) ToResponseList(list interface{}, total int64) {
 	})
 }
 
-func (r *Response) ToErrorResponse(err *errcode.Error) {
+func (r *Response) ToErrorResponse(err *errcode.Error) error {
 	response := fiber.Map{"code": err.Code(), "msg": err.Msg()}
 	details := err.Details()
 	if len(details) > 0 {
 		response["details"] = details
 	}
 
-	r.Ctx.Status(err.StatusCode()).JSON(response)
+	return r.Ctx.Status(err.StatusCode()).JSON(response)
 }

@@ -23,6 +23,8 @@ var (
 	NicknameLengthLimit     = NewError(20020, "昵称长度2~12")
 	NoExistUsername         = NewError(20021, "用户不存在")
 	NoAdminPermission       = NewError(20022, "无管理权限")
+	GetUserFailed           = NewError(20023, "获取用户资料失败")
+	UserLoginFailed         = NewError(20025, "用户登录失败")
 
 	GetPostsFailed          = NewError(30001, "获取动态列表失败")
 	CreatePostFailed        = NewError(30002, "动态发布失败")
@@ -57,4 +59,9 @@ var (
 	RechargeReqFail     = NewError(70001, "充值请求失败")
 	RechargeNotifyError = NewError(70002, "充值回调失败")
 	GetRechargeFailed   = NewError(70003, "充值详情获取失败")
+
+	GetTagsFailed   = NewError(80001, "获取话题列表失败")
+	GetTagFailed    = NewError(80002, "获取话题详情失败")
+	CreateTagFailed = NewError(80003, "创建话题失败")
+	TagHasExisted   = NewError(80004, "话题已存在")
 )
