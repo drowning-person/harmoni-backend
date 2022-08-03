@@ -1,87 +1,75 @@
 package apis
 
 import (
-	"fiberLearn/model"
-	"fiberLearn/pkg/snowflake"
+	"fiberLearn/pkg/app"
+	"fiberLearn/pkg/errcode"
+	"fiberLearn/pkg/validator"
 	"fiberLearn/services"
-	"fmt"
-	"time"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/gorm"
 )
 
 func GetAllUsers(c *fiber.Ctx) error {
-	var users []services.User
-	if err := model.DB.Find(&users).Error; err != nil {
-		return err
+	r := app.NewResponse(c)
+	offset, limit := app.GetPageOffset(c)
+	data, total, err := services.GetUsers(offset, limit)
+	if err != nil {
+		return r.ToErrorResponse(errcode.GetUsersFailed)
 	}
-	return c.JSON(users)
+	return r.ToResponseList(data, total)
 }
 
 func GetUser(c *fiber.Ctx) error {
+	r := app.NewResponse(c)
 	id := c.Params("id")
-	var user model.User
-	if err := model.DB.First(&user, id).Error; err != nil {
-		return err
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		return r.ToErrorResponse(errcode.InvalidParams)
 	}
-	return c.JSON(user)
+
+	data, err := services.GetUser(userID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return r.ToErrorResponse(errcode.NotFound.WithDetails("用户不存在"))
+		}
+		return r.ToErrorResponse(errcode.GetUserFailed)
+	}
+	return r.ToResponse(data)
 }
 
 func Regist(c *fiber.Ctx) error {
 	var service services.UserRegistService
-
+	r := app.NewResponse(c)
 	if err := c.BodyParser(&service); err != nil {
-		return err
+		return r.ToErrorResponse(errcode.InvalidParams)
 	}
-	user := model.User{
-		UserID: snowflake.GenID(),
-		Name:   service.Name,
-		Email:  service.Email,
+	if err := validator.Validate(service); err != nil {
+		return r.ToErrorResponse(errcode.InvalidParams.WithDetails(err.Error()))
 	}
-	if err := user.HashAndSalt(service.Password); err != nil {
-		return err
+	data, err := service.Regist()
+	if err != nil {
+		return r.ToErrorResponse(errcode.UserRegisterFailed)
 	}
-	if exist, err := user.IsExist(); err != nil {
-		return err
-	} else if !exist {
-		if err := model.DB.Create(&user).Error; err != nil {
-			fmt.Println(err == gorm.ErrRegistered)
-			return err
-		}
-	} else {
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"Error": "User already exists"})
+	if data == nil {
+		return r.ToErrorResponse(errcode.UsernameHasExisted)
 	}
-	return c.JSON(user)
+	return r.ToResponse(data)
 }
 
 func Login(c *fiber.Ctx) error {
 	var service services.UserLoginService
+	r := app.NewResponse(c)
 	if err := c.BodyParser(&service); err != nil {
-		return err
+		return r.ToErrorResponse(errcode.InvalidParams)
 	}
-	var user model.User
-	if err := model.DB.Where("email = ?", service.Email).First(&user).Error; err != nil {
-		return err
+	if err := validator.Validate(service); err != nil {
+		return r.ToErrorResponse(errcode.InvalidParams.WithDetails(err.Error()))
 	}
-	if !user.CheckPassword(service.Password) {
-		return fiber.NewError(fiber.StatusUnauthorized, "Wrong password")
-	}
-	// Create the Claims
-	claims := jwt.MapClaims{
-		"name": user.Name,
-		"exp":  time.Now().Add(time.Hour * 24 * 7).Unix(),
-	}
-
-	// Create token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte("secret"))
+	data, token, err := service.Login()
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return r.ToErrorResponse(err.(*errcode.Error))
 	}
-
-	return c.JSON(fiber.Map{"token": t, "user": user})
+	return r.ToResponse((fiber.Map{"token": token, "user": data}))
 }

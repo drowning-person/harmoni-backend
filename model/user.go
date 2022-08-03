@@ -1,38 +1,39 @@
 package model
 
 import (
-	"golang.org/x/crypto/bcrypt"
+	"time"
+
 	"gorm.io/gorm"
 )
 
 type User struct {
 	gorm.Model
 	UserID   int64  `json:"user_id,string"`
-	Name     string `json:"name" gorm:"not null;type:varchar(255)"`
+	Name     string `json:"name" gorm:"not null;type:varchar(20)"`
 	Email    string `json:"email" gorm:"uniqueIndex;type:varchar(100)"`
 	Password string `json:"-" gorm:"not null;type:varchar(255)"`
 }
 
-func (u *User) HashAndSalt(password string) error {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	u.Password = string(bytes)
-	return nil
+type UserDetail struct {
+	UserID    int64     `json:"user_id,string"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_time"`
 }
 
-func (u *User) CheckPassword(password string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
-	return err == nil
+type UserInfo struct {
+	UserID int64  `json:"user_id,string"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
 }
 
-func (u *User) IsExist() (bool, error) {
-	if err := DB.Where("email = ?", u.Email).First(&u).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return false, nil
-		}
+func IsUserExist(email string) (bool, error) {
+	var count int64
+	if err := DB.Table("users").Where("email = ?", email).Count(&count).Error; err != nil {
 		return false, err
 	}
-	return true, nil
+	if count != 0 {
+		return true, nil
+	}
+	return false, nil
 }

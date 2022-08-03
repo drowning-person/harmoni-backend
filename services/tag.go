@@ -3,6 +3,7 @@ package services
 import (
 	"fiberLearn/model"
 	"fiberLearn/pkg/snowflake"
+	"html"
 )
 
 func GetTags(offset, limit int) ([]*model.TagInfo, int64, error) {
@@ -22,17 +23,18 @@ type TagInsertService struct {
 	Introduction string `json:"introduction" validate:"required,lte=256" label:"话题简介"`
 }
 
-func (t *TagInsertService) Insert() (*model.TagInfo, error) {
+func (t *TagInsertService) Insert() (*model.TagDetail, error) {
 	if exist, err := model.IsTagExist(t.TagName); err != nil {
 		return nil, err
 	} else if exist {
 		return nil, nil
 	}
-	tag := model.TagInfo{
-		TagID:   snowflake.GenID(),
-		TagName: t.TagName,
+	tag := model.TagDetail{
+		TagID:        snowflake.GenID(),
+		TagName:      html.EscapeString(t.TagName),
+		Introduction: html.EscapeString(t.Introduction),
 	}
-	if err := model.DB.Table("tags").Create(&tag).Error; err != nil {
+	if err := model.DB.Debug().Table("tags").Create(&tag).Error; err != nil {
 		return nil, err
 	}
 	return &tag, nil

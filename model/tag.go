@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -32,7 +31,6 @@ func IsTagExist(name string) (bool, error) {
 	if err := DB.Table("tags").Where("tag_name = ?", name).Count(&count).Error; err != nil {
 		return false, err
 	}
-	fmt.Println(count)
 	if count != 0 {
 		return true, nil
 	}

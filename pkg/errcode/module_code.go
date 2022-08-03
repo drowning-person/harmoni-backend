@@ -25,6 +25,8 @@ var (
 	NoAdminPermission       = NewError(20022, "无管理权限")
 	GetUserFailed           = NewError(20023, "获取用户资料失败")
 	UserLoginFailed         = NewError(20025, "用户登录失败")
+	GetUsersFailed          = NewError(20026, "获取用户列表失败")
+	UserEmailHasExisted     = NewError(20027, "邮箱已被注册")
 
 	GetPostsFailed          = NewError(30001, "获取动态列表失败")
 	CreatePostFailed        = NewError(30002, "动态发布失败")
