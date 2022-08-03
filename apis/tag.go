@@ -3,6 +3,7 @@ package apis
 import (
 	"fiberLearn/pkg/app"
 	"fiberLearn/pkg/errcode"
+	"fiberLearn/pkg/validator"
 	"fiberLearn/services"
 	"strconv"
 
@@ -26,9 +27,15 @@ func CreateTag(c *fiber.Ctx) error {
 	if err := c.BodyParser(&service); err != nil {
 		return r.ToErrorResponse(errcode.InvalidParams)
 	}
+	if err := validator.Validate(service); err != nil {
+		return r.ToErrorResponse(errcode.InvalidParams.WithDetails(err.Error()))
+	}
 	data, err := service.Insert()
 	if err != nil {
 		return r.ToErrorResponse(errcode.CreateTagFailed)
+	}
+	if data == nil {
+		return r.ToErrorResponse(errcode.TagHasExisted)
 	}
 	return r.ToResponse(data)
 }

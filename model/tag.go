@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -24,4 +25,16 @@ type TagDetail struct {
 	Introduction string    `json:"introduction"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+func IsTagExist(name string) (bool, error) {
+	var count int64
+	if err := DB.Table("tags").Where("tag_name = ?", name).Count(&count).Error; err != nil {
+		return false, err
+	}
+	fmt.Println(count)
+	if count != 0 {
+		return true, nil
+	}
+	return false, nil
 }
