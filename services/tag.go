@@ -34,7 +34,7 @@ func (t *TagInsertService) Insert() (*model.TagDetail, error) {
 		TagName:      html.EscapeString(t.TagName),
 		Introduction: html.EscapeString(t.Introduction),
 	}
-	if err := model.DB.Debug().Table("tags").Create(&tag).Error; err != nil {
+	if err := model.DB.Table("tags").Create(&tag).Error; err != nil {
 		return nil, err
 	}
 	return &tag, nil
