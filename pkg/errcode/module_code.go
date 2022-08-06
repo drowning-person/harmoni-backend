@@ -3,7 +3,7 @@ package errcode
 var (
 	UsernameHasExisted      = NewError(20001, "用户名已存在")
 	UsernameLengthLimit     = NewError(20002, "用户名长度3~12")
-	UsernameCharLimit       = NewError(20003, "用户名只能包含字母、数字")
+	UsernameCharLimit       = NewError(20003, "用户名只能包含中文、字母、数字、!-_")
 	PasswordLengthLimit     = NewError(20004, "密码长度6~16")
 	UserRegisterFailed      = NewError(20005, "用户注册失败")
 	UserHasBeenBanned       = NewError(20006, "该账户已被封停")

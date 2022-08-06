@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 func GetAllUsers(c *fiber.Ctx) error {
@@ -29,12 +28,9 @@ func GetUser(c *fiber.Ctx) error {
 		return r.ToErrorResponse(errcode.InvalidParams)
 	}
 
-	data, err := services.GetUser(userID)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return r.ToErrorResponse(errcode.NotFound.WithDetails("用户不存在"))
-		}
-		return r.ToErrorResponse(errcode.GetUserFailed)
+	data, err1 := services.GetUser(userID)
+	if err1 != nil {
+		return r.ToErrorResponse(err1)
 	}
 	return r.ToResponse(data)
 }
@@ -48,12 +44,9 @@ func Regist(c *fiber.Ctx) error {
 	if err := validator.Validate(service); err != nil {
 		return r.ToErrorResponse(errcode.InvalidParams.WithDetails(err.Error()))
 	}
-	data, err := service.Regist()
-	if err != nil {
-		return r.ToErrorResponse(errcode.UserRegisterFailed)
-	}
-	if data == nil {
-		return r.ToErrorResponse(errcode.UsernameHasExisted)
+	data, err1 := service.Regist()
+	if err1 != nil {
+		return r.ToErrorResponse(err1)
 	}
 	return r.ToResponse(data)
 }
@@ -67,9 +60,9 @@ func Login(c *fiber.Ctx) error {
 	if err := validator.Validate(service); err != nil {
 		return r.ToErrorResponse(errcode.InvalidParams.WithDetails(err.Error()))
 	}
-	data, token, err := service.Login()
-	if err != nil {
-		return r.ToErrorResponse(err.(*errcode.Error))
+	data, token, err1 := service.Login()
+	if err1 != nil {
+		return r.ToErrorResponse(err1.(*errcode.Error))
 	}
 	return r.ToResponse((fiber.Map{"token": token, "user": data}))
 }

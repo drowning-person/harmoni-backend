@@ -4,6 +4,7 @@ import (
 	"fiberLearn/model"
 	"fiberLearn/pkg/errcode"
 	"fiberLearn/pkg/snowflake"
+	"fiberLearn/pkg/zap"
 	"regexp"
 	"time"
 
@@ -23,39 +24,46 @@ type UserLoginService struct {
 	Password string `json:"password" validate:"required"`
 }
 
-func GetUser(userID int) (*model.UserDetail, error) {
+func GetUser(userID int) (*model.UserDetail, *errcode.Error) {
 	var user model.UserDetail
 	if err := model.DB.Table("users").Where("user_id = ?", userID).First(&user).Error; err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, errcode.NotFound.WithDetails("用户不存在")
+		}
+		zap.Logger.Error(err.Error())
+		return nil, errcode.GetUserFailed
 	}
 	return &user, nil
 }
 
-func GetUsers(offset, limit int) ([]*model.UserInfo, int64, error) {
+func GetUsers(offset, limit int) ([]*model.UserInfo, int64, *errcode.Error) {
 	users := []*model.UserInfo{}
 	if err := model.DB.Table("users").Offset(offset).Limit(limit).Find(&users).Error; err != nil {
-		return nil, 0, err
+		zap.Logger.Error(err.Error())
+		return nil, 0, errcode.GetUserFailed
 	}
 	var total int64
 	if err := model.DB.Table("users").Count(&total).Error; err != nil {
-		return nil, 0, err
+		zap.Logger.Error(err.Error())
+		return nil, 0, errcode.GetUserFailed
 	}
 	return users, total, nil
 }
 
 // ValidUsername 验证用户
-func ValidUsername(username string) error {
-	if !regexp.MustCompile(`^[a-zA-Z0-9]+$`).MatchString(username) {
+func ValidUsername(username string) *errcode.Error {
+	if !regexp.MustCompile("^[-_!a-zA-Z0-9\u4e00-\u9fa5]+$").MatchString(username) {
 		return errcode.UsernameCharLimit
 	}
 	return nil
 }
 
-func (urs *UserRegistService) Regist() (*model.UserDetail, error) {
+func (urs *UserRegistService) Regist() (*model.UserDetail, *errcode.Error) {
 	if exist, err := model.IsUserExist(urs.Email); err != nil {
-		return nil, err
+		zap.Logger.Error(err.Error())
+		return nil, errcode.UserRegisterFailed
 	} else if exist {
-		return nil, nil
+		return nil, errcode.UserEmailHasExisted
 	}
 	if err := ValidUsername(urs.Name); err != nil {
 		return nil, err
@@ -66,12 +74,14 @@ func (urs *UserRegistService) Regist() (*model.UserDetail, error) {
 		Email:  urs.Email,
 	}
 	if p, err := HashAndSalt(urs.Password); err != nil {
-		return nil, err
+		zap.Logger.Error(err.Error())
+		return nil, errcode.UserRegisterFailed
 	} else {
 		user.Password = p
 	}
 	if err := model.DB.Table("users").Create(&user).Error; err != nil {
-		return nil, err
+		zap.Logger.Error(err.Error())
+		return nil, errcode.UserRegisterFailed
 	}
 	return &model.UserDetail{
 		UserID:    user.UserID,
@@ -100,6 +110,7 @@ func (uls *UserLoginService) Login() (*model.UserDetail, string, error) {
 		if err == gorm.ErrRecordNotFound {
 			return nil, "", errcode.UnauthorizedAuthNotExist
 		}
+		zap.Logger.Error(err.Error())
 		return nil, "", errcode.UserLoginFailed
 	}
 	if !CheckPassword(user.Password, uls.Password) {
@@ -117,6 +128,7 @@ func (uls *UserLoginService) Login() (*model.UserDetail, string, error) {
 	// Generate encoded token and send it as response.
 	t, err := token.SignedString([]byte("secret"))
 	if err != nil {
+		zap.Logger.Error(err.Error())
 		return nil, "", errcode.UnauthorizedTokenGenerate
 	}
 	return &model.UserDetail{

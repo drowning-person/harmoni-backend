@@ -2,6 +2,7 @@ package main
 
 import (
 	"fiberLearn/model"
+	"fiberLearn/model/redis"
 	"fiberLearn/pkg/snowflake"
 	"fiberLearn/pkg/validator"
 	"fiberLearn/pkg/zap"
@@ -22,6 +23,6 @@ func main() {
 		panic(err)
 	}
 	app := router.New()
-
+	redis.InitRedis()
 	app.Listen(":3000")
 }

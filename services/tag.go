@@ -2,18 +2,24 @@ package services
 
 import (
 	"fiberLearn/model"
+	"fiberLearn/pkg/errcode"
 	"fiberLearn/pkg/snowflake"
+	"fiberLearn/pkg/zap"
 	"html"
+
+	"gorm.io/gorm"
 )
 
-func GetTags(offset, limit int) ([]*model.TagInfo, int64, error) {
+func GetTags(offset, limit int) ([]*model.TagInfo, int64, *errcode.Error) {
 	tags := []*model.TagInfo{}
 	if err := model.DB.Table("tags").Offset(offset).Limit(limit).Find(&tags).Error; err != nil {
-		return nil, 0, err
+		zap.Logger.Error(err.Error())
+		return nil, 0, errcode.GetTagsFailed
 	}
 	var total int64
 	if err := model.DB.Table("tags").Count(&total).Error; err != nil {
-		return nil, 0, err
+		zap.Logger.Error(err.Error())
+		return nil, 0, errcode.GetTagsFailed
 	}
 	return tags, total, nil
 }
@@ -23,11 +29,12 @@ type TagInsertService struct {
 	Introduction string `json:"introduction" validate:"required,lte=256" label:"话题简介"`
 }
 
-func (t *TagInsertService) Insert() (*model.TagDetail, error) {
+func (t *TagInsertService) Insert() (*model.TagDetail, *errcode.Error) {
 	if exist, err := model.IsTagExist(t.TagName); err != nil {
-		return nil, err
+		zap.Logger.Error(err.Error())
+		return nil, errcode.CreateTagFailed
 	} else if exist {
-		return nil, nil
+		return nil, errcode.TagHasExisted
 	}
 	tag := model.TagDetail{
 		TagID:        snowflake.GenID(),
@@ -35,15 +42,19 @@ func (t *TagInsertService) Insert() (*model.TagDetail, error) {
 		Introduction: html.EscapeString(t.Introduction),
 	}
 	if err := model.DB.Table("tags").Create(&tag).Error; err != nil {
-		return nil, err
+		return nil, errcode.CreateTagFailed
 	}
 	return &tag, nil
 }
 
-func GetTagDetail(tagID int) (*model.TagDetail, error) {
+func GetTagDetail(tagID int) (*model.TagDetail, *errcode.Error) {
 	var tag model.TagDetail
 	if err := model.DB.Table("tags").Where("tag_id = ?", tagID).First(&tag).Error; err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, errcode.NotFound.WithDetails("话题不存在")
+		}
+		zap.Logger.Error(err.Error())
+		return nil, errcode.GetTagFailed
 	}
 	return &tag, nil
 }

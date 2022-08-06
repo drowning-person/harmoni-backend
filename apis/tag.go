@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 func GetTags(c *fiber.Ctx) error {
@@ -16,7 +15,7 @@ func GetTags(c *fiber.Ctx) error {
 	offset, limit := app.GetPageOffset(c)
 	data, total, err := services.GetTags(offset, limit)
 	if err != nil {
-		return r.ToErrorResponse(errcode.GetTagsFailed)
+		return r.ToErrorResponse(err)
 	}
 	return r.ToResponseList(data, total)
 }
@@ -32,10 +31,7 @@ func CreateTag(c *fiber.Ctx) error {
 	}
 	data, err := service.Insert()
 	if err != nil {
-		return r.ToErrorResponse(errcode.CreateTagFailed)
-	}
-	if data == nil {
-		return r.ToErrorResponse(errcode.TagHasExisted)
+		return r.ToErrorResponse(err)
 	}
 	return r.ToResponse(data)
 }
@@ -48,12 +44,9 @@ func GetTagDetail(c *fiber.Ctx) error {
 		return r.ToErrorResponse(errcode.InvalidParams)
 	}
 
-	data, err := services.GetTagDetail(tagID)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return r.ToErrorResponse(errcode.NotFound.WithDetails("话题不存在"))
-		}
-		return r.ToErrorResponse(errcode.GetTagFailed)
+	data, err1 := services.GetTagDetail(tagID)
+	if err1 != nil {
+		return r.ToErrorResponse(err1)
 	}
 	return r.ToResponse(data)
 }
