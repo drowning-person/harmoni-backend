@@ -22,7 +22,10 @@ func main() {
 	if err := validator.InitTrans("zh"); err != nil {
 		panic(err)
 	}
+	if err := redis.InitRedis(); err != nil {
+		panic(err)
+	}
 	app := router.New()
-	redis.InitRedis()
+
 	app.Listen(":3000")
 }
