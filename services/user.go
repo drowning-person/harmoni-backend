@@ -28,6 +28,7 @@ func GetUser(userID int) (*model.UserDetail, *errcode.Error) {
 	var user model.UserDetail
 	if err := model.DB.Table("users").Where("user_id = ?", userID).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
+			zap.Logger.Warn(err.Error())
 			return nil, errcode.NotFound.WithDetails("用户不存在")
 		}
 		zap.Logger.Error(err.Error())
@@ -108,6 +109,7 @@ func (uls *UserLoginService) Login() (*model.UserDetail, string, error) {
 	var user model.User
 	if err := model.DB.Table("users").Where("email = ?", uls.Email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
+			zap.Logger.Warn(err.Error())
 			return nil, "", errcode.UnauthorizedAuthNotExist
 		}
 		zap.Logger.Error(err.Error())

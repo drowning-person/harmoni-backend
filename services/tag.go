@@ -42,6 +42,7 @@ func (t *TagInsertService) Insert() (*model.TagDetail, *errcode.Error) {
 		Introduction: html.EscapeString(t.Introduction),
 	}
 	if err := model.DB.Table("tags").Create(&tag).Error; err != nil {
+		zap.Logger.Error(err.Error())
 		return nil, errcode.CreateTagFailed
 	}
 	return &tag, nil
@@ -51,6 +52,7 @@ func GetTagDetail(tagID int) (*model.TagDetail, *errcode.Error) {
 	var tag model.TagDetail
 	if err := model.DB.Table("tags").Where("tag_id = ?", tagID).First(&tag).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
+			zap.Logger.Warn(err.Error())
 			return nil, errcode.NotFound.WithDetails("话题不存在")
 		}
 		zap.Logger.Error(err.Error())
