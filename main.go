@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	if err := zap.InitLogger("./log/main.log"); err != nil {
+	if err := zap.InitLogger("./log/", "main.log"); err != nil {
 		panic(err)
 	}
 	if err := model.InitMysql("utf8mb4"); err != nil {

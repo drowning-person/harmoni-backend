@@ -10,9 +10,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetTags(offset, limit int) ([]*model.TagInfo, int64, *errcode.Error) {
+func GetTags(param *model.ParamListData) ([]*model.TagInfo, int64, *errcode.Error) {
 	tags := []*model.TagInfo{}
-	if err := model.DB.Table("tags").Offset(offset).Limit(limit).Find(&tags).Error; err != nil {
+	if err := model.DB.Table("tags").Offset(int(param.PageNum)).Limit(int(param.PageSize)).Find(&tags).Error; err != nil {
 		zap.Logger.Error(err.Error())
 		return nil, 0, errcode.GetTagsFailed
 	}

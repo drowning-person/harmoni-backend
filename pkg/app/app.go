@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fiberLearn/model"
 	"fiberLearn/pkg/errcode"
 	"net/http"
 
@@ -41,8 +42,8 @@ func (r *Response) ToResponseList(list interface{}, total int64) error {
 	return r.ToResponse(fiber.Map{
 		"list": list,
 		"pager": Pager{
-			Page:     GetPage(r.Ctx),
-			PageSize: GetPageSize(r.Ctx),
+			Page:     model.GetPage(r.Ctx),
+			PageSize: model.GetPageSize(r.Ctx),
 			Total:    total,
 		},
 	})

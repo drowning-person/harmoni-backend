@@ -37,9 +37,9 @@ func GetUser(userID int) (*model.UserDetail, *errcode.Error) {
 	return &user, nil
 }
 
-func GetUsers(offset, limit int) ([]*model.UserInfo, int64, *errcode.Error) {
+func GetUsers(param *model.ParamListData) ([]*model.UserInfo, int64, *errcode.Error) {
 	users := []*model.UserInfo{}
-	if err := model.DB.Table("users").Offset(offset).Limit(limit).Find(&users).Error; err != nil {
+	if err := model.DB.Table("users").Offset(int(param.PageNum)).Limit(int(param.PageSize)).Find(&users).Error; err != nil {
 		zap.Logger.Error(err.Error())
 		return nil, 0, errcode.GetUserFailed
 	}
@@ -121,9 +121,9 @@ func (uls *UserLoginService) Login() (*model.UserDetail, string, error) {
 	// Create the Claims
 	claims := jwt.MapClaims{
 		"name": user.Name,
+		"id":   user.UserID,
 		"exp":  time.Now().Add(time.Hour * 24 * 7).Unix(),
 	}
-
 	// Create token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 

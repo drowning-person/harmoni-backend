@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"fiberLearn/model"
 	"fiberLearn/pkg/app"
 	"fiberLearn/pkg/errcode"
 	"fiberLearn/pkg/validator"
@@ -12,10 +13,13 @@ import (
 
 func GetTags(c *fiber.Ctx) error {
 	r := app.NewResponse(c)
-	offset, limit := app.GetPageOffset(c)
-	data, total, err := services.GetTags(offset, limit)
+	param, err := model.GetPageParam(c)
 	if err != nil {
-		return r.ToErrorResponse(err)
+		return r.ToErrorResponse(errcode.InvalidParams.WithDetails(err.Error()))
+	}
+	data, total, err1 := services.GetTags(param)
+	if err != nil {
+		return r.ToErrorResponse(err1)
 	}
 	return r.ToResponseList(data, total)
 }

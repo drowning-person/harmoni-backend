@@ -9,8 +9,30 @@ import (
 
 var Logger *zap.Logger
 
-func InitLogger(filename string) error {
-	file, err := os.OpenFile(filename, os.O_RDWR, os.ModeAppend)
+// 判断文件夹是否存在
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+func InitLogger(dirname, filename string) error {
+	exist, err := PathExists(dirname)
+	if err != nil {
+		return err
+	}
+	if !exist {
+		err := os.Mkdir(dirname, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+	file, err := os.OpenFile(dirname+filename, os.O_APPEND|os.O_CREATE|os.O_RDWR, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -31,5 +53,7 @@ func InitLogger(filename string) error {
 	}
 	Logger = zap.New(zapcore.NewCore(zapcore.NewJSONEncoder(encoderConfig), zapcore.AddSync(file), zap.DebugLevel))
 	Logger = Logger.WithOptions(zap.AddCaller(), zap.Development())
+
+	zap.ReplaceGlobals(Logger)
 	return nil
 }
