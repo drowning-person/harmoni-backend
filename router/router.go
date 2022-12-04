@@ -50,7 +50,7 @@ func New() *fiber.App {
 		appUser.Get(":id", apis.GetUser)
 
 		appUserWithAuth := appUser.Use(auth)
-		appUserWithAuth.Get("", auth, apis.GetAllUsers)
+		appUserWithAuth.Get("", apis.GetAllUsers)
 	}
 	{
 		appTag := apiv1.Group("/tag")
@@ -58,7 +58,7 @@ func New() *fiber.App {
 		appTag.Get(":id", apis.GetTagDetail)
 
 		appTagWithAuth := appTag.Use(auth)
-		appTagWithAuth.Post("", auth, apis.CreateTag)
+		appTagWithAuth.Post("", apis.CreateTag)
 	}
 	{
 		appPost := apiv1.Group("/post")
@@ -66,8 +66,15 @@ func New() *fiber.App {
 		appPost.Get("", apis.GetPosts)
 
 		appPostWithAuth := appPost.Use(auth)
-		appPostWithAuth.Post("", auth, apis.CreatePost)
-		appPostWithAuth.Post("/like", auth, apis.LikePost)
+		appPostWithAuth.Post("", apis.CreatePost)
+		appPostWithAuth.Post("/like", apis.LikePost)
+	}
+	{
+		appComment := apiv1.Group("/comment")
+		appComment.Get("", apis.GetPostComment)
+
+		appCommentWithAuth := appComment.Use(auth)
+		appCommentWithAuth.Post("", apis.CreateComment)
 	}
 	return app
 }

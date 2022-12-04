@@ -104,7 +104,7 @@ func (p *PostInsertService) Insert(authorID int64) (*model.PostDetail, *errcode.
 	postFormated, err := post.Format()
 	if err != nil {
 		zap.Logger.Error(err.Error())
-		return nil, errcode.GetPostFailed
+		return nil, errcode.CreatePostFailed
 	} else if postFormated == nil {
 		zap.Logger.Warn(err.Error())
 	}

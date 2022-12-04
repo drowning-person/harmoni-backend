@@ -33,7 +33,7 @@ func InitMysql(charset string) error {
 	// SetConnMaxLifetime 设置了连接可复用的最大时间。
 	sqlDB.SetConnMaxLifetime(time.Minute)
 
-	DB.AutoMigrate(&User{}, &Tag{}, &Post{})
+	DB.AutoMigrate(&User{}, &Tag{}, &Post{}, &Comment{})
 
 	return nil
 }
