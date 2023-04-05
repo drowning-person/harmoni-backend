@@ -1,11 +1,11 @@
 package services
 
 import (
-	"fiberLearn/model"
-	"fiberLearn/model/redis"
-	"fiberLearn/pkg/errcode"
-	"fiberLearn/pkg/snowflake"
-	"fiberLearn/pkg/zap"
+	"harmoni/model"
+	"harmoni/model/redis"
+	"harmoni/pkg/errcode"
+	"harmoni/pkg/snowflake"
+	"harmoni/pkg/zap"
 	"html"
 	"strings"
 

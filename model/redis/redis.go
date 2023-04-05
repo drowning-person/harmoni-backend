@@ -2,8 +2,10 @@ package redis
 
 import (
 	"context"
+	"fmt"
+	"harmoni/config"
 
-	"github.com/go-redis/redis/v9"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -11,11 +13,14 @@ var (
 	RDB *redis.Client
 )
 
-func InitRedis() error {
+func InitRedis(conf *config.Redis) error {
 	RDB = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "Woaini.12", // no password set
-		DB:       0,           // use default DB
+		Addr:         fmt.Sprintf("%s:%d", conf.IP, conf.Port),
+		Password:     conf.Password,
+		DB:           int(conf.Database),
+		PoolSize:     conf.PoolSize,
+		ReadTimeout:  conf.ReadTimeout,
+		WriteTimeout: conf.WriteTimeout,
 	})
 	_, err := RDB.Ping(Ctx).Result()
 	if err != nil {

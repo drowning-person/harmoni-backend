@@ -1,9 +1,9 @@
 package router
 
 import (
-	"fiberLearn/apis"
+	"harmoni/apis"
 
-	"fiberLearn/pkg/zap"
+	"harmoni/pkg/zap"
 
 	"github.com/gofiber/contrib/fiberzap"
 	"github.com/gofiber/fiber/v2"

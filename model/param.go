@@ -1,7 +1,7 @@
 package model
 
 import (
-	"fiberLearn/pkg/zap"
+	"harmoni/pkg/zap"
 	"strconv"
 
 	"github.com/go-playground/validator/v10"

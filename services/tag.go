@@ -1,10 +1,10 @@
 package services
 
 import (
-	"fiberLearn/model"
-	"fiberLearn/pkg/errcode"
-	"fiberLearn/pkg/snowflake"
-	"fiberLearn/pkg/zap"
+	"harmoni/model"
+	"harmoni/pkg/errcode"
+	"harmoni/pkg/snowflake"
+	"harmoni/pkg/zap"
 	"html"
 
 	"gorm.io/gorm"

@@ -1,11 +1,11 @@
 package apis
 
 import (
-	"fiberLearn/model"
-	"fiberLearn/pkg/app"
-	"fiberLearn/pkg/errcode"
-	"fiberLearn/pkg/validator"
-	"fiberLearn/services"
+	"harmoni/model"
+	"harmoni/pkg/app"
+	"harmoni/pkg/errcode"
+	"harmoni/pkg/validator"
+	"harmoni/services"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"

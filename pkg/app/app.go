@@ -1,8 +1,8 @@
 package app
 
 import (
-	"fiberLearn/model"
-	"fiberLearn/pkg/errcode"
+	"harmoni/model"
+	"harmoni/pkg/errcode"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"

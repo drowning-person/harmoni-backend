@@ -1,16 +1,21 @@
 package test
 
 import (
-	"fiberLearn/model"
-	"fiberLearn/pkg/snowflake"
-	"fiberLearn/pkg/zap"
+	"harmoni/config"
+	"harmoni/model"
+	"harmoni/pkg/snowflake"
+	"harmoni/pkg/zap"
 	"testing"
 )
 
 func TestCreateComment(t *testing.T) {
+	cfg, err := config.ReadConfig("./config/config.yaml")
+	if err != nil {
+		panic(err)
+	}
 	snowflake.Init("2022-07-31", 1)
-	zap.InitLogger("./log/", "main.log")
-	model.InitMysql("utf8mb4")
+	zap.InitLogger(cfg.Log)
+	model.InitMysql(cfg.DB)
 	for i := 0; i < 100000; i++ {
 		c := model.Comment{
 			CommentID: snowflake.GenID(),

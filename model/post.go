@@ -1,8 +1,8 @@
 package model
 
 import (
-	"fiberLearn/model/redis"
-	"fiberLearn/pkg/zap"
+	"harmoni/model/redis"
+	"harmoni/pkg/zap"
 	"strings"
 	"time"
 

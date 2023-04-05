@@ -1,7 +1,8 @@
 package model
 
 import (
-	"fiberLearn/pkg/zap"
+	"harmoni/config"
+	"harmoni/pkg/zap"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -11,11 +12,10 @@ import (
 
 var DB *gorm.DB
 
-func InitMysql(charset string) error {
-	dsn := "root:Woaini.12@tcp(127.0.0.1:3306)/todolist?charset=" + charset + "&parseTime=True&loc=Local"
+func InitMysql(conf *config.DB) error {
 	logger := zapgorm2.New(zap.Logger)
 	logger.SetAsDefault()
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger})
+	db, err := gorm.Open(mysql.Open(conf.Source), &gorm.Config{Logger: logger})
 	DB = db
 	if err != nil {
 		return err

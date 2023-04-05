@@ -1,7 +1,10 @@
 package zap
 
 import (
+	"harmoni/config"
 	"os"
+	"path"
+	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -21,7 +24,8 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func InitLogger(dirname, filename string) error {
+func InitLogger(conf *config.Log) error {
+	dirname, filename := path.Split(conf.Path)
 	exist, err := PathExists(dirname)
 	if err != nil {
 		return err
@@ -32,10 +36,12 @@ func InitLogger(dirname, filename string) error {
 			return err
 		}
 	}
+
 	file, err := os.OpenFile(dirname+filename, os.O_APPEND|os.O_CREATE|os.O_RDWR, os.ModePerm)
 	if err != nil {
 		return err
 	}
+
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "time",
 		LevelKey:       "level",
@@ -51,7 +57,21 @@ func InitLogger(dirname, filename string) error {
 		EncodeCaller:   zapcore.FullCallerEncoder,
 		EncodeName:     zapcore.FullNameEncoder,
 	}
-	Logger = zap.New(zapcore.NewCore(zapcore.NewJSONEncoder(encoderConfig), zapcore.AddSync(file), zap.DebugLevel))
+
+	level := zap.InfoLevel
+	logLevel := strings.ToLower(conf.Level)
+	switch logLevel {
+	case "info":
+		level = zap.InfoLevel
+	case "debug":
+		level = zap.DebugLevel
+	case "error":
+		level = zap.ErrorLevel
+	case "warn":
+		level = zap.WarnLevel
+	}
+
+	Logger = zap.New(zapcore.NewCore(zapcore.NewJSONEncoder(encoderConfig), zapcore.AddSync(file), level))
 	Logger = Logger.WithOptions(zap.AddCaller(), zap.Development())
 
 	zap.ReplaceGlobals(Logger)

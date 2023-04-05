@@ -1,12 +1,12 @@
 package apis
 
 import (
-	"fiberLearn/model"
-	"fiberLearn/pkg/app"
-	"fiberLearn/pkg/errcode"
-	"fiberLearn/pkg/validator"
-	"fiberLearn/pkg/zap"
-	"fiberLearn/services"
+	"harmoni/model"
+	"harmoni/pkg/app"
+	"harmoni/pkg/errcode"
+	"harmoni/pkg/validator"
+	"harmoni/pkg/zap"
+	"harmoni/services"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"

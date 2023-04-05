@@ -1,0 +1,23 @@
+app:
+  addr: 0.0.0.0:8080
+
+auth:
+  tokenExpire: 3600
+  secret: ${JWT_SECRET | IKNOWWHATIAMDOING}
+
+db:
+  driver: ${DB_DRIVER| mysql }
+  source: ${DB_SOURCE| root:123456@tcp(127.0.0.1:3306)/harmoni?parseTime=True }
+
+log:
+  level: info # debug | error | warn | info
+  path: ./log/harmoni.log
+
+redis:
+  ip: ${RDB_IP | 127.0.0.1 }
+  port: ${RDB_PORT | 6379 }
+  password: ${RDB_PASSWORD}
+  database: 0
+  poolSize: 2
+  readTimeout: 5s
+  writeTimeout: 5s
