@@ -1,22 +1,24 @@
 app:
-  addr: 0.0.0.0:8080
+  # addr: 0.0.0.0:8080
+  debug: false
 
 auth:
   tokenExpire: 3600
-  secret: ${JWT_SECRET | IKNOWWHATIAMDOING}
+  # secret:
 
 db:
-  driver: ${DB_DRIVER| mysql }
-  source: ${DB_SOURCE| root:123456@tcp(127.0.0.1:3306)/harmoni?parseTime=True }
+  # driver:
+  # source:
+  conn_max_life_time: 1h
 
 log:
-  level: info # debug | error | warn | info
+  level: debug # debug | error | warn | info
   path: ./log/harmoni.log
 
 redis:
-  ip: ${RDB_IP | 127.0.0.1 }
-  port: ${RDB_PORT | 6379 }
-  password: ${RDB_PASSWORD}
+  # ip:
+  # port:
+  # password:
   database: 0
   poolSize: 2
   readTimeout: 5s

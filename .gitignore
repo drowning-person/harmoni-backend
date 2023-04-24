@@ -21,3 +21,5 @@
 go.work
 
 log/
+bin/
+start.sh
