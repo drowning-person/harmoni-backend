@@ -44,5 +44,6 @@ func CommentToCommentDetail(c *Comment) CommentDetail {
 
 type CommentRepository interface {
 	Create(ctx context.Context, comment *Comment) error
+	GetByCommentID(ctx context.Context, commentID int64) (*Comment, bool, error)
 	GetPage(ctx context.Context, commentQuery *CommentQuery) (paginator.Page[Comment], error)
 }

@@ -28,14 +28,14 @@ type TagDetail struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-func ConvertTagToDisplay(t Tag) TagInfo {
+func ConvertTagToDisplay(t *Tag) TagInfo {
 	return TagInfo{
 		TagID:   t.TagID,
 		TagName: t.TagName,
 	}
 }
 
-func ConvertTagToDetailDisplay(t Tag) TagDetail {
+func ConvertTagToDetailDisplay(t *Tag) TagDetail {
 	return TagDetail{
 		TagID:        t.TagID,
 		TagName:      t.TagName,
@@ -47,7 +47,7 @@ func ConvertTagToDetailDisplay(t Tag) TagDetail {
 
 type TagRepository interface {
 	Create(ctx context.Context, tag *Tag) error
-	GetByTagID(ctx context.Context, tagID int64) (Tag, error)
-	GetByTagName(ctx context.Context, tagName string) (Tag, error)
+	GetByTagID(ctx context.Context, tagID int64) (*Tag, bool, error)
+	GetByTagName(ctx context.Context, tagName string) (*Tag, bool, error)
 	GetPage(ctx context.Context, pageSize, pageNum int64) (paginator.Page[Tag], error)
 }

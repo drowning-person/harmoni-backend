@@ -47,6 +47,19 @@ func (r *commentRepo) Create(ctx context.Context, comment *commententity.Comment
 	return nil
 }
 
+func (r *commentRepo) GetByCommentID(ctx context.Context, commentID int64) (*commententity.Comment, bool, error) {
+	comment := &commententity.Comment{}
+	err := r.db.WithContext(ctx).Where("comment_id = ?", commentID).First(comment).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, false, nil
+		}
+		return nil, false, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return comment, true, nil
+}
+
 func (r *commentRepo) GetPage(ctx context.Context, commentQuery *commententity.CommentQuery) (paginator.Page[commententity.Comment], error) {
 	commentPage := paginator.Page[commententity.Comment]{CurrentPage: commentQuery.Page, PageSize: commentQuery.PageSize}
 	db := r.db.WithContext(ctx).Where("object_id = ? AND root_id = ?", commentQuery.ObjectID, commentQuery.RootID)

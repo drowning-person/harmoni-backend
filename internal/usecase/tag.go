@@ -2,10 +2,8 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"harmoni/internal/entity/paginator"
 	tagentity "harmoni/internal/entity/tag"
-	"harmoni/internal/pkg/errorx"
 
 	"go.uber.org/zap"
 )
@@ -22,39 +20,21 @@ func NewTagUseCase(tagRepo tagentity.TagRepository, logger *zap.SugaredLogger) *
 	}
 }
 
-func (u *TagUseCase) Create(ctx context.Context, tag *tagentity.Tag) (tagentity.Tag, error) {
+func (u *TagUseCase) Create(ctx context.Context, tag *tagentity.Tag) (*tagentity.Tag, error) {
 	err := u.tagRepo.Create(ctx, tag)
 	if err != nil {
-		return tagentity.Tag{}, err
+		return nil, err
 	}
 
-	return *tag, err
+	return tag, err
 }
 
-func (u *TagUseCase) GetTagByTagID(ctx context.Context, tagID int64) (tagentity.Tag, error) {
-	tag, err := u.tagRepo.GetByTagID(ctx, tagID)
-	if err != nil {
-		return tagentity.Tag{}, err
-	}
-	return tag, nil
+func (u *TagUseCase) GetByTagID(ctx context.Context, tagID int64) (*tagentity.Tag, bool, error) {
+	return u.tagRepo.GetByTagID(ctx, tagID)
 }
 
-func (u *TagUseCase) IsTagExistByName(ctx context.Context, name string) (bool, error) {
-	tag, err := u.tagRepo.GetByTagName(ctx, name)
-	if err != nil {
-		myErr := &errorx.Error{}
-		if errors.As(err, &myErr) {
-			if errorx.IsNotFound(err.(*errorx.Error)) {
-				return false, nil
-			}
-		}
-		return false, err
-	}
-	if tag.ID == 0 {
-		return false, nil
-	}
-
-	return true, nil
+func (u *TagUseCase) GetByTagName(ctx context.Context, name string) (*tagentity.Tag, bool, error) {
+	return u.tagRepo.GetByTagName(ctx, name)
 }
 
 func (u *TagUseCase) GetPage(ctx context.Context, pageSize int64, pageNum int64) (paginator.Page[tagentity.Tag], error) {

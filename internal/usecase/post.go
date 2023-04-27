@@ -29,13 +29,12 @@ func (u *PostUseCase) Create(ctx context.Context, post *postentity.Post) (posten
 	return *post, err
 }
 
-func (u *PostUseCase) GetByPostID(ctx context.Context, postID int64) (postentity.Post, error) {
-	post, err := u.postRepo.GetByPostID(ctx, postID)
-	if err != nil {
-		return postentity.Post{}, err
-	}
+func (u *PostUseCase) GetByPostID(ctx context.Context, postID int64) (*postentity.Post, bool, error) {
+	return u.postRepo.GetByPostID(ctx, postID)
+}
 
-	return post, err
+func (u *PostUseCase) GetBasicInfoByPostID(ctx context.Context, postID int64) (*postentity.Post, bool, error) {
+	return u.postRepo.GetBasicInfoByPostID(ctx, postID)
 }
 
 // func (u *PostUseCase) BatchByIDs(ctx context.Context, postIDs []int64) ([]Post, error)

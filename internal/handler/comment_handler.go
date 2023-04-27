@@ -4,6 +4,7 @@ import (
 	commententity "harmoni/internal/entity/comment"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/httpx/fiberx"
+	"harmoni/internal/pkg/middleware"
 	"harmoni/internal/pkg/reason"
 	"harmoni/internal/service"
 
@@ -36,7 +37,7 @@ func (h *CommentHandler) CreateComment(c *fiber.Ctx) error {
 	if err := fiberx.ParseAndCheck(c, &req); err != nil {
 		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
 	}
-
+	req.UserID = middleware.GetClaimsFromCtx(c.UserContext()).UserID
 	reply, err := h.cs.Create(c.UserContext(), &req)
 
 	return fiberx.HandleResponse(c, err, reply)

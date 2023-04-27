@@ -6,7 +6,7 @@ type GetUserDetailRequest struct {
 	UserID int64 `params:"id" validate:"required"`
 }
 
-type GetTagDetailReply struct {
+type GetUserDetailReply struct {
 	UserDetail
 }
 

@@ -24,7 +24,7 @@ type GetCommentsRequest struct {
 	// object id
 	ObjectID string `query:"oid" validate:"required" label:"对象ID"`
 	// root id
-	RootID string `query:"rid" validate:"required" label:"根ID"`
+	RootID string `query:"rid" label:"根ID"`
 	// query condition
 	QueryCond string `query:"cond" validate:"omitempty,oneof=newest" label:"排序"`
 }

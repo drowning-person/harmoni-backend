@@ -25,7 +25,7 @@ type UserDetail struct {
 	BasicUserInfo
 }
 
-func ConvertUserToDisplay(u User) BasicUserInfo {
+func ConvertUserToDisplay(u *User) BasicUserInfo {
 	return BasicUserInfo{
 		UserID: u.UserID,
 		Name:   u.Name,
@@ -33,7 +33,7 @@ func ConvertUserToDisplay(u User) BasicUserInfo {
 	}
 }
 
-func ConvertUserToDetailDisplay(u User) UserDetail {
+func ConvertUserToDetailDisplay(u *User) UserDetail {
 	return UserDetail{
 		BasicUserInfo: BasicUserInfo{
 			UserID: u.UserID,
@@ -45,7 +45,7 @@ func ConvertUserToDetailDisplay(u User) UserDetail {
 
 type UserRepository interface {
 	Create(ctx context.Context, user *User) error
-	GetByEmail(ctx context.Context, email string) (User, error)
-	GetByUserID(ctx context.Context, userID int64) (User, error)
+	GetByEmail(ctx context.Context, email string) (*User, bool, error)
+	GetByUserID(ctx context.Context, userID int64) (*User, bool, error)
 	GetPage(ctx context.Context, pageSize, pageNum int64) (paginator.Page[User], error)
 }

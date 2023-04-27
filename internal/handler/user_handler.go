@@ -37,7 +37,7 @@ func (h *UserHandler) GetUser(c *fiber.Ctx) error {
 		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
 	}
 
-	reply, err := h.us.GetUserByUserID(c.UserContext(), req.UserID)
+	reply, err := h.us.GetUserByUserID(c.UserContext(), &req)
 	return fiberx.HandleResponse(c, err, reply)
 }
 

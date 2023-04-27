@@ -20,13 +20,8 @@ func NewCommentUseCase(commentRepo commententity.CommentRepository, logger *zap.
 	}
 }
 
-func (u *CommentUseCase) Create(ctx context.Context, comment *commententity.Comment) (commententity.Comment, error) {
-	err := u.commentRepo.Create(ctx, comment)
-	if err != nil {
-		return commententity.Comment{}, err
-	}
-
-	return *comment, nil
+func (u *CommentUseCase) Create(ctx context.Context, comment *commententity.Comment) error {
+	return u.commentRepo.Create(ctx, comment)
 }
 
 func (u *CommentUseCase) GetPage(ctx context.Context, commentQuery *commententity.CommentQuery) (paginator.Page[commententity.Comment], error) {

@@ -48,7 +48,7 @@ func (h *TagHandler) GetTagByID(c *fiber.Ctx) error {
 		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
 	}
 
-	reply, err := h.ts.GetTag(c.UserContext(), &req)
+	reply, err := h.ts.GetByTagID(c.UserContext(), &req)
 
 	return fiberx.HandleResponse(c, err, reply)
 }

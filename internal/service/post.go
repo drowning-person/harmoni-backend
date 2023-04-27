@@ -4,7 +4,8 @@ import (
 	"context"
 	"harmoni/internal/entity/paginator"
 	postentity "harmoni/internal/entity/post"
-	"harmoni/internal/pkg/middleware"
+	"harmoni/internal/pkg/errorx"
+	"harmoni/internal/pkg/reason"
 	"harmoni/internal/usecase"
 
 	"go.uber.org/zap"
@@ -25,11 +26,11 @@ func NewPostService(
 	}
 }
 
-func (s *PostService) GetPosts(ctx context.Context, req *postentity.GetPostsRequest) (postentity.GetPostsReply, error) {
+func (s *PostService) GetPosts(ctx context.Context, req *postentity.GetPostsRequest) (*postentity.GetPostsReply, error) {
 	posts, err := s.pc.GetPage(ctx, req.PageSize, req.Page, req.Order)
 	if err != nil {
 		s.logger.Errorln(err)
-		return postentity.GetPostsReply{}, err
+		return nil, err
 	}
 
 	res := paginator.Page[postentity.PostDetail]{
@@ -44,27 +45,28 @@ func (s *PostService) GetPosts(ctx context.Context, req *postentity.GetPostsRequ
 		res.Data = append(res.Data, postentity.ConvertPostToDisplayDetail(&post))
 	}
 
-	return postentity.GetPostsReply{
+	return &postentity.GetPostsReply{
 		Page: res,
 	}, nil
 }
 
-func (s *PostService) GetPostDetail(ctx context.Context, req *postentity.GetPostDetailRequest) (postentity.GetPostDetailReply, error) {
-	post, err := s.pc.GetByPostID(ctx, req.PostID)
+func (s *PostService) GetPostDetail(ctx context.Context, req *postentity.GetPostDetailRequest) (*postentity.GetPostDetailReply, error) {
+	post, exist, err := s.pc.GetByPostID(ctx, req.PostID)
 	if err != nil {
 		s.logger.Errorln(err)
-		return postentity.GetPostDetailReply{}, err
+		return nil, err
+	} else if !exist {
+		return nil, errorx.NotFound(reason.PostNotFound)
 	}
 
-	return postentity.GetPostDetailReply{
-		PostDetail: postentity.ConvertPostToDisplayDetail(&post),
+	return &postentity.GetPostDetailReply{
+		PostDetail: postentity.ConvertPostToDisplayDetail(post),
 	}, nil
 }
 
-func (s *PostService) Create(ctx context.Context, req *postentity.CreatePostRequest) (postentity.CreatePostReply, error) {
-	s.logger.Debugln(middleware.GetClaimsFromCtx(ctx))
+func (s *PostService) Create(ctx context.Context, req *postentity.CreatePostRequest) (*postentity.CreatePostReply, error) {
 	post := postentity.Post{
-		AuthorID: middleware.GetClaimsFromCtx(ctx).UserID,
+		AuthorID: req.UserID,
 		TagID:    req.TagID,
 		Title:    req.Title,
 		Content:  req.Content,
@@ -73,10 +75,10 @@ func (s *PostService) Create(ctx context.Context, req *postentity.CreatePostRequ
 	post, err := s.pc.Create(ctx, &post)
 	if err != nil {
 		s.logger.Errorln(err)
-		return postentity.CreatePostReply{}, err
+		return nil, err
 	}
 
-	return postentity.CreatePostReply{
+	return &postentity.CreatePostReply{
 		PostDetail: postentity.ConvertPostToDisplayDetail(&post),
 	}, nil
 }

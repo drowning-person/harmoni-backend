@@ -4,7 +4,6 @@ import (
 	"context"
 	commententity "harmoni/internal/entity/comment"
 	"harmoni/internal/entity/paginator"
-	"harmoni/internal/pkg/middleware"
 	"harmoni/internal/usecase"
 
 	"go.uber.org/zap"
@@ -52,13 +51,13 @@ func (s *CommentService) GetComments(ctx context.Context, req *commententity.Get
 
 func (s *CommentService) Create(ctx context.Context, req *commententity.CreateCommentRequest) (commententity.CreateCommentReply, error) {
 	comment := commententity.Comment{
-		AuthorID: middleware.GetClaimsFromCtx(ctx).UserID,
+		AuthorID: req.UserID,
 		ParentID: req.ParentID,
 		RootID:   req.RootID,
 		Content:  req.Content,
 	}
 
-	comment, err := s.cc.Create(ctx, &comment)
+	err := s.cc.Create(ctx, &comment)
 	if err != nil {
 		s.logger.Errorln(err)
 		return commententity.CreateCommentReply{}, err

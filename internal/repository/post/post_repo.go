@@ -4,13 +4,11 @@ import (
 	"context"
 	"harmoni/internal/entity/paginator"
 	postentity "harmoni/internal/entity/post"
-	tagentity "harmoni/internal/entity/tag"
 	"harmoni/internal/entity/unique"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
 	"html"
 	"strconv"
-	"strings"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -21,40 +19,19 @@ type postRepo struct {
 	db           *gorm.DB
 	rdb          *redis.Client
 	uniqueIDRepo unique.UniqueIDRepo
-	tagRepo      tagentity.TagRepository
 	logger       *zap.SugaredLogger
 }
 
-func NewPostRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, tagRepo tagentity.TagRepository, logger *zap.SugaredLogger) postentity.PostRepository {
+func NewPostRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) postentity.PostRepository {
 	return &postRepo{
 		db:           db,
 		rdb:          rdb,
 		uniqueIDRepo: uniqueIDRepo,
-		tagRepo:      tagRepo,
 		logger:       logger,
 	}
 }
 
 func (r *postRepo) Create(ctx context.Context, post *postentity.Post) (err error) {
-	m := make(map[int64]struct{}, 4)
-	tagNames := strings.Builder{}
-	tagNames.Grow(8)
-
-	for _, id := range post.TagID {
-		if _, ok := m[id]; !ok {
-			m[id] = struct{}{}
-		} else {
-			return errorx.BadRequest(reason.TagDuplicateInObeject)
-		}
-		if tag, err := r.tagRepo.GetByTagID(ctx, id); err != nil {
-			return err
-		} else {
-			tagNames.WriteString(tag.TagName)
-			tagNames.WriteByte(',')
-		}
-	}
-	post.TagName = tagNames.String()
-
 	post.PostID, err = r.uniqueIDRepo.GenUniqueID(ctx)
 	if err != nil {
 		return err
@@ -76,22 +53,31 @@ func (r *postRepo) Create(ctx context.Context, post *postentity.Post) (err error
 	return nil
 }
 
-func (r *postRepo) GetByPostID(ctx context.Context, postID int64) (postentity.Post, error) {
-	post := postentity.Post{}
-	err := r.db.WithContext(ctx).Where("post_id = ?", postID).First(&post).Error
+func (r *postRepo) GetBasicInfoByPostID(ctx context.Context, postID int64) (*postentity.Post, bool, error) {
+	post := &postentity.Post{}
+	err := r.db.WithContext(ctx).Where("post_id = ?", postID).First(post).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return postentity.Post{}, errorx.NotFound(reason.PostNotFound)
+			return nil, false, nil
 		}
-		return postentity.Post{}, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		return nil, false, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return post, true, nil
+}
+
+func (r *postRepo) GetByPostID(ctx context.Context, postID int64) (*postentity.Post, bool, error) {
+	post, exist, err := r.GetBasicInfoByPostID(ctx, postID)
+	if err != nil {
+		return nil, false, err
 	}
 
 	post.LikeCount, err = r.getPostLikeNumber(ctx, postID)
 	if err != nil {
-		return postentity.Post{}, err
+		return nil, exist, err
 	}
 
-	return post, nil
+	return post, exist, nil
 }
 
 func (r *postRepo) BatchByIDs(ctx context.Context, postIDs []int64) ([]postentity.Post, error) {

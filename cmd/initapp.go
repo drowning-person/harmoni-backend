@@ -60,7 +60,7 @@ func initApp(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *
 	tagServie := service.NewTagService(tagUsecase, logger.Sugar())
 	tagHanlder := handler.NewTagHandler(tagServie)
 
-	postRepo := postrepo.NewPostRepo(db, rdb, uniqueIDRepo, tagRepo, logger.Sugar())
+	postRepo := postrepo.NewPostRepo(db, rdb, uniqueIDRepo, logger.Sugar())
 	postUsecase := usecase.NewPostUseCase(postRepo, logger.Sugar())
 	postServie := service.NewPostService(postUsecase, logger.Sugar())
 	postHanlder := handler.NewPostHandler(postServie)

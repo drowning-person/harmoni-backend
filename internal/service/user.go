@@ -29,14 +29,18 @@ func NewUserService(
 	}
 }
 
-func (s *UserService) GetUserByUserID(ctx context.Context, userID int64) (userentity.UserDetail, error) {
-	user, err := s.uc.GetUserByUserID(ctx, userID)
+func (s *UserService) GetUserByUserID(ctx context.Context, req *userentity.GetUserDetailRequest) (*userentity.GetUserDetailReply, error) {
+	user, exist, err := s.uc.GetByUserID(ctx, req.UserID)
 	if err != nil {
 		s.logger.Errorln(err)
-		return userentity.UserDetail{}, err
+		return nil, err
+	} else if !exist {
+		return nil, errorx.NotFound(reason.UserNotFound)
 	}
 
-	return userentity.ConvertUserToDetailDisplay(user), nil
+	return &userentity.GetUserDetailReply{
+		UserDetail: userentity.ConvertUserToDetailDisplay(user),
+	}, nil
 }
 
 // GetUsers TODO: Add condition
@@ -56,25 +60,24 @@ func (s *UserService) GetUsers(ctx context.Context, pageSize, pageNum int64) (pa
 	}
 
 	for _, user := range users.Data {
-		res.Data = append(res.Data, userentity.ConvertUserToDisplay(user))
+		res.Data = append(res.Data, userentity.ConvertUserToDisplay(&user))
 	}
 
 	return res, nil
 }
 
-func (s *UserService) Register(ctx context.Context, req *userentity.UserRegisterRequest) (userentity.UserRegisterReply, error) {
-	exist, err := s.uc.IsUserExistByEmail(ctx, req.Email)
+func (s *UserService) Register(ctx context.Context, req *userentity.UserRegisterRequest) (*userentity.UserRegisterReply, error) {
+	_, exist, err := s.uc.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		s.logger.Errorln(err)
-		return userentity.UserRegisterReply{}, err
-	}
-	if exist {
+		return nil, err
+	} else if exist {
 		s.logger.Infof("Registration attempt failed. User with email '%v' already exists.\n", req.Email)
-		return userentity.UserRegisterReply{}, errorx.BadRequest(reason.EmailDuplicate)
+		return nil, errorx.BadRequest(reason.EmailDuplicate)
 	}
 
 	if err := s.uc.ValidUsername(req.Name); err != nil {
-		return userentity.UserRegisterReply{}, err
+		return nil, err
 	}
 
 	user := userentity.User{
@@ -85,41 +88,44 @@ func (s *UserService) Register(ctx context.Context, req *userentity.UserRegister
 	user, err = s.uc.Create(ctx, &user)
 	if err != nil {
 		s.logger.Errorln(err)
-		return userentity.UserRegisterReply{}, err
+		return nil, err
 	}
 
 	token, err := s.ac.GenToken(ctx, user.UserID, user.Name)
 	if err != nil {
 		s.logger.Errorln(err)
-		return userentity.UserRegisterReply{}, err
+		return nil, err
 	}
 
-	return userentity.UserRegisterReply{
-		User:        userentity.ConvertUserToDisplay(user),
+	return &userentity.UserRegisterReply{
+		User:        userentity.ConvertUserToDisplay(&user),
 		AccessToken: token,
 	}, nil
 }
 
-func (s *UserService) Login(ctx context.Context, req *userentity.UserLoginRequset) (userentity.UserLoginReply, error) {
-	user, err := s.uc.GetUserByEmail(ctx, req.Email)
+func (s *UserService) Login(ctx context.Context, req *userentity.UserLoginRequset) (*userentity.UserLoginReply, error) {
+	user, exist, err := s.uc.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		s.logger.Errorln(err)
-		return userentity.UserLoginReply{}, err
+		return nil, err
+	} else if !exist {
+		s.logger.Infof("Login attempt failed. User with email '%v' not found.\n", req.Email)
+		return nil, errorx.NotFound(reason.UserNotFound)
 	}
 
 	err = s.uc.VerifyPassword(ctx, req.Password, user.Password)
 	if err != nil {
 		s.logger.Infof("Login attempt failed. User (%#v) password is wrong.\n", user)
-		return userentity.UserLoginReply{}, err
+		return nil, err
 	}
 
 	token, err := s.ac.GenToken(ctx, user.UserID, user.Name)
 	if err != nil {
 		s.logger.Errorln(err)
-		return userentity.UserLoginReply{}, err
+		return nil, err
 	}
 
-	return userentity.UserLoginReply{
+	return &userentity.UserLoginReply{
 		User:        userentity.ConvertUserToDisplay(user),
 		AccessToken: token,
 	}, nil

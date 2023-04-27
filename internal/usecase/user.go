@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"harmoni/internal/entity/paginator"
 	userentity "harmoni/internal/entity/user"
 	"harmoni/internal/pkg/errorx"
@@ -65,38 +64,12 @@ func (u *UserUseCase) VerifyPassword(ctx context.Context, password, hashedPwd st
 	return nil
 }
 
-func (u *UserUseCase) GetUserByUserID(ctx context.Context, userID int64) (userentity.User, error) {
-	user, err := u.userRepo.GetByUserID(ctx, userID)
-	if err != nil {
-		return userentity.User{}, err
-	}
-	return user, nil
+func (u *UserUseCase) GetByUserID(ctx context.Context, userID int64) (*userentity.User, bool, error) {
+	return u.userRepo.GetByUserID(ctx, userID)
 }
 
-func (u *UserUseCase) GetUserByEmail(ctx context.Context, email string) (userentity.User, error) {
-	user, err := u.userRepo.GetByEmail(ctx, email)
-	if err != nil {
-		return userentity.User{}, err
-	}
-	return user, nil
-}
-
-func (u *UserUseCase) IsUserExistByEmail(ctx context.Context, email string) (bool, error) {
-	user, err := u.userRepo.GetByEmail(ctx, email)
-	if err != nil {
-		myErr := &errorx.Error{}
-		if errors.As(err, &myErr) {
-			if errorx.IsNotFound(err.(*errorx.Error)) {
-				return false, nil
-			}
-		}
-		return false, err
-	}
-	if user.ID == 0 {
-		return false, nil
-	}
-
-	return true, nil
+func (u *UserUseCase) GetUserByEmail(ctx context.Context, email string) (*userentity.User, bool, error) {
+	return u.userRepo.GetByEmail(ctx, email)
 }
 
 func (u *UserUseCase) GetPage(ctx context.Context, pageSize int64, pageNum int64) (paginator.Page[userentity.User], error) {

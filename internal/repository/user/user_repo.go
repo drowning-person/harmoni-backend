@@ -43,30 +43,30 @@ func (r *userRepo) Create(ctx context.Context, user *userentity.User) (err error
 	return nil
 }
 
-func (r *userRepo) GetByEmail(ctx context.Context, email string) (userentity.User, error) {
-	user := userentity.User{}
+func (r *userRepo) GetByEmail(ctx context.Context, email string) (*userentity.User, bool, error) {
+	user := &userentity.User{}
 	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return userentity.User{}, errorx.NotFound(reason.UserNotFound)
+			return nil, false, nil
 		}
-		return userentity.User{}, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		return nil, false, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 
-	return user, nil
+	return user, true, nil
 }
 
-func (r *userRepo) GetByUserID(ctx context.Context, userID int64) (userentity.User, error) {
-	user := userentity.User{}
+func (r *userRepo) GetByUserID(ctx context.Context, userID int64) (*userentity.User, bool, error) {
+	user := &userentity.User{}
 	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return userentity.User{}, errorx.NotFound(reason.UserNotFound)
+			return nil, false, nil
 		}
-		return userentity.User{}, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		return nil, false, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 
-	return user, nil
+	return user, true, nil
 }
 
 // GetPage get user page TODO: Add Condition

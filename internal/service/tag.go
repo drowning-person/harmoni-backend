@@ -27,11 +27,11 @@ func NewTagService(
 }
 
 // GetTags TODO: Add condition
-func (s *TagService) GetTags(ctx context.Context, req *tagentity.GetTagsRequest) (tagentity.GetTagsReply, error) {
+func (s *TagService) GetTags(ctx context.Context, req *tagentity.GetTagsRequest) (*tagentity.GetTagsReply, error) {
 	tags, err := s.tc.GetPage(ctx, req.PageSize, req.Page)
 	if err != nil {
 		s.logger.Errorln(err)
-		return tagentity.GetTagsReply{}, err
+		return nil, err
 	}
 
 	res := paginator.Page[tagentity.TagInfo]{
@@ -43,48 +43,50 @@ func (s *TagService) GetTags(ctx context.Context, req *tagentity.GetTagsRequest)
 	}
 
 	for _, tag := range tags.Data {
-		res.Data = append(res.Data, tagentity.ConvertTagToDisplay(tag))
+		res.Data = append(res.Data, tagentity.ConvertTagToDisplay(&tag))
 	}
 
-	return tagentity.GetTagsReply{
+	return &tagentity.GetTagsReply{
 		Page: res,
 	}, nil
 }
 
-func (s *TagService) Create(ctx context.Context, req *tagentity.CreateTagRequest) (tagentity.CreateTagReply, error) {
-	exist, err := s.tc.IsTagExistByName(ctx, req.Name)
+func (s *TagService) Create(ctx context.Context, req *tagentity.CreateTagRequest) (*tagentity.CreateTagReply, error) {
+	_, exist, err := s.tc.GetByTagName(ctx, req.Name)
 	if err != nil {
 		s.logger.Errorln(err)
-		return tagentity.CreateTagReply{}, err
-	}
-	if exist {
+		return nil, err
+	} else if exist {
 		s.logger.Infof("Create Tag attempt failed. Tag with name '%v' already exists.\n", req.Name)
-		return tagentity.CreateTagReply{}, errorx.BadRequest(reason.TagAlreadyExist)
+		return nil, errorx.BadRequest(reason.TagAlreadyExist)
 	}
 
-	tag := tagentity.Tag{
+	tag := &tagentity.Tag{
 		TagName:      req.Name,
 		Introduction: req.Introduction,
 	}
-	tag, err = s.tc.Create(ctx, &tag)
+	tag, err = s.tc.Create(ctx, tag)
 	if err != nil {
 		s.logger.Errorln(err)
-		return tagentity.CreateTagReply{}, err
+		return nil, err
 	}
 
-	return tagentity.CreateTagReply{
+	return &tagentity.CreateTagReply{
 		TagDetail: tagentity.ConvertTagToDetailDisplay(tag),
 	}, nil
 }
 
-func (s *TagService) GetTag(ctx context.Context, req *tagentity.GetTagDetailRequest) (tagentity.GetTagDetailReply, error) {
-	tag, err := s.tc.GetTagByTagID(ctx, req.TagID)
+func (s *TagService) GetByTagID(ctx context.Context, req *tagentity.GetTagDetailRequest) (*tagentity.GetTagDetailReply, error) {
+	tag, exist, err := s.tc.GetByTagID(ctx, req.TagID)
 	if err != nil {
 		s.logger.Errorln(err)
-		return tagentity.GetTagDetailReply{}, err
+		return nil, err
+	} else if !exist {
+		s.logger.Infof("Get Tag attempt failed. Tag with ID '%v' not found.\n", req.TagID)
+		return nil, errorx.NotFound(reason.TagNotFound)
 	}
 
-	return tagentity.GetTagDetailReply{
+	return &tagentity.GetTagDetailReply{
 		TagDetail: tagentity.ConvertTagToDetailDisplay(tag),
 	}, nil
 }

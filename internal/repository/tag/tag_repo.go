@@ -51,30 +51,30 @@ func (r *tagRepo) Create(ctx context.Context, tag *tagentity.Tag) (err error) {
 	return nil
 }
 
-func (r *tagRepo) GetByTagID(ctx context.Context, tagID int64) (tagentity.Tag, error) {
-	tag := tagentity.Tag{}
+func (r *tagRepo) GetByTagID(ctx context.Context, tagID int64) (*tagentity.Tag, bool, error) {
+	tag := &tagentity.Tag{}
 	err := r.db.WithContext(ctx).Where("tag_id = ?", tagID).First(&tag).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return tagentity.Tag{}, errorx.NotFound(reason.TagNotFound)
+			return nil, false, nil
 		}
-		return tagentity.Tag{}, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		return nil, false, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 
-	return tag, nil
+	return tag, true, nil
 }
 
-func (r *tagRepo) GetByTagName(ctx context.Context, tagName string) (tagentity.Tag, error) {
-	tag := tagentity.Tag{}
+func (r *tagRepo) GetByTagName(ctx context.Context, tagName string) (*tagentity.Tag, bool, error) {
+	tag := &tagentity.Tag{}
 	err := r.db.WithContext(ctx).Where("tag_name = ?", tagName).First(&tag).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return tagentity.Tag{}, errorx.NotFound(reason.TagNotFound)
+			return nil, false, nil
 		}
-		return tagentity.Tag{}, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		return nil, false, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 
-	return tag, nil
+	return tag, true, nil
 }
 
 // GetPage get tag page TODO: Add Condition

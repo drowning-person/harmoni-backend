@@ -123,7 +123,8 @@ func ConvertPostToDisplayDetail(post *Post) PostDetail {
 
 type PostRepository interface {
 	Create(ctx context.Context, post *Post) error
-	GetByPostID(ctx context.Context, postID int64) (Post, error)
+	GetBasicInfoByPostID(ctx context.Context, postID int64) (*Post, bool, error)
+	GetByPostID(ctx context.Context, postID int64) (*Post, bool, error)
 	BatchByIDs(ctx context.Context, postIDs []int64) ([]Post, error)
 	GetPage(ctx context.Context, pageSize, pageNum int64, orderCond string) (paginator.Page[Post], error)
 	LikePost(ctx context.Context, postID int64, userID int64, direction int8) error
