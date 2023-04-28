@@ -41,13 +41,23 @@ func (h *UserHandler) GetUser(c *fiber.Ctx) error {
 	return fiberx.HandleResponse(c, err, reply)
 }
 
+func (h *UserHandler) SendCodeByEmail(c *fiber.Ctx) error {
+	req := userentity.UserSendCodeByEmailRequest{}
+	if err := fiberx.ParseAndCheck(c, &req); err != nil {
+		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
+	}
+
+	reply, err := h.us.SendCodeByEmail(c.UserContext(), &req)
+	return fiberx.HandleResponse(c, err, reply)
+}
+
 func (h *UserHandler) Register(c *fiber.Ctx) error {
 	req := userentity.UserRegisterRequest{}
 	if err := fiberx.ParseAndCheck(c, &req); err != nil {
 		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
 	}
 
-	reply, err := h.us.Register(c.UserContext(), &req)
+	reply, err := h.us.RegisterByEmail(c.UserContext(), &req)
 	return fiberx.HandleResponse(c, err, reply)
 }
 

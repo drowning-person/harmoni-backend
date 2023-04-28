@@ -2,11 +2,13 @@ package usecase
 
 import (
 	"context"
+	emailentity "harmoni/internal/entity/email"
 	"harmoni/internal/entity/paginator"
 	userentity "harmoni/internal/entity/user"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
 	"regexp"
+	"time"
 	"unicode/utf8"
 
 	"go.uber.org/zap"
@@ -14,18 +16,20 @@ import (
 )
 
 type UserUseCase struct {
-	userRepo    userentity.UserRepository
-	authUsecase *AuthUseCase
-	logger      *zap.SugaredLogger
-	reg         *regexp.Regexp
+	userRepo     userentity.UserRepository
+	authUsecase  *AuthUseCase
+	emailUsecase *EmailUsecase
+	logger       *zap.SugaredLogger
+	reg          *regexp.Regexp
 }
 
-func NewUserUseCase(userRepo userentity.UserRepository, authUsecase *AuthUseCase, logger *zap.SugaredLogger) *UserUseCase {
+func NewUserUseCase(userRepo userentity.UserRepository, authUsecase *AuthUseCase, emailUsecase *EmailUsecase, logger *zap.SugaredLogger) *UserUseCase {
 	return &UserUseCase{
-		userRepo:    userRepo,
-		authUsecase: authUsecase,
-		logger:      logger,
-		reg:         regexp.MustCompile("^[-_!a-zA-Z0-9\u4e00-\u9fa5]+$"),
+		userRepo:     userRepo,
+		authUsecase:  authUsecase,
+		emailUsecase: emailUsecase,
+		logger:       logger,
+		reg:          regexp.MustCompile("^[-_!a-zA-Z0-9\u4e00-\u9fa5]+$"),
 	}
 }
 
@@ -42,19 +46,52 @@ func checkPassword(userPassword, password string) bool {
 	return err == nil
 }
 
-func (u *UserUseCase) Create(ctx context.Context, user *userentity.User) (userentity.User, error) {
-	var err error
+func (u *UserUseCase) SendCodeByEmail(ctx context.Context, user *userentity.User) error {
+	_, exist, err := u.userRepo.GetByEmail(ctx, user.Email)
+	if err != nil {
+		return err
+	}
+	if exist {
+		return errorx.BadRequest(reason.EmailDuplicate)
+	}
+
+	err = u.emailUsecase.CheckBeforeSendCode(ctx, user.Email)
+	if err != nil {
+		return err
+	}
+
+	registerCode := u.emailUsecase.GenCode(ctx)
+	title, body, err := u.emailUsecase.RegisterTemplate(ctx, registerCode)
+	if err != nil {
+		return err
+	}
+
+	data := emailentity.EmailCodeContent{
+		Code:        registerCode,
+		LastReqTime: time.Now().Unix(),
+	}
+
+	go u.emailUsecase.SendAndSaveCode(ctx, user.Email, title, body, data.ToJSONString())
+	return nil
+}
+
+func (u *UserUseCase) Create(ctx context.Context, code string, user *userentity.User) error {
+	err := u.emailUsecase.VerifyCode(ctx, user.Email, code)
+	if err != nil {
+		return err
+	}
+
 	user.Password, err = hashAndSalt(user.Password)
 	if err != nil {
-		return userentity.User{}, err
+		return err
 	}
 
 	err = u.userRepo.Create(ctx, user)
 	if err != nil {
-		return userentity.User{}, err
+		return err
 	}
 
-	return *user, err
+	return err
 }
 
 func (u *UserUseCase) VerifyPassword(ctx context.Context, password, hashedPwd string) error {

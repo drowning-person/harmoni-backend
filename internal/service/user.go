@@ -66,7 +66,18 @@ func (s *UserService) GetUsers(ctx context.Context, pageSize, pageNum int64) (pa
 	return res, nil
 }
 
-func (s *UserService) Register(ctx context.Context, req *userentity.UserRegisterRequest) (*userentity.UserRegisterReply, error) {
+func (s *UserService) SendCodeByEmail(ctx context.Context, req *userentity.UserSendCodeByEmailRequest) (*userentity.UserSendCodeByEmailReply, error) {
+	err := s.uc.SendCodeByEmail(ctx, &userentity.User{
+		Email: req.Email,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &userentity.UserSendCodeByEmailReply{}, err
+}
+
+func (s *UserService) RegisterByEmail(ctx context.Context, req *userentity.UserRegisterRequest) (*userentity.UserRegisterReply, error) {
 	_, exist, err := s.uc.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		s.logger.Errorln(err)
@@ -85,7 +96,7 @@ func (s *UserService) Register(ctx context.Context, req *userentity.UserRegister
 		Email:    req.Email,
 		Password: req.Password,
 	}
-	user, err = s.uc.Create(ctx, &user)
+	err = s.uc.Create(ctx, req.RegisterCode, &user)
 	if err != nil {
 		s.logger.Errorln(err)
 		return nil, err

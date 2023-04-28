@@ -23,3 +23,10 @@ redis:
   poolSize: 2
   readTimeout: 5s
   writeTimeout: 5s
+
+email:
+  # host:
+  # port:
+  # user_name:
+  # password:
+  from_name: noreply

@@ -32,12 +32,20 @@ type UserLoginReply struct {
 }
 
 type UserRegisterRequest struct {
-	Name     string `json:"name" validate:"required,gte=3,lte=20"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
+	Name         string `json:"name" validate:"required,gte=3,lte=20"`
+	Email        string `json:"email" validate:"required,email"`
+	Password     string `json:"password" validate:"required"`
+	RegisterCode string `json:"register_code" validate:"required"`
 }
 
 type UserRegisterReply struct {
 	User        BasicUserInfo
 	AccessToken string
+}
+
+type UserSendCodeByEmailRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type UserSendCodeByEmailReply struct {
 }

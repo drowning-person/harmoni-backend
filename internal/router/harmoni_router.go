@@ -48,7 +48,7 @@ func (h *HarmoniAPIRouter) RegisterUnAuthHarmoniAPIRouter(r fiber.Router) {
 
 	r.Post("/login", h.userHandler.Login)
 	r.Post("/register", h.userHandler.Register)
-
+	r.Post("/mail/code", h.userHandler.SendCodeByEmail)
 	// tag
 	r.Get("/tag", h.tagHandler.GetTags)
 	r.Get("/tag/:id", h.tagHandler.GetTagByID)

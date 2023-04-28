@@ -10,6 +10,7 @@ import (
 	"harmoni/internal/pkg/snowflakex"
 	"harmoni/internal/pkg/validator"
 	commentrepo "harmoni/internal/repository/comment"
+	emailrepo "harmoni/internal/repository/email"
 	postrepo "harmoni/internal/repository/post"
 	tagrepo "harmoni/internal/repository/tag"
 	uniquerepo "harmoni/internal/repository/unique"
@@ -22,9 +23,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func initApp(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *conf.Auth, logConf *conf.Log) (*fiber.App, error) {
+func initApp(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *conf.Auth, emailConf *conf.Email, logConf *conf.Log) (*fiber.App, error) {
 	if err := validator.InitTrans("zh"); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	logger, err := logger.NewZapLogger(logConf)
@@ -49,9 +50,15 @@ func initApp(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *
 
 	uniqueIDRepo := uniquerepo.NewUniqueIDRepo(node)
 
+	emailRepo := emailrepo.NewEmailRepo(rdb)
+	emailUsecase, err := usecase.NewEmailUsecase(emailConf, emailRepo, logger.Sugar())
+	if err != nil {
+		return nil, err
+	}
+
 	userRepo := userrepo.NewUserRepo(db, rdb, uniqueIDRepo, logger.Sugar())
 	authUsecase := usecase.NewAuthUseCase(authConf, userRepo, logger.Sugar())
-	userUsecase := usecase.NewUserUseCase(userRepo, authUsecase, logger.Sugar())
+	userUsecase := usecase.NewUserUseCase(userRepo, authUsecase, emailUsecase, logger.Sugar())
 	userService := service.NewUserService(userUsecase, authUsecase, logger.Sugar())
 	userHandler := handler.NewUserHandler(userService)
 

@@ -15,6 +15,7 @@ type Config struct {
 	DB    *DB    `mapstructure:"db"`
 	Log   *Log   `mapstructure:"log"`
 	Redis *Redis `mapstructure:"redis"`
+	Email *Email `mapstructure:"email"`
 }
 
 type App struct {
@@ -149,6 +150,38 @@ func SetRedisDefault(v *viper.Viper) {
 	})
 }
 
+type Email struct {
+	Host     string `mapstructure:"host"`
+	Port     string `mapstructure:"port"`
+	UserName string `mapstructure:"user_name"`
+	Password string `mapstructure:"password"`
+	FromName string `mapstructure:"from_name"`
+}
+
+func SetEmailEnv(v *viper.Viper) error {
+	err := v.BindEnv("email.host", "HARMONI_EMAIL_HOST")
+	if err != nil {
+		return err
+	}
+
+	err = v.BindEnv("email.port", "HARMONI_EMAIL_PORT")
+	if err != nil {
+		return err
+	}
+
+	err = v.BindEnv("email.user_name", "HARMONI_EMAIL_USERNAME")
+	if err != nil {
+		return err
+	}
+
+	err = v.BindEnv("email.password", "HARMONI_EMAIL_PASSWORD")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func ReadConfig(filePath string) (*Config, error) {
 	v := viper.New()
 
@@ -185,6 +218,11 @@ func ReadConfig(filePath string) (*Config, error) {
 	}
 
 	err = SetRedisEnv(v)
+	if err != nil {
+		return nil, err
+	}
+
+	err = SetEmailEnv(v)
 	if err != nil {
 		return nil, err
 	}
