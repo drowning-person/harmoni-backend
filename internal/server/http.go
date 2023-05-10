@@ -9,7 +9,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/recover"
 	"go.uber.org/zap"
 )
 
@@ -26,7 +25,7 @@ func NewHTTPServer(debug bool,
 	})
 
 	r.Use(cors.New())
-	r.Use(recover.New())
+	// r.Use(recover.New())
 	r.Use(compress.New(compress.Config{
 		Level: compress.LevelBestCompression, // 1
 	}))

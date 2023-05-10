@@ -9,6 +9,7 @@ import (
 	"harmoni/internal/pkg/middleware"
 	"harmoni/internal/pkg/snowflakex"
 	"harmoni/internal/pkg/validator"
+	authrepo "harmoni/internal/repository/auth"
 	commentrepo "harmoni/internal/repository/comment"
 	emailrepo "harmoni/internal/repository/email"
 	postrepo "harmoni/internal/repository/post"
@@ -19,6 +20,7 @@ import (
 	"harmoni/internal/server"
 	"harmoni/internal/service"
 	"harmoni/internal/usecase"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -43,7 +45,7 @@ func initApp(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *
 		return nil, err
 	}
 
-	node, err := snowflakex.NewSnowflakeNode("2022-07-31", 1)
+	node, err := snowflakex.NewSnowflakeNode(time.Now().Format("2006-01-02"), 1)
 	if err != nil {
 		return nil, err
 	}
@@ -56,11 +58,18 @@ func initApp(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *
 		return nil, err
 	}
 
+	authRepo := authrepo.NewAuthRepo(rdb, logger.Sugar())
+	authUsecase := usecase.NewAuthUseCase(authConf, authRepo, logger.Sugar())
+	authMiddleware := middleware.NewJwtAuthMiddleware(authConf.Secret, authUsecase)
+
 	userRepo := userrepo.NewUserRepo(db, rdb, uniqueIDRepo, logger.Sugar())
-	authUsecase := usecase.NewAuthUseCase(authConf, userRepo, logger.Sugar())
-	userUsecase := usecase.NewUserUseCase(userRepo, authUsecase, emailUsecase, logger.Sugar())
-	userService := service.NewUserService(userUsecase, authUsecase, logger.Sugar())
+	userUsecase := usecase.NewUserUseCase(userRepo, authUsecase, logger.Sugar())
+	accountUsecase := usecase.NewAccountUsecase(authUsecase, userRepo, emailUsecase, userUsecase, logger)
+	userService := service.NewUserService(userUsecase, authUsecase, accountUsecase, logger.Sugar())
 	userHandler := handler.NewUserHandler(userService)
+
+	accountService := service.NewAccountService(accountUsecase, logger.Sugar())
+	accountHandler := handler.NewAccountHandler(accountService, authMiddleware, logger.Sugar())
 
 	tagRepo := tagrepo.NewTagRepo(db, rdb, uniqueIDRepo, logger.Sugar())
 	tagUsecase := usecase.NewTagUseCase(tagRepo, logger.Sugar())
@@ -77,8 +86,7 @@ func initApp(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *
 	commentServie := service.NewCommentService(commentUsecase, logger.Sugar())
 	commentHanlder := handler.NewCommentHandler(commentServie)
 
-	authMiddleware := middleware.NewJwtAuthMiddleware(authConf.Secret, authUsecase)
-	hrouter := router.NewHarmoniAPIRouter(userHandler, postHanlder, tagHanlder, commentHanlder)
+	hrouter := router.NewHarmoniAPIRouter(accountHandler, userHandler, postHanlder, tagHanlder, commentHanlder)
 
 	app := server.NewHTTPServer(appConf.Debug, logger, hrouter, authMiddleware)
 	return app, nil

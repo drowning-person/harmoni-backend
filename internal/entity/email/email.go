@@ -12,6 +12,15 @@ type EmailCodeContent struct {
 	LastReqTime int64  `json:"last_req_time,omitempty"`
 }
 
+type EmailType uint8
+
+const (
+	BindEmail EmailType = iota + 1
+	ChangeEmail
+	ChangePassword
+	ResetPassword
+)
+
 func (r *EmailCodeContent) ToJSONString() string {
 	codeBytes, _ := json.Marshal(r)
 	return string(codeBytes)

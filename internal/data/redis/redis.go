@@ -9,6 +9,8 @@ import (
 )
 
 func NewRedis(conf *conf.Redis) (*redis.Client, error) {
+	fmt.Printf("redis conf:%#v\n", conf)
+
 	rdb := redis.NewClient(&redis.Options{
 		Addr:         fmt.Sprintf("%s:%d", conf.IP, conf.Port),
 		Password:     conf.Password,
@@ -24,5 +26,6 @@ func NewRedis(conf *conf.Redis) (*redis.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return rdb, nil
 }

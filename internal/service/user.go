@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	accountentity "harmoni/internal/entity/account"
+	authentity "harmoni/internal/entity/auth"
 	"harmoni/internal/entity/paginator"
 	userentity "harmoni/internal/entity/user"
 	"harmoni/internal/pkg/errorx"
@@ -14,17 +16,20 @@ import (
 type UserService struct {
 	uc     *usecase.UserUseCase
 	ac     *usecase.AuthUseCase
+	auc    *usecase.AccountUsecase
 	logger *zap.SugaredLogger
 }
 
 func NewUserService(
 	uc *usecase.UserUseCase,
 	ac *usecase.AuthUseCase,
+	auc *usecase.AccountUsecase,
 	logger *zap.SugaredLogger,
 ) *UserService {
 	return &UserService{
 		uc:     uc,
 		ac:     ac,
+		auc:    auc,
 		logger: logger,
 	}
 }
@@ -32,7 +37,7 @@ func NewUserService(
 func (s *UserService) GetUserByUserID(ctx context.Context, req *userentity.GetUserDetailRequest) (*userentity.GetUserDetailReply, error) {
 	user, exist, err := s.uc.GetByUserID(ctx, req.UserID)
 	if err != nil {
-		s.logger.Errorln(err)
+		s.logger.Error(err)
 		return nil, err
 	} else if !exist {
 		return nil, errorx.NotFound(reason.UserNotFound)
@@ -44,11 +49,11 @@ func (s *UserService) GetUserByUserID(ctx context.Context, req *userentity.GetUs
 }
 
 // GetUsers TODO: Add condition
-func (s *UserService) GetUsers(ctx context.Context, pageSize, pageNum int64) (paginator.Page[userentity.BasicUserInfo], error) {
-	users, err := s.uc.GetPage(ctx, pageSize, pageNum)
+func (s *UserService) GetUsers(ctx context.Context, req *userentity.GetUsersRequest) (*userentity.GetUsersReply, error) {
+	users, err := s.uc.GetPage(ctx, req.PageSize, req.Page)
 	if err != nil {
-		s.logger.Errorln(err)
-		return paginator.Page[userentity.BasicUserInfo]{}, err
+		s.logger.Error(err)
+		return nil, err
 	}
 
 	res := paginator.Page[userentity.BasicUserInfo]{
@@ -63,24 +68,15 @@ func (s *UserService) GetUsers(ctx context.Context, pageSize, pageNum int64) (pa
 		res.Data = append(res.Data, userentity.ConvertUserToDisplay(&user))
 	}
 
-	return res, nil
-}
-
-func (s *UserService) SendCodeByEmail(ctx context.Context, req *userentity.UserSendCodeByEmailRequest) (*userentity.UserSendCodeByEmailReply, error) {
-	err := s.uc.SendCodeByEmail(ctx, &userentity.User{
-		Email: req.Email,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &userentity.UserSendCodeByEmailReply{}, err
+	return &userentity.GetUsersReply{
+		Page: res,
+	}, nil
 }
 
 func (s *UserService) RegisterByEmail(ctx context.Context, req *userentity.UserRegisterRequest) (*userentity.UserRegisterReply, error) {
 	_, exist, err := s.uc.GetUserByEmail(ctx, req.Email)
 	if err != nil {
-		s.logger.Errorln(err)
+		s.logger.Error(err)
 		return nil, err
 	} else if exist {
 		s.logger.Infof("Registration attempt failed. User with email '%v' already exists.\n", req.Email)
@@ -96,28 +92,41 @@ func (s *UserService) RegisterByEmail(ctx context.Context, req *userentity.UserR
 		Email:    req.Email,
 		Password: req.Password,
 	}
-	err = s.uc.Create(ctx, req.RegisterCode, &user)
+	err = s.auc.CheckVerificationCodeByEmail(ctx, &user, req.RegisterCode, accountentity.RegisterAct)
 	if err != nil {
-		s.logger.Errorln(err)
+		s.logger.Error(err)
 		return nil, err
 	}
 
-	token, err := s.ac.GenToken(ctx, user.UserID, user.Name)
+	err = s.uc.Create(ctx, &user)
 	if err != nil {
-		s.logger.Errorln(err)
+		s.logger.Error(err)
+		return nil, err
+	}
+
+	token, err := s.ac.GenToken(ctx, &user, authentity.AccessTokenType)
+	if err != nil {
+		s.logger.Error(err)
+		return nil, err
+	}
+
+	refreshToken, err := s.ac.GenToken(ctx, &user, authentity.RefreshTokenType)
+	if err != nil {
+		s.logger.Error(err)
 		return nil, err
 	}
 
 	return &userentity.UserRegisterReply{
-		User:        userentity.ConvertUserToDisplay(&user),
-		AccessToken: token,
+		User:         userentity.ConvertUserToDisplay(&user),
+		AccessToken:  token,
+		RefreshToken: refreshToken,
 	}, nil
 }
 
 func (s *UserService) Login(ctx context.Context, req *userentity.UserLoginRequset) (*userentity.UserLoginReply, error) {
 	user, exist, err := s.uc.GetUserByEmail(ctx, req.Email)
 	if err != nil {
-		s.logger.Errorln(err)
+		s.logger.Error(err)
 		return nil, err
 	} else if !exist {
 		s.logger.Infof("Login attempt failed. User with email '%v' not found.\n", req.Email)
@@ -130,14 +139,68 @@ func (s *UserService) Login(ctx context.Context, req *userentity.UserLoginRequse
 		return nil, err
 	}
 
-	token, err := s.ac.GenToken(ctx, user.UserID, user.Name)
+	token, err := s.ac.GenToken(ctx, user, authentity.AccessTokenType)
 	if err != nil {
-		s.logger.Errorln(err)
+		s.logger.Error(err)
+		return nil, err
+	}
+
+	refreshToken, err := s.ac.GenToken(ctx, user, authentity.RefreshTokenType)
+	if err != nil {
+		s.logger.Error(err)
 		return nil, err
 	}
 
 	return &userentity.UserLoginReply{
-		User:        userentity.ConvertUserToDisplay(user),
-		AccessToken: token,
+		User:         userentity.ConvertUserToDisplay(user),
+		AccessToken:  token,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
+func (s *UserService) Logout(ctx context.Context, req *userentity.UserLogoutRequest) (*userentity.UserLogoutReply, error) {
+	err := s.ac.RevokeToken(ctx, req.UserID, req.AccessTokenID, authentity.AccessTokenType)
+	if err != nil {
+		s.logger.Error(err)
+		return nil, err
+	}
+
+	claims, err := s.ac.VerifyToken(ctx, req.RefreshToken, authentity.RefreshTokenType)
+	if err != nil {
+		s.logger.Error(err)
+		return nil, err
+	}
+
+	err = s.ac.RevokeToken(ctx, req.UserID, claims.ID, authentity.RefreshTokenType)
+	if err != nil {
+		s.logger.Error(err)
+		return nil, err
+	}
+
+	return &userentity.UserLogoutReply{}, nil
+}
+
+func (s *UserService) RefreshToken(ctx context.Context, req *userentity.RefreshTokenRequest) (*userentity.RefreshTokenReply, error) {
+	claims, err := s.ac.VerifyToken(ctx, req.RefreshToken, authentity.RefreshTokenType)
+	if err != nil {
+		s.logger.Error(err)
+		return nil, err
+	}
+
+	accessToken, err := s.ac.GenToken(ctx, &userentity.User{UserID: claims.UserID, Name: claims.Name}, authentity.AccessTokenType)
+	if err != nil {
+		s.logger.Error(err)
+		return nil, err
+	}
+
+	newRefreshToken, err := s.ac.ReGenToken(ctx, claims, authentity.RefreshTokenType)
+	if err != nil {
+		s.logger.Error(err)
+		return nil, err
+	}
+
+	return &userentity.RefreshTokenReply{
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
 	}, nil
 }

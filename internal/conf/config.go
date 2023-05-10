@@ -45,14 +45,16 @@ func SetAppEnv(v *viper.Viper) error {
 }
 
 type Auth struct {
-	TokenExpire int64 `default:"1800"`
-	Secret      string
+	TokenExpire        time.Duration `mapstructure:"token_expire"`
+	RefreshTokenExpire time.Duration `mapstructure:"refresh_token_expire"`
+	Secret             string        `mapstructure:"secret"`
 }
 
 func SetAuthDefault(v *viper.Viper) {
 	v.SetDefault("auth", map[string]interface{}{
-		"token_expire": "30m",
-		"secret":       "IKNOWWHATIAMDOING",
+		"token_expire":         "5m",
+		"refresh_token_expire": "336h",
+		"secret":               "IKNOWWHATIAMDOING",
 	})
 }
 
@@ -151,11 +153,18 @@ func SetRedisDefault(v *viper.Viper) {
 }
 
 type Email struct {
-	Host     string `mapstructure:"host"`
-	Port     string `mapstructure:"port"`
-	UserName string `mapstructure:"user_name"`
-	Password string `mapstructure:"password"`
-	FromName string `mapstructure:"from_name"`
+	Host     string        `mapstructure:"host"`
+	Port     string        `mapstructure:"port"`
+	UserName string        `mapstructure:"user_name"`
+	Password string        `mapstructure:"password"`
+	FromName string        `mapstructure:"from_name"`
+	CodeTTL  time.Duration `mapstructure:"code_ttl"`
+}
+
+func SetEmailDefault(v *viper.Viper) {
+	v.SetDefault("email", map[string]interface{}{
+		"code_ttl": "5m",
+	})
 }
 
 func SetEmailEnv(v *viper.Viper) error {
@@ -190,6 +199,7 @@ func ReadConfig(filePath string) (*Config, error) {
 	SetDBDefault(v)
 	SetLogDefault(v)
 	SetRedisDefault(v)
+	SetEmailDefault(v)
 
 	filename := path.Base(filePath)
 	fileext := path.Ext(filePath)

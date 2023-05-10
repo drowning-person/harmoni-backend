@@ -3,18 +3,20 @@ package middleware
 import (
 	"context"
 	"harmoni/internal/entity"
+	authentity "harmoni/internal/entity/auth"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
 	"harmoni/internal/usecase"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
 )
+
+type TokenCtxType string
 
 type Config struct {
 	Unauthorized  func(error) error
-	TokenCtxName  string
+	TokenCtxName  TokenCtxType
 	TokenHeadName string
 	TokenLookup   string
 }
@@ -49,7 +51,7 @@ func NewJwtAuthMiddleware(secret string, authUsecase *usecase.AuthUseCase, opts 
 
 func (mw *JwtAuthMiddleware) Auth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		err := mw.parseAndVerifyToken(c)
+		err := mw.ParseAndVerifyToken(c)
 		if err != nil {
 			return err
 		}
@@ -102,7 +104,7 @@ func (mw *JwtAuthMiddleware) jwtFromParam(c *fiber.Ctx, key string) (string, err
 	return token, nil
 }
 
-func (mw *JwtAuthMiddleware) parseAndVerifyToken(c *fiber.Ctx) error {
+func (mw *JwtAuthMiddleware) ParseAndVerifyToken(c *fiber.Ctx) error {
 	var token string
 	var err error
 
@@ -130,7 +132,7 @@ func (mw *JwtAuthMiddleware) parseAndVerifyToken(c *fiber.Ctx) error {
 		return err
 	}
 
-	claims, err := mw.authUsecase.VerifyToken(c.UserContext(), token)
+	claims, err := mw.authUsecase.VerifyToken(c.UserContext(), token, authentity.AccessTokenType)
 	if err != nil {
 		return err
 	}
@@ -143,7 +145,7 @@ func (mw *JwtAuthMiddleware) parseAndVerifyToken(c *fiber.Ctx) error {
 
 func WithTokenCtxName(name string) Option {
 	return func(conf *Config) {
-		conf.TokenCtxName = name
+		conf.TokenCtxName = TokenCtxType(name)
 	}
 }
 
@@ -165,10 +167,10 @@ func GetClaimsFromCtx(ctx context.Context) *entity.JwtCustomClaims {
 		return nil
 	}
 
-	claims, ok := tmp.(jwt.Claims)
+	claims, ok := tmp.(*entity.JwtCustomClaims)
 	if !ok {
 		return nil
 	}
 
-	return claims.(*entity.JwtCustomClaims)
+	return claims
 }

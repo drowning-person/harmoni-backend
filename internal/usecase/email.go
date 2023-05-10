@@ -80,6 +80,47 @@ const (
 	  </body>
 	</html>`
 	registerSubject = "注册验证码"
+
+	resetPasswordTemplate = `
+	<!DOCTYPE html>
+	<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>重置密码</title>
+	</head>
+	<body>
+		<div>
+			<h1>重置密码</h1>
+			<p>我们收到了一份针对您账户的密码重置请求。如果您没有请求此操作，请忽略此邮件。</p>
+			<p>如果您确实请求了密码重置，请在页面输入以下代码：</p>
+			<p>{{ .Code }}</p>
+			<p>此代码将在 {{ .TTL }} 分钟后失效。</p>
+		</div>
+	</body>
+	</html>
+	`
+	resetPasswordSubject = "重置密码"
+
+	changeTemplate = `
+	<!DOCTYPE html>
+	<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>修改账户信息</title>
+	</head>
+	<body>
+		<div>
+			<h1>修改账户信息</h1>
+			<p>我们收到了您修改{{ .ChangeName }}的请求。如果您没有进行此操作，请忽略此邮件。</p>
+			<p>如果您确实请求了修改账户信息，请在页面输入以下代码：</p>
+			<p>{{ .Code }}</p>
+			<p>此代码将在 {{ .TTL }} 分钟后失效。</p>
+			<p>如果您没有进行上述操作或有任何疑问，请及时联系我们。</p>
+		</div>
+	</body>
+	</html>
+	`
+	changeSubject = "修改账户信息"
 )
 
 const (
@@ -87,6 +128,10 @@ const (
 
 	mailcodePrefix = "mail.code:"
 )
+
+func emailcodeKey(email string, emailtype emailentity.EmailType) string {
+	return fmt.Sprintf("%s%s:%d", mailcodePrefix, email, emailtype)
+}
 
 type EmailUsecase struct {
 	emailRepo emailentity.EmailRepo
@@ -110,8 +155,8 @@ func NewEmailUsecase(conf *conf.Email, emailRepo emailentity.EmailRepo, logger *
 	}, nil
 }
 
-func (u *EmailUsecase) CheckBeforeSendCode(ctx context.Context, email string) error {
-	key := mailcodePrefix + email
+func (u *EmailUsecase) CheckBeforeSendCode(ctx context.Context, email string, emailType emailentity.EmailType) error {
+	key := emailcodeKey(email, emailType)
 	content, err := u.emailRepo.GetCode(ctx, key)
 	if err != nil {
 		return err
@@ -133,11 +178,11 @@ func (u *EmailUsecase) CheckBeforeSendCode(ctx context.Context, email string) er
 }
 
 // SendAndSaveCode send email and save code
-func (u *EmailUsecase) SendAndSaveCode(ctx context.Context, toEmailAddr, subject, body, codeContent string) {
-	key := mailcodePrefix + toEmailAddr
+func (u *EmailUsecase) SendAndSaveCode(ctx context.Context, toEmailAddr, subject, body, codeContent string, emailType emailentity.EmailType) {
+	key := emailcodeKey(toEmailAddr, emailType)
 
 	u.Send(ctx, toEmailAddr, subject, body)
-	err := u.emailRepo.SetCode(ctx, key, codeContent, 5*time.Minute)
+	err := u.emailRepo.SetCode(ctx, key, codeContent, u.conf.CodeTTL)
 	if err != nil {
 		u.logger.Error(err)
 	}
@@ -145,8 +190,8 @@ func (u *EmailUsecase) SendAndSaveCode(ctx context.Context, toEmailAddr, subject
 
 // SendAndSaveCodeWithTime send email and save code
 func (u *EmailUsecase) SendAndSaveCodeWithTime(
-	ctx context.Context, toEmailAddr, subject, body, codeContent string, duration time.Duration) {
-	key := mailcodePrefix + toEmailAddr
+	ctx context.Context, toEmailAddr, subject, body, codeContent string, emailType emailentity.EmailType, duration time.Duration) {
+	key := emailcodeKey(toEmailAddr, emailType)
 
 	u.Send(ctx, toEmailAddr, subject, body)
 	err := u.emailRepo.SetCode(ctx, key, codeContent, duration)
@@ -174,8 +219,9 @@ func (u *EmailUsecase) Send(ctx context.Context, toEmailAddr, subject, body stri
 
 }
 
-func (u *EmailUsecase) VerifyCode(ctx context.Context, email, code string) error {
-	content, err := u.emailRepo.GetCode(ctx, mailcodePrefix+email)
+func (u *EmailUsecase) VerifyCode(ctx context.Context, email, code string, emailType emailentity.EmailType) error {
+	key := emailcodeKey(email, emailType)
+	content, err := u.emailRepo.GetCode(ctx, key)
 	if err != nil {
 		return err
 	}
@@ -221,8 +267,52 @@ func (u *EmailUsecase) RegisterTemplate(ctx context.Context, code string) (strin
 	var body bytes.Buffer
 	err := t.Execute(&body, data)
 	if err != nil {
-		return "", "", err
+		return "", "", errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 
 	return registerSubject, body.String(), nil
+}
+
+func (u *EmailUsecase) ChangeTemplate(ctx context.Context, code string, changeName string) (string, string, error) {
+	// 解析 HTML 模板
+	t := template.Must(template.New("change").Parse(changeTemplate))
+
+	// 构造 HTML 邮件正文
+	data := struct {
+		Code       string
+		ChangeName string
+		TTL        time.Duration
+	}{
+		Code:       code,
+		ChangeName: changeName,
+		TTL:        u.conf.CodeTTL,
+	}
+	var body bytes.Buffer
+	err := t.Execute(&body, data)
+	if err != nil {
+		return "", "", errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return changeSubject, body.String(), nil
+}
+
+func (u *EmailUsecase) ResetPasswordTemplate(ctx context.Context, code string) (string, string, error) {
+	// 解析 HTML 模板
+	t := template.Must(template.New("resetpassword").Parse(resetPasswordTemplate))
+
+	// 构造 HTML 邮件正文
+	data := struct {
+		Code string
+		TTL  time.Duration
+	}{
+		Code: code,
+		TTL:  u.conf.CodeTTL,
+	}
+	var body bytes.Buffer
+	err := t.Execute(&body, data)
+	if err != nil {
+		return "", "", errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return resetPasswordSubject, body.String(), nil
 }

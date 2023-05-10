@@ -20,6 +20,7 @@ const (
 const (
 	AuthHeaderInvalid                = "error.auth.header_invalid"
 	TokenInvalid                     = "error.token.invalid"
+	TokenNotExistOrExpired           = "error.token.not_exist_or_expired"
 	EmailOrPasswordWrong             = "error.object.email_or_password_incorrect"
 	CommentNotFound                  = "error.comment.not_found"
 	CommentCannotEditAfterDeadline   = "error.comment.cannot_edit_after_deadline"
@@ -49,6 +50,7 @@ const (
 	EmailCodeIncorrect               = "error.email.code_incorrect"
 	EmailVerifyURLExpired            = "error.email.verify_url_expired"
 	EmailNeedToBeVerified            = "error.email.need_to_be_verified"
+	EmailNeedToBeVerifiedBeforeAct   = "error.email.need_to_be_verified_before_action"
 	UserSuspended                    = "error.user.suspended"
 	ObjectNotFound                   = "error.object.not_found"
 	TagNotFound                      = "error.tag.not_found"

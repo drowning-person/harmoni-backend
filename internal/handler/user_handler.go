@@ -4,6 +4,7 @@ import (
 	userentity "harmoni/internal/entity/user"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/httpx/fiberx"
+	"harmoni/internal/pkg/middleware"
 	"harmoni/internal/pkg/reason"
 	"harmoni/internal/service"
 
@@ -20,13 +21,13 @@ func NewUserHandler(us *service.UserService) *UserHandler {
 	}
 }
 
-func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
-	req := userentity.GetAllUsersRequest{}
+func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
+	req := userentity.GetUsersRequest{}
 	if err := fiberx.ParseAndCheck(c, &req); err != nil {
 		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
 	}
 
-	reply, err := h.us.GetUsers(c.UserContext(), req.PageSize, req.Page)
+	reply, err := h.us.GetUsers(c.UserContext(), &req)
 
 	return fiberx.HandleResponse(c, err, reply)
 }
@@ -38,16 +39,6 @@ func (h *UserHandler) GetUser(c *fiber.Ctx) error {
 	}
 
 	reply, err := h.us.GetUserByUserID(c.UserContext(), &req)
-	return fiberx.HandleResponse(c, err, reply)
-}
-
-func (h *UserHandler) SendCodeByEmail(c *fiber.Ctx) error {
-	req := userentity.UserSendCodeByEmailRequest{}
-	if err := fiberx.ParseAndCheck(c, &req); err != nil {
-		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
-	}
-
-	reply, err := h.us.SendCodeByEmail(c.UserContext(), &req)
 	return fiberx.HandleResponse(c, err, reply)
 }
 
@@ -68,5 +59,29 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	reply, err := h.us.Login(c.UserContext(), &req)
+	return fiberx.HandleResponse(c, err, reply)
+}
+
+func (h *UserHandler) Logout(c *fiber.Ctx) error {
+	req := userentity.UserLogoutRequest{}
+	if err := fiberx.ParseAndCheck(c, &req); err != nil {
+		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
+	}
+
+	myclaims := middleware.GetClaimsFromCtx(c.UserContext())
+	req.UserID = myclaims.UserID
+	req.AccessTokenID = myclaims.ID
+
+	reply, err := h.us.Logout(c.UserContext(), &req)
+	return fiberx.HandleResponse(c, err, reply)
+}
+
+func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
+	req := userentity.RefreshTokenRequest{}
+	if err := fiberx.ParseAndCheck(c, &req); err != nil {
+		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
+	}
+
+	reply, err := h.us.RefreshToken(c.UserContext(), &req)
 	return fiberx.HandleResponse(c, err, reply)
 }

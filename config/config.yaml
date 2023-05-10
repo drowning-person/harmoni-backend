@@ -3,7 +3,7 @@ app:
   debug: false
 
 auth:
-  tokenExpire: 3600
+  tokenExpire: 5m
   # secret:
 
 db:
