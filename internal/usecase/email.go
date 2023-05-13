@@ -178,26 +178,32 @@ func (u *EmailUsecase) CheckBeforeSendCode(ctx context.Context, email string, em
 }
 
 // SendAndSaveCode send email and save code
-func (u *EmailUsecase) SendAndSaveCode(ctx context.Context, toEmailAddr, subject, body, codeContent string, emailType emailentity.EmailType) {
+func (u *EmailUsecase) SendAndSaveCode(ctx context.Context, toEmailAddr, subject, body, codeContent string, emailType emailentity.EmailType) error {
 	key := emailcodeKey(toEmailAddr, emailType)
-
-	u.Send(ctx, toEmailAddr, subject, body)
-	err := u.emailRepo.SetCode(ctx, key, codeContent, u.conf.CodeTTL)
+	exist, err := u.emailRepo.SetCode(ctx, key, codeContent, u.conf.CodeTTL)
 	if err != nil {
 		u.logger.Error(err)
+	} else if exist {
+		return errorx.BadRequest(reason.EmailShouldRequestLater)
 	}
+
+	go u.Send(ctx, toEmailAddr, subject, body)
+	return nil
 }
 
 // SendAndSaveCodeWithTime send email and save code
 func (u *EmailUsecase) SendAndSaveCodeWithTime(
-	ctx context.Context, toEmailAddr, subject, body, codeContent string, emailType emailentity.EmailType, duration time.Duration) {
+	ctx context.Context, toEmailAddr, subject, body, codeContent string, emailType emailentity.EmailType, duration time.Duration) error {
 	key := emailcodeKey(toEmailAddr, emailType)
-
-	u.Send(ctx, toEmailAddr, subject, body)
-	err := u.emailRepo.SetCode(ctx, key, codeContent, duration)
+	exist, err := u.emailRepo.SetCode(ctx, key, codeContent, duration)
 	if err != nil {
 		u.logger.Error(err)
+	} else if exist {
+		return errorx.BadRequest(reason.EmailShouldRequestLater)
 	}
+
+	go u.Send(ctx, toEmailAddr, subject, body)
+	return nil
 }
 
 // Send email send

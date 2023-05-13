@@ -56,12 +56,12 @@ func (s *UserService) GetUsers(ctx context.Context, req *userentity.GetUsersRequ
 		return nil, err
 	}
 
-	res := paginator.Page[userentity.BasicUserInfo]{
+	res := paginator.Page[userentity.UserBasicInfo]{
 		CurrentPage: users.CurrentPage,
 		PageSize:    users.PageSize,
 		Total:       users.Total,
 		Pages:       users.Pages,
-		Data:        make([]userentity.BasicUserInfo, 0, len(users.Data)),
+		Data:        make([]userentity.UserBasicInfo, 0, len(users.Data)),
 	}
 
 	for _, user := range users.Data {

@@ -68,6 +68,10 @@ func (u *UserUseCase) GetByUserID(ctx context.Context, userID int64) (*userentit
 	return u.userRepo.GetByUserID(ctx, userID)
 }
 
+func (u *UserUseCase) GetByUserIDs(ctx context.Context, userIDs []int64) ([]userentity.User, error) {
+	return u.userRepo.GetByUserIDs(ctx, userIDs)
+}
+
 func (u *UserUseCase) GetUserByEmail(ctx context.Context, email string) (*userentity.User, bool, error) {
 	return u.userRepo.GetByEmail(ctx, email)
 }

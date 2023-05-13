@@ -31,6 +31,6 @@ func (r *EmailCodeContent) FromJSONString(data string) error {
 }
 
 type EmailRepo interface {
-	SetCode(ctx context.Context, codeKey, content string, duration time.Duration) error
+	SetCode(ctx context.Context, codeKey, content string, duration time.Duration) (bool, error)
 	GetCode(ctx context.Context, codeKey string) (content string, err error)
 }

@@ -11,24 +11,30 @@ import (
 
 type User struct {
 	gorm.Model
-	UserID   int64  `json:"user_id,string" gorm:"not null;uniqueIndex"`
-	Name     string `json:"name" gorm:"not null;type:varchar(20)"`
-	Email    string `json:"email" gorm:"uniqueIndex;type:varchar(100)"`
-	Password string `json:"-" gorm:"not null;type:varchar(255)"`
+	UserID      int64  `json:"user_id,string" gorm:"not null;uniqueIndex"`
+	Name        string `json:"name" gorm:"not null;type:varchar(20)"`
+	Email       string `json:"email" gorm:"not null;uniqueIndex;type:varchar(100)"`
+	Password    string `json:"-" gorm:"not null;type:varchar(255)"`
+	FollowCount int64  `gorm:"not null;default:0"`
 }
 
-type BasicUserInfo struct {
-	UserID int64  `json:"user_id,string"`
-	Name   string `json:"name"`
-	Email  string `json:"email"`
+type UserBasicInfo struct {
+	UserID int64  `json:"user_id,string,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Email  string `json:"email,omitempty"`
 }
 
 type UserDetail struct {
-	BasicUserInfo
+	UserBasicInfo
+	FollowCount int64 `json:"follow_count"`
 }
 
-func ConvertUserToDisplay(u *User) BasicUserInfo {
-	return BasicUserInfo{
+func (User) TableName() string {
+	return "user"
+}
+
+func ConvertUserToDisplay(u *User) UserBasicInfo {
+	return UserBasicInfo{
 		UserID: u.UserID,
 		Name:   u.Name,
 		Email:  u.Email,
@@ -37,11 +43,12 @@ func ConvertUserToDisplay(u *User) BasicUserInfo {
 
 func ConvertUserToDetailDisplay(u *User) UserDetail {
 	return UserDetail{
-		BasicUserInfo: BasicUserInfo{
+		UserBasicInfo: UserBasicInfo{
 			UserID: u.UserID,
 			Name:   u.Name,
 			Email:  u.Email,
 		},
+		FollowCount: u.FollowCount,
 	}
 }
 
@@ -65,7 +72,9 @@ type UserRepository interface {
 	Create(ctx context.Context, user *User) error
 	GetByEmail(ctx context.Context, email string) (*User, bool, error)
 	GetByUserID(ctx context.Context, userID int64) (*User, bool, error)
+	GetByUserIDs(ctx context.Context, userID []int64) ([]User, error)
 	GetPage(ctx context.Context, pageSize, pageNum int64) (paginator.Page[User], error)
+
 	// To ensure that the status corresponds to the correct security information
 	// the verification method (email or phone) needs to be specified.
 	// you can leave method empty in the implementation

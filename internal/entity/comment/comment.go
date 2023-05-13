@@ -18,6 +18,10 @@ type Comment struct {
 	Content   string `gorm:"type:varchar(2048)"`
 }
 
+func (Comment) TableName() string {
+	return "comment"
+}
+
 type CommentDetail struct {
 	CommentID int64     `json:"cid,string"`
 	ObjectID  int64     `json:"oid,string"`

@@ -33,6 +33,10 @@ func (u *TagUseCase) GetByTagID(ctx context.Context, tagID int64) (*tagentity.Ta
 	return u.tagRepo.GetByTagID(ctx, tagID)
 }
 
+func (u *TagUseCase) GetByTagIDs(ctx context.Context, tagIDs []int64) ([]tagentity.Tag, error) {
+	return u.tagRepo.GetByTagIDs(ctx, tagIDs)
+}
+
 func (u *TagUseCase) GetByTagName(ctx context.Context, name string) (*tagentity.Tag, bool, error) {
 	return u.tagRepo.GetByTagName(ctx, name)
 }

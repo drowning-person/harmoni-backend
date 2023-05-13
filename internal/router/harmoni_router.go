@@ -8,6 +8,7 @@ import (
 
 type HarmoniAPIRouter struct {
 	accountHandler *handler.AccountHandler
+	followHandler  *handler.FollowHandler
 	userHandler    *handler.UserHandler
 	postHandler    *handler.PostHandler
 	tagHandler     *handler.TagHandler
@@ -16,6 +17,7 @@ type HarmoniAPIRouter struct {
 
 func NewHarmoniAPIRouter(
 	accountHandler *handler.AccountHandler,
+	followHandler *handler.FollowHandler,
 	userHandler *handler.UserHandler,
 	postHandler *handler.PostHandler,
 	tagHandler *handler.TagHandler,
@@ -23,6 +25,7 @@ func NewHarmoniAPIRouter(
 ) *HarmoniAPIRouter {
 	return &HarmoniAPIRouter{
 		accountHandler: accountHandler,
+		followHandler:  followHandler,
 		userHandler:    userHandler,
 		postHandler:    postHandler,
 		tagHandler:     tagHandler,
@@ -36,6 +39,14 @@ func (h *HarmoniAPIRouter) RegisterHarmoniAPIRouter(r fiber.Router) {
 	account.Post("/email/change", h.accountHandler.ChangeEmail)
 	account.Post("/password/change", h.accountHandler.ChangePassword)
 	account.Post("/password/reset", h.accountHandler.ResetPassword)
+
+	follow := r.Group("/follow")
+	follow.Post("", h.followHandler.Follow)
+
+	follow.Get("/followers", h.followHandler.GetFollowers)
+	follow.Get("/followings", h.followHandler.GetFollowings)
+	follow.Get("/isFollowing", h.followHandler.IsFollowing)
+	follow.Get("/arefolloweachother", h.followHandler.AreFollowEachOther)
 
 	// user
 	r.Get("/user", h.userHandler.GetUsers)

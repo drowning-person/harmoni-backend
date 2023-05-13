@@ -64,6 +64,16 @@ func (r *tagRepo) GetByTagID(ctx context.Context, tagID int64) (*tagentity.Tag, 
 	return tag, true, nil
 }
 
+func (r *tagRepo) GetByTagIDs(ctx context.Context, tagIDs []int64) ([]tagentity.Tag, error) {
+	tags := make([]tagentity.Tag, 0, 8)
+	err := r.db.WithContext(ctx).Where("tag_id IN ?", tagIDs).Find(&tags).Error
+	if err != nil {
+		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return tags, nil
+}
+
 func (r *tagRepo) GetByTagName(ctx context.Context, tagName string) (*tagentity.Tag, bool, error) {
 	tag := &tagentity.Tag{}
 	err := r.db.WithContext(ctx).Where("tag_name = ?", tagName).First(&tag).Error

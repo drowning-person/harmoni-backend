@@ -12,6 +12,7 @@ import (
 	authrepo "harmoni/internal/repository/auth"
 	commentrepo "harmoni/internal/repository/comment"
 	emailrepo "harmoni/internal/repository/email"
+	followrepo "harmoni/internal/repository/follow"
 	postrepo "harmoni/internal/repository/post"
 	tagrepo "harmoni/internal/repository/tag"
 	uniquerepo "harmoni/internal/repository/unique"
@@ -86,7 +87,12 @@ func initApp(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *
 	commentServie := service.NewCommentService(commentUsecase, logger.Sugar())
 	commentHanlder := handler.NewCommentHandler(commentServie)
 
-	hrouter := router.NewHarmoniAPIRouter(accountHandler, userHandler, postHanlder, tagHanlder, commentHanlder)
+	followRepo := followrepo.NewFollowRepo(db, userRepo, tagRepo, uniqueIDRepo, logger.Sugar())
+	followUsecase := usecase.NewFollowUseCase(followRepo, userUsecase, tagUsecase, logger.Sugar())
+	followService := service.NewFollowService(followUsecase, userUsecase, logger.Sugar())
+	followHandler := handler.NewFollowHandler(followService, logger.Sugar())
+
+	hrouter := router.NewHarmoniAPIRouter(accountHandler, followHandler, userHandler, postHanlder, tagHanlder, commentHanlder)
 
 	app := server.NewHTTPServer(appConf.Debug, logger, hrouter, authMiddleware)
 	return app, nil

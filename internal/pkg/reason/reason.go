@@ -18,6 +18,9 @@ const (
 )
 
 const (
+	FollowAlreadyExist = "error.follow.already_exist"
+	FollowNotFound     = "error.follow.not_found"
+
 	AuthHeaderInvalid                = "error.auth.header_invalid"
 	TokenInvalid                     = "error.token.invalid"
 	TokenNotExistOrExpired           = "error.token.not_exist_or_expired"

@@ -2,7 +2,7 @@ package email
 
 import (
 	"context"
-	emailrepo "harmoni/internal/entity/email"
+	emailentity "harmoni/internal/entity/email"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
 	"time"
@@ -16,19 +16,25 @@ type emailRepo struct {
 }
 
 // NewEmailRepo new repository
-func NewEmailRepo(rdb *redis.Client) emailrepo.EmailRepo {
+func NewEmailRepo(rdb *redis.Client) emailentity.EmailRepo {
 	return &emailRepo{
 		rdb: rdb,
 	}
 }
 
 // SetCode The email code is used to verify that the link in the message is out of date
-func (e *emailRepo) SetCode(ctx context.Context, codeKey, content string, duration time.Duration) error {
-	err := e.rdb.Set(ctx, codeKey, content, duration).Err()
+func (e *emailRepo) SetCode(ctx context.Context, codeKey, content string, duration time.Duration) (bool, error) {
+	err := e.rdb.SetArgs(ctx, codeKey, content, redis.SetArgs{
+		Mode: "NX",
+		TTL:  duration,
+	}).Err()
 	if err != nil {
-		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		if err == redis.Nil {
+			return true, nil
+		}
+		return false, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
-	return nil
+	return false, nil
 }
 
 // GetCode get the code

@@ -22,6 +22,8 @@ const (
 	verifyKey     = "verify:"
 )
 
+var _ userentity.UserRepository = (*userRepo)(nil)
+
 func userVerifyKey(userID int64, verifyType userentity.VerifyType, actionType accountentity.AccountActionType) string {
 	return fmt.Sprintf("%s%d:%s%d:%d", userKeyPrefix, userID, verifyKey, verifyType, actionType)
 }
@@ -33,7 +35,7 @@ type userRepo struct {
 	logger       *zap.SugaredLogger
 }
 
-func NewUserRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) userentity.UserRepository {
+func NewUserRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) *userRepo {
 	return &userRepo{
 		db:           db,
 		rdb:          rdb,
@@ -80,6 +82,16 @@ func (r *userRepo) GetByUserID(ctx context.Context, userID int64) (*userentity.U
 	}
 
 	return user, true, nil
+}
+
+func (r *userRepo) GetByUserIDs(ctx context.Context, userIDs []int64) ([]userentity.User, error) {
+	users := make([]userentity.User, 0, 8)
+	err := r.db.WithContext(ctx).Where("user_id IN ?", userIDs).Find(&users).Error
+	if err != nil {
+		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return users, nil
 }
 
 // GetPage get user page TODO: Add Condition

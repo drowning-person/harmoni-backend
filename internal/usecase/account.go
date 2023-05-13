@@ -172,6 +172,10 @@ func (u *AccountUsecase) SendVerificationCodeByEmail(ctx context.Context, user *
 		LastReqTime: time.Now().Unix(),
 	}
 
-	go u.emailUsecase.SendAndSaveCode(ctx, user.Email, title, body, data.ToJSONString(), accountentity.AccountActionTypeToEmailType(actionType))
+	err = u.emailUsecase.SendAndSaveCode(ctx, user.Email, title, body, data.ToJSONString(), accountentity.AccountActionTypeToEmailType(actionType))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

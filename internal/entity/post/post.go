@@ -85,6 +85,10 @@ type Post struct {
 	LikeCount int64         `gorm:"-"`
 }
 
+func (Post) TableName() string {
+	return "post"
+}
+
 type PostDetail struct {
 	Status    int32               `json:"status"`
 	Like      int64               `json:"like"`

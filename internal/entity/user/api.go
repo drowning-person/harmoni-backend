@@ -18,7 +18,7 @@ type GetUsersRequest struct {
 }
 
 type GetUsersReply struct {
-	paginator.Page[BasicUserInfo]
+	paginator.Page[UserBasicInfo]
 }
 
 type UserLoginRequset struct {
@@ -27,7 +27,7 @@ type UserLoginRequset struct {
 }
 
 type UserLoginReply struct {
-	User         BasicUserInfo
+	User         UserBasicInfo
 	AccessToken  string `json:"access_token,omitempty"`
 	RefreshToken string `json:"refresh_token,omitempty"`
 }
@@ -49,7 +49,7 @@ type UserRegisterRequest struct {
 }
 
 type UserRegisterReply struct {
-	User         BasicUserInfo
+	User         UserBasicInfo
 	AccessToken  string `json:"access_token,omitempty"`
 	RefreshToken string `json:"refresh_token,omitempty"`
 }

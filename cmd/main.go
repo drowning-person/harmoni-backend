@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	cfg, err := conf.ReadConfig("./config/config.yaml")
+	cfg, err := conf.ReadConfig("./configs/config.yaml")
 	if err != nil {
 		panic(err)
 	}
