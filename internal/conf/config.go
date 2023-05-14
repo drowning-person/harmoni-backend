@@ -19,14 +19,18 @@ type Config struct {
 }
 
 type App struct {
-	Debug bool   `default:"false"`
-	Addr  string `default:"127.0.0.1:80"`
+	Debug     bool   `default:"false" mapstructure:"debug"`
+	Addr      string `default:"127.0.0.1:80" mapstructure:"addr"`
+	StartTime string `mapstructure:"start_time"`
+	AppID     int64  `mapstructure:"app_id"`
 }
 
 func SetAppDefault(v *viper.Viper) {
 	v.SetDefault("app", map[string]interface{}{
-		"debug": false,
-		"addr":  "127.0.0.1:80",
+		"debug":      false,
+		"addr":       "127.0.0.1:80",
+		"start_time": time.Now().Format("2006-01-02"),
+		"app_id":     1,
 	})
 }
 

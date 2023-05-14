@@ -14,9 +14,9 @@ import (
 	"gorm.io/gorm"
 )
 
-var _ followentity.FollowRepository = (*followRepo)(nil)
+var _ followentity.FollowRepository = (*FollowRepo)(nil)
 
-type followRepo struct {
+type FollowRepo struct {
 	db           *gorm.DB
 	uniqueIDRepo unique.UniqueIDRepo
 	userRepo     user.UserRepository
@@ -28,8 +28,8 @@ func NewFollowRepo(db *gorm.DB,
 	userRepo user.UserRepository,
 	tagRepo tag.TagRepository,
 	uniqueIDRepo unique.UniqueIDRepo,
-	logger *zap.SugaredLogger) *followRepo {
-	return &followRepo{
+	logger *zap.SugaredLogger) *FollowRepo {
+	return &FollowRepo{
 		db:           db,
 		userRepo:     userRepo,
 		tagRepo:      tagRepo,
@@ -38,7 +38,7 @@ func NewFollowRepo(db *gorm.DB,
 	}
 }
 
-func (r *followRepo) Follow(ctx context.Context, follow *followentity.Follow) error {
+func (r *FollowRepo) Follow(ctx context.Context, follow *followentity.Follow) error {
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		exist, err := r.getFollowObject(ctx, tx, follow)
 		if err != nil {
@@ -72,7 +72,7 @@ func (r *followRepo) Follow(ctx context.Context, follow *followentity.Follow) er
 	return nil
 }
 
-func (r *followRepo) FollowCancel(ctx context.Context, follow *followentity.Follow) error {
+func (r *FollowRepo) FollowCancel(ctx context.Context, follow *followentity.Follow) error {
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		exist, err := r.getFollowObject(ctx, tx, follow)
 		if err != nil {
@@ -108,7 +108,7 @@ func (r *followRepo) FollowCancel(ctx context.Context, follow *followentity.Foll
 	return nil
 }
 
-func (r *followRepo) getFollowObject(ctx context.Context, tx *gorm.DB, follow *followentity.Follow) (bool, error) {
+func (r *FollowRepo) getFollowObject(ctx context.Context, tx *gorm.DB, follow *followentity.Follow) (bool, error) {
 	var (
 		exist bool
 		err   error
@@ -123,7 +123,7 @@ func (r *followRepo) getFollowObject(ctx context.Context, tx *gorm.DB, follow *f
 	return exist, err
 }
 
-func (r *followRepo) isFollowExist(ctx context.Context, tx *gorm.DB, follow *followentity.Follow) (bool, error) {
+func (r *FollowRepo) isFollowExist(ctx context.Context, tx *gorm.DB, follow *followentity.Follow) (bool, error) {
 	var count int64
 	err := tx.Model(follow).
 		Where("follower_id = ? AND followed_id = ? AND followed_type = ?", follow.FollowerID, follow.FollowedID, follow.FollowedType).
@@ -131,7 +131,7 @@ func (r *followRepo) isFollowExist(ctx context.Context, tx *gorm.DB, follow *fol
 	return count > 0, err
 }
 
-func (r *followRepo) updateFollows(ctx context.Context, tx *gorm.DB, follow *followentity.Follow, followCount int) error {
+func (r *FollowRepo) updateFollows(ctx context.Context, tx *gorm.DB, follow *followentity.Follow, followCount int) error {
 	var err error
 	switch follow.FollowedType {
 	case followentity.FollowUser:
@@ -145,7 +145,7 @@ func (r *followRepo) updateFollows(ctx context.Context, tx *gorm.DB, follow *fol
 	return err
 }
 
-func (r *followRepo) GetFollowers(ctx context.Context, followQuery *followentity.FollowQuery) (paginator.Page[int64], error) {
+func (r *FollowRepo) GetFollowers(ctx context.Context, followQuery *followentity.FollowQuery) (paginator.Page[int64], error) {
 	idPage := paginator.Page[int64]{
 		CurrentPage: followQuery.Page,
 		PageSize:    followQuery.PageSize,
@@ -171,7 +171,7 @@ func (r *followRepo) GetFollowers(ctx context.Context, followQuery *followentity
 	return idPage, nil
 }
 
-func (r *followRepo) GetFollowings(ctx context.Context, followQuery *followentity.FollowQuery) (paginator.Page[int64], error) {
+func (r *FollowRepo) GetFollowings(ctx context.Context, followQuery *followentity.FollowQuery) (paginator.Page[int64], error) {
 	idPage := paginator.Page[int64]{
 		CurrentPage: followQuery.Page,
 		PageSize:    followQuery.PageSize,
@@ -197,7 +197,7 @@ func (r *followRepo) GetFollowings(ctx context.Context, followQuery *followentit
 	return idPage, nil
 }
 
-func (r *followRepo) IsFollowing(ctx context.Context, follow *followentity.Follow) (bool, error) {
+func (r *FollowRepo) IsFollowing(ctx context.Context, follow *followentity.Follow) (bool, error) {
 	var count int64
 	if err := r.db.WithContext(ctx).Model(follow).
 		Where("follower_id = ? AND followed_id = ? AND followed_type = ?", follow.FollowerID, follow.FollowedID, follow.FollowedType).
@@ -208,7 +208,7 @@ func (r *followRepo) IsFollowing(ctx context.Context, follow *followentity.Follo
 	return count > 0, nil
 }
 
-func (r *followRepo) AreFollowEachOther(ctx context.Context, userIDx int64, userIDy int64) (bool, error) {
+func (r *FollowRepo) AreFollowEachOther(ctx context.Context, userIDx int64, userIDy int64) (bool, error) {
 	var count int64
 	if err := r.db.WithContext(ctx).Model(&followentity.Follow{}).
 		Joins("INNER JOIN follow AS f2 ON follow.follower_id = f2.followed_id AND follow.followed_id = f2.follower_id").

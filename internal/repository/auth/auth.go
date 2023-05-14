@@ -17,7 +17,9 @@ const (
 	userPrefix         = "user:"
 )
 
-type authRepo struct {
+var _ authentity.AuthRepository = (*AuthRepo)(nil)
+
+type AuthRepo struct {
 	rdb    *redis.Client
 	logger *zap.SugaredLogger
 }
@@ -30,15 +32,15 @@ func refreshTokenKey(userID int64) string {
 	return fmt.Sprintf("%s%d:refresh_token", userPrefix, userID)
 }
 
-func NewAuthRepo(rdb *redis.Client, logger *zap.SugaredLogger) authentity.AuthRepository {
-	return &authRepo{
+func NewAuthRepo(rdb *redis.Client, logger *zap.SugaredLogger) *AuthRepo {
+	return &AuthRepo{
 		rdb:    rdb,
 		logger: logger,
 	}
 }
 
 // storeAccessToken does not need to store access token with JWT for now
-func (r *authRepo) storeAccessToken(ctx context.Context, userID int64, token string, ttl time.Duration) error {
+func (r *AuthRepo) storeAccessToken(ctx context.Context, userID int64, token string, ttl time.Duration) error {
 	key := accessTokenKey(userID, token)
 	_, err := r.rdb.Set(ctx, key, "", ttl).Result()
 	if err != nil {
@@ -48,7 +50,7 @@ func (r *authRepo) storeAccessToken(ctx context.Context, userID int64, token str
 	return nil
 }
 
-func (r *authRepo) storeRefreshToken(ctx context.Context, userID int64, token string, ttl time.Duration) error {
+func (r *AuthRepo) storeRefreshToken(ctx context.Context, userID int64, token string, ttl time.Duration) error {
 	key := refreshTokenKey(userID)
 	tokenCount, err := r.rdb.ZCard(ctx, key).Result()
 	if err != nil {
@@ -89,7 +91,7 @@ func (r *authRepo) storeRefreshToken(ctx context.Context, userID int64, token st
 
 // StoreToken store a token ID
 // The "token" parameter in this function is actually the JWT token ID.
-func (r *authRepo) StoreToken(ctx context.Context, userID int64, token string, tokenType authentity.TokenType, ttl time.Duration) error {
+func (r *AuthRepo) StoreToken(ctx context.Context, userID int64, token string, tokenType authentity.TokenType, ttl time.Duration) error {
 	switch tokenType {
 	case authentity.AccessTokenType:
 		return r.storeAccessToken(ctx, userID, token, ttl)
@@ -102,7 +104,7 @@ func (r *authRepo) StoreToken(ctx context.Context, userID int64, token string, t
 
 // RetrieveToken retrieve token from redis
 // The "token" parameter in this function is actually the JWT token ID.
-func (r *authRepo) RetrieveToken(ctx context.Context, userID int64, token string, tokenType authentity.TokenType) (string, bool, error) {
+func (r *AuthRepo) RetrieveToken(ctx context.Context, userID int64, token string, tokenType authentity.TokenType) (string, bool, error) {
 	var (
 		key string
 	)
@@ -130,14 +132,14 @@ func (r *authRepo) RetrieveToken(ctx context.Context, userID int64, token string
 }
 
 // RetrieveTokens do nothing for now
-func (r *authRepo) RetrieveTokens(ctx context.Context, userID int64, tokenType authentity.TokenType) ([]string, bool, error) {
+func (r *AuthRepo) RetrieveTokens(ctx context.Context, userID int64, tokenType authentity.TokenType) ([]string, bool, error) {
 	return nil, false, nil
 }
 
 // RemoveToken removes a token and adds it to the blacklist.
 // The "token" parameter in this function is actually the JWT token ID.
 // The "ttl" parameter in this function is the token on black list ttl
-func (r *authRepo) RemoveToken(ctx context.Context, userID int64, token string, tokenType authentity.TokenType, ttl time.Duration) error {
+func (r *AuthRepo) RemoveToken(ctx context.Context, userID int64, token string, tokenType authentity.TokenType, ttl time.Duration) error {
 	var (
 		count int64
 		err   error
@@ -161,7 +163,7 @@ func (r *authRepo) RemoveToken(ctx context.Context, userID int64, token string, 
 	return nil
 }
 
-func (r *authRepo) removeAccessTokens(ctx context.Context, userID int64, ttl time.Duration) error {
+func (r *AuthRepo) removeAccessTokens(ctx context.Context, userID int64, ttl time.Duration) error {
 	key := fmt.Sprintf("%s%d:*", userPrefix, userID)
 	for {
 		tokens, cursor, err := r.rdb.Scan(ctx, 0, key, 10).Result()
@@ -184,7 +186,7 @@ func (r *authRepo) removeAccessTokens(ctx context.Context, userID int64, ttl tim
 	return nil
 }
 
-func (r *authRepo) removeRefreshTokens(ctx context.Context, userID int64, ttl time.Duration) error {
+func (r *AuthRepo) removeRefreshTokens(ctx context.Context, userID int64, ttl time.Duration) error {
 	key := refreshTokenKey(userID)
 	tokens, cursor, err := r.rdb.ZScan(ctx, key, 0, "", tokenCanStoreCount).Result()
 	if err != nil {
@@ -211,7 +213,7 @@ func (r *authRepo) removeRefreshTokens(ctx context.Context, userID int64, ttl ti
 	return nil
 }
 
-func (r *authRepo) RemoveTokens(ctx context.Context, userID int64, tokenType authentity.TokenType, ttl time.Duration) error {
+func (r *AuthRepo) RemoveTokens(ctx context.Context, userID int64, tokenType authentity.TokenType, ttl time.Duration) error {
 	switch tokenType {
 	case authentity.AccessTokenType:
 		return r.removeAccessTokens(ctx, userID, ttl)

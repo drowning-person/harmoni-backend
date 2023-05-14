@@ -22,21 +22,21 @@ const (
 	verifyKey     = "verify:"
 )
 
-var _ userentity.UserRepository = (*userRepo)(nil)
+var _ userentity.UserRepository = (*UserRepo)(nil)
 
 func userVerifyKey(userID int64, verifyType userentity.VerifyType, actionType accountentity.AccountActionType) string {
 	return fmt.Sprintf("%s%d:%s%d:%d", userKeyPrefix, userID, verifyKey, verifyType, actionType)
 }
 
-type userRepo struct {
+type UserRepo struct {
 	db           *gorm.DB
 	rdb          *redis.Client
 	uniqueIDRepo unique.UniqueIDRepo
 	logger       *zap.SugaredLogger
 }
 
-func NewUserRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) *userRepo {
-	return &userRepo{
+func NewUserRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) *UserRepo {
+	return &UserRepo{
 		db:           db,
 		rdb:          rdb,
 		uniqueIDRepo: uniqueIDRepo,
@@ -44,7 +44,7 @@ func NewUserRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRep
 	}
 }
 
-func (r *userRepo) Create(ctx context.Context, user *userentity.User) (err error) {
+func (r *UserRepo) Create(ctx context.Context, user *userentity.User) (err error) {
 	user.UserID, err = r.uniqueIDRepo.GenUniqueID(ctx)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func (r *userRepo) Create(ctx context.Context, user *userentity.User) (err error
 	return nil
 }
 
-func (r *userRepo) GetByEmail(ctx context.Context, email string) (*userentity.User, bool, error) {
+func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*userentity.User, bool, error) {
 	user := &userentity.User{}
 	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
 	if err != nil {
@@ -71,7 +71,7 @@ func (r *userRepo) GetByEmail(ctx context.Context, email string) (*userentity.Us
 	return user, true, nil
 }
 
-func (r *userRepo) GetByUserID(ctx context.Context, userID int64) (*userentity.User, bool, error) {
+func (r *UserRepo) GetByUserID(ctx context.Context, userID int64) (*userentity.User, bool, error) {
 	user := &userentity.User{}
 	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&user).Error
 	if err != nil {
@@ -84,7 +84,7 @@ func (r *userRepo) GetByUserID(ctx context.Context, userID int64) (*userentity.U
 	return user, true, nil
 }
 
-func (r *userRepo) GetByUserIDs(ctx context.Context, userIDs []int64) ([]userentity.User, error) {
+func (r *UserRepo) GetByUserIDs(ctx context.Context, userIDs []int64) ([]userentity.User, error) {
 	users := make([]userentity.User, 0, 8)
 	err := r.db.WithContext(ctx).Where("user_id IN ?", userIDs).Find(&users).Error
 	if err != nil {
@@ -95,7 +95,7 @@ func (r *userRepo) GetByUserIDs(ctx context.Context, userIDs []int64) ([]userent
 }
 
 // GetPage get user page TODO: Add Condition
-func (r *userRepo) GetPage(ctx context.Context, pageSize, pageNum int64) (paginator.Page[userentity.User], error) {
+func (r *UserRepo) GetPage(ctx context.Context, pageSize, pageNum int64) (paginator.Page[userentity.User], error) {
 	userPage := paginator.Page[userentity.User]{CurrentPage: int64(pageNum), PageSize: int64(pageSize)}
 	err := userPage.SelectPages(r.db.WithContext(ctx))
 	if err != nil {
@@ -105,7 +105,7 @@ func (r *userRepo) GetPage(ctx context.Context, pageSize, pageNum int64) (pagina
 	return userPage, nil
 }
 
-func (r *userRepo) GetModifyStaus(ctx context.Context, userID int64, verifyType userentity.VerifyType, actionType accountentity.AccountActionType) (userentity.ModifyStatus, error) {
+func (r *UserRepo) GetModifyStaus(ctx context.Context, userID int64, verifyType userentity.VerifyType, actionType accountentity.AccountActionType) (userentity.ModifyStatus, error) {
 	key := userVerifyKey(userID, verifyType, actionType)
 	statusTmp, err := r.rdb.Get(ctx, key).Result()
 	if err != nil {
@@ -123,7 +123,7 @@ func (r *userRepo) GetModifyStaus(ctx context.Context, userID int64, verifyType 
 	return userentity.ModifyStatus(status), nil
 }
 
-func (r *userRepo) SetModifyStatus(ctx context.Context, userID int64, status userentity.ModifyStatus, verifyType userentity.VerifyType, actionType accountentity.AccountActionType, statusKeepTime time.Duration) error {
+func (r *UserRepo) SetModifyStatus(ctx context.Context, userID int64, status userentity.ModifyStatus, verifyType userentity.VerifyType, actionType accountentity.AccountActionType, statusKeepTime time.Duration) error {
 	key := userVerifyKey(userID, verifyType, actionType)
 	if _, err := r.rdb.Set(ctx, key, uint8(status), statusKeepTime).Result(); err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
@@ -132,7 +132,7 @@ func (r *userRepo) SetModifyStatus(ctx context.Context, userID int64, status use
 	return nil
 }
 
-func (r *userRepo) ModifyPassword(ctx context.Context, user *userentity.User) error {
+func (r *UserRepo) ModifyPassword(ctx context.Context, user *userentity.User) error {
 	err := r.db.WithContext(ctx).Model(user).Where("id = ?", user.ID).Update("password", user.Password).Error
 	if err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
@@ -141,7 +141,7 @@ func (r *userRepo) ModifyPassword(ctx context.Context, user *userentity.User) er
 	return nil
 }
 
-func (r *userRepo) ModifyEmail(ctx context.Context, user *userentity.User) error {
+func (r *UserRepo) ModifyEmail(ctx context.Context, user *userentity.User) error {
 	err := r.db.WithContext(ctx).Model(user).Where("id = ?", user.ID).Update("email", user.Email).Error
 	if err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()

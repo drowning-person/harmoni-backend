@@ -14,15 +14,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type tagRepo struct {
+var _ tagentity.TagRepository = (*TagRepo)(nil)
+
+type TagRepo struct {
 	db           *gorm.DB
 	rdb          *redis.Client
 	uniqueIDRepo unique.UniqueIDRepo
 	logger       *zap.SugaredLogger
 }
 
-func NewTagRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) tagentity.TagRepository {
-	return &tagRepo{
+func NewTagRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) *TagRepo {
+	return &TagRepo{
 		db:           db,
 		rdb:          rdb,
 		uniqueIDRepo: uniqueIDRepo,
@@ -30,7 +32,7 @@ func NewTagRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo
 	}
 }
 
-func (r *tagRepo) Create(ctx context.Context, tag *tagentity.Tag) (err error) {
+func (r *TagRepo) Create(ctx context.Context, tag *tagentity.Tag) (err error) {
 	tag.TagID, err = r.uniqueIDRepo.GenUniqueID(ctx)
 	if err != nil {
 		return err
@@ -51,7 +53,7 @@ func (r *tagRepo) Create(ctx context.Context, tag *tagentity.Tag) (err error) {
 	return nil
 }
 
-func (r *tagRepo) GetByTagID(ctx context.Context, tagID int64) (*tagentity.Tag, bool, error) {
+func (r *TagRepo) GetByTagID(ctx context.Context, tagID int64) (*tagentity.Tag, bool, error) {
 	tag := &tagentity.Tag{}
 	err := r.db.WithContext(ctx).Where("tag_id = ?", tagID).First(&tag).Error
 	if err != nil {
@@ -64,7 +66,7 @@ func (r *tagRepo) GetByTagID(ctx context.Context, tagID int64) (*tagentity.Tag, 
 	return tag, true, nil
 }
 
-func (r *tagRepo) GetByTagIDs(ctx context.Context, tagIDs []int64) ([]tagentity.Tag, error) {
+func (r *TagRepo) GetByTagIDs(ctx context.Context, tagIDs []int64) ([]tagentity.Tag, error) {
 	tags := make([]tagentity.Tag, 0, 8)
 	err := r.db.WithContext(ctx).Where("tag_id IN ?", tagIDs).Find(&tags).Error
 	if err != nil {
@@ -74,7 +76,7 @@ func (r *tagRepo) GetByTagIDs(ctx context.Context, tagIDs []int64) ([]tagentity.
 	return tags, nil
 }
 
-func (r *tagRepo) GetByTagName(ctx context.Context, tagName string) (*tagentity.Tag, bool, error) {
+func (r *TagRepo) GetByTagName(ctx context.Context, tagName string) (*tagentity.Tag, bool, error) {
 	tag := &tagentity.Tag{}
 	err := r.db.WithContext(ctx).Where("tag_name = ?", tagName).First(&tag).Error
 	if err != nil {
@@ -88,7 +90,7 @@ func (r *tagRepo) GetByTagName(ctx context.Context, tagName string) (*tagentity.
 }
 
 // GetPage get tag page TODO: Add Condition
-func (r *tagRepo) GetPage(ctx context.Context, pageSize, pageNum int64) (paginator.Page[tagentity.Tag], error) {
+func (r *TagRepo) GetPage(ctx context.Context, pageSize, pageNum int64) (paginator.Page[tagentity.Tag], error) {
 	tagPage := paginator.Page[tagentity.Tag]{CurrentPage: pageNum, PageSize: pageSize}
 	err := tagPage.SelectPages(r.db.WithContext(ctx))
 	if err != nil {

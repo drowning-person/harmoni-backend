@@ -21,7 +21,7 @@ func getRedisKeyForLikeUserSet(postID int64) string {
 	return fmt.Sprintf("%s%d", KeyPostLikeZetPrefix, postID)
 }
 
-func (r *postRepo) getPostLikeNumber(ctx context.Context, postID int64) (int64, error) {
+func (r *PostRepo) getPostLikeNumber(ctx context.Context, postID int64) (int64, error) {
 	count, err := r.rdb.ZScore(ctx, KeyLikeNumberZSet, strconv.FormatInt(postID, 10)).Result()
 	if err != nil {
 		return 0, err
@@ -31,7 +31,7 @@ func (r *postRepo) getPostLikeNumber(ctx context.Context, postID int64) (int64, 
 }
 
 // 按照点赞数 降序排列
-func (r *postRepo) getPostIDsByScore(ctx context.Context, pageSize int64, pageNum int64) (ids []string, err error) {
+func (r *PostRepo) getPostIDsByScore(ctx context.Context, pageSize int64, pageNum int64) (ids []string, err error) {
 	start := (pageNum - 1) * pageSize
 	ids, err = r.rdb.ZRangeArgs(ctx, redis.ZRangeArgs{
 		Key:   KeyLikeNumberZSet,
@@ -47,7 +47,7 @@ func (r *postRepo) getPostIDsByScore(ctx context.Context, pageSize int64, pageNu
 }
 
 // AddPost 每次发表帖子成功 都去 zset里面 新增一条记录
-func (r *postRepo) addPost(ctx context.Context, postID int64) error {
+func (r *PostRepo) addPost(ctx context.Context, postID int64) error {
 	_, err := r.rdb.ZAdd(ctx, KeyLikeNumberZSet, redis.Z{
 		Score:  0,
 		Member: strconv.FormatInt(postID, 10),
@@ -60,7 +60,7 @@ func (r *postRepo) addPost(ctx context.Context, postID int64) error {
 }
 
 // CheckLike 判断之前有没有投过票 true 代表之前 投过 false 代表之前没有投过
-func (r *postRepo) checkLike(ctx context.Context, postID int64, userID int64) (float64, bool, error) {
+func (r *PostRepo) checkLike(ctx context.Context, postID int64, userID int64) (float64, bool, error) {
 	like := r.rdb.ZScore(ctx, getRedisKeyForLikeUserSet(postID), strconv.FormatInt(userID, 10))
 
 	res, err := like.Result()
@@ -75,7 +75,7 @@ func (r *postRepo) checkLike(ctx context.Context, postID int64, userID int64) (f
 }
 
 // DoLike 点赞 或者点踩 记录这个用户对这个帖子的行为
-func (r *postRepo) doLike(ctx context.Context, postID int64, userID int64, direction int8) error {
+func (r *PostRepo) doLike(ctx context.Context, postID int64, userID int64, direction int8) error {
 	if direction == 2 {
 		direction = -1
 	}

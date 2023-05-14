@@ -15,15 +15,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type postRepo struct {
+var _ postentity.PostRepository = (*PostRepo)(nil)
+
+type PostRepo struct {
 	db           *gorm.DB
 	rdb          *redis.Client
 	uniqueIDRepo unique.UniqueIDRepo
 	logger       *zap.SugaredLogger
 }
 
-func NewPostRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) postentity.PostRepository {
-	return &postRepo{
+func NewPostRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) *PostRepo {
+	return &PostRepo{
 		db:           db,
 		rdb:          rdb,
 		uniqueIDRepo: uniqueIDRepo,
@@ -31,7 +33,7 @@ func NewPostRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRep
 	}
 }
 
-func (r *postRepo) Create(ctx context.Context, post *postentity.Post) (err error) {
+func (r *PostRepo) Create(ctx context.Context, post *postentity.Post) (err error) {
 	post.PostID, err = r.uniqueIDRepo.GenUniqueID(ctx)
 	if err != nil {
 		return err
@@ -53,7 +55,7 @@ func (r *postRepo) Create(ctx context.Context, post *postentity.Post) (err error
 	return nil
 }
 
-func (r *postRepo) GetBasicInfoByPostID(ctx context.Context, postID int64) (*postentity.Post, bool, error) {
+func (r *PostRepo) GetBasicInfoByPostID(ctx context.Context, postID int64) (*postentity.Post, bool, error) {
 	post := &postentity.Post{}
 	err := r.db.WithContext(ctx).Where("post_id = ?", postID).First(post).Error
 	if err != nil {
@@ -66,7 +68,7 @@ func (r *postRepo) GetBasicInfoByPostID(ctx context.Context, postID int64) (*pos
 	return post, true, nil
 }
 
-func (r *postRepo) GetByPostID(ctx context.Context, postID int64) (*postentity.Post, bool, error) {
+func (r *PostRepo) GetByPostID(ctx context.Context, postID int64) (*postentity.Post, bool, error) {
 	post, exist, err := r.GetBasicInfoByPostID(ctx, postID)
 	if err != nil {
 		return nil, false, err
@@ -80,7 +82,7 @@ func (r *postRepo) GetByPostID(ctx context.Context, postID int64) (*postentity.P
 	return post, exist, nil
 }
 
-func (r *postRepo) BatchByIDs(ctx context.Context, postIDs []int64) ([]postentity.Post, error) {
+func (r *PostRepo) BatchByIDs(ctx context.Context, postIDs []int64) ([]postentity.Post, error) {
 	posts := make([]postentity.Post, 0, len(postIDs))
 	if err := r.db.WithContext(ctx).Where("post_id IN ?", postIDs).Find(&posts).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -92,7 +94,7 @@ func (r *postRepo) BatchByIDs(ctx context.Context, postIDs []int64) ([]postentit
 	return posts, nil
 }
 
-func (r *postRepo) GetPage(ctx context.Context, pageSize, pageNum int64, orderCond string) (paginator.Page[postentity.Post], error) {
+func (r *PostRepo) GetPage(ctx context.Context, pageSize, pageNum int64, orderCond string) (paginator.Page[postentity.Post], error) {
 	db := r.db.WithContext(ctx)
 
 	var (
@@ -139,7 +141,7 @@ func (r *postRepo) GetPage(ctx context.Context, pageSize, pageNum int64, orderCo
 	return postPage, nil
 }
 
-func (r *postRepo) LikePost(ctx context.Context, postID int64, userID int64, direction int8) error {
+func (r *PostRepo) LikePost(ctx context.Context, postID int64, userID int64, direction int8) error {
 	_, err := r.getPostLikeNumber(ctx, postID)
 	if err != nil {
 		if err == redis.Nil {

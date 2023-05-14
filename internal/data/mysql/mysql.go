@@ -14,12 +14,12 @@ import (
 	"moul.io/zapgorm2"
 )
 
-func NewDB(conf *conf.DB, logger *zap.Logger) (*gorm.DB, error) {
+func NewDB(conf *conf.DB, logger *zap.Logger) (*gorm.DB, func(), error) {
 	l := zapgorm2.New(logger)
 	l.SetAsDefault()
 	db, err := gorm.Open(mysql.Open(conf.Source), &gorm.Config{Logger: l})
 	if err != nil {
-		return nil, err
+		return nil, func() {}, err
 	}
 
 	if logger.Level() == zap.DebugLevel {
@@ -27,8 +27,11 @@ func NewDB(conf *conf.DB, logger *zap.Logger) (*gorm.DB, error) {
 	}
 
 	sqlDB, err := db.DB()
+	cleanFunc := func() {
+		sqlDB.Close()
+	}
 	if err != nil {
-		return nil, err
+		return nil, cleanFunc, err
 	}
 
 	logger.Sugar().Debugf("db conf is %#v", *conf)
@@ -42,5 +45,5 @@ func NewDB(conf *conf.DB, logger *zap.Logger) (*gorm.DB, error) {
 
 	db.AutoMigrate(&userentity.User{}, &commententity.Comment{}, &postentity.Post{}, &tagentity.Tag{}, &followentity.Follow{})
 
-	return db, nil
+	return db, cleanFunc, nil
 }

@@ -7,14 +7,16 @@ import (
 	"github.com/bwmarrin/snowflake"
 )
 
-type uniqueIDRepo struct {
+var _ unique.UniqueIDRepo = (*UniqueIDRepo)(nil)
+
+type UniqueIDRepo struct {
 	node *snowflake.Node
 }
 
-func NewUniqueIDRepo(node *snowflake.Node) unique.UniqueIDRepo {
-	return &uniqueIDRepo{node: node}
+func NewUniqueIDRepo(node *snowflake.Node) *UniqueIDRepo {
+	return &UniqueIDRepo{node: node}
 }
 
-func (r *uniqueIDRepo) GenUniqueID(ctx context.Context) (int64, error) {
+func (r *UniqueIDRepo) GenUniqueID(ctx context.Context) (int64, error) {
 	return r.node.Generate().Int64(), nil
 }

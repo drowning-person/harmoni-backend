@@ -1,8 +1,11 @@
 package server
 
 import (
+	"harmoni/internal/conf"
+	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/httpx/fiberx"
 	"harmoni/internal/pkg/middleware"
+	"harmoni/internal/pkg/reason"
 	"harmoni/internal/router"
 
 	"github.com/gofiber/contrib/fiberzap"
@@ -13,13 +16,18 @@ import (
 )
 
 // NewHTTPServer new http server.
-func NewHTTPServer(debug bool,
+func NewHTTPServer(
+	conf *conf.App,
 	zapLogger *zap.Logger,
 	harmoniRouter *router.HarmoniAPIRouter,
 	authMiddleware *middleware.JwtAuthMiddleware,
 ) *fiber.App {
 	r := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			switch e := err.(type) {
+			case *fiber.Error:
+				err = errorx.New(e.Code, reason.ServerError).WithMsg(e.Message)
+			}
 			return fiberx.HandleResponse(c, err, nil)
 		},
 	})

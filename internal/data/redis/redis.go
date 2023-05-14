@@ -8,7 +8,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func NewRedis(conf *conf.Redis) (*redis.Client, error) {
+func NewRedis(conf *conf.Redis) (*redis.Client, func(), error) {
 	fmt.Printf("redis conf:%#v\n", conf)
 
 	rdb := redis.NewClient(&redis.Options{
@@ -20,12 +20,16 @@ func NewRedis(conf *conf.Redis) (*redis.Client, error) {
 		WriteTimeout: conf.WriteTimeout,
 	})
 
+	cleanFunc := func() {
+		rdb.Close()
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), rdb.Options().ReadTimeout)
 	defer cancel()
 	_, err := rdb.Ping(ctx).Result()
 	if err != nil {
-		return nil, err
+		return nil, cleanFunc, err
 	}
 
-	return rdb, nil
+	return rdb, cleanFunc, nil
 }

@@ -10,7 +10,8 @@ func main() {
 		panic(err)
 	}
 
-	app, err := initApp(cfg.App, cfg.DB, cfg.Redis, cfg.Auth, cfg.Email, cfg.Log)
+	app, clean, err := initApplication(cfg.App, cfg.DB, cfg.Redis, cfg.Auth, cfg.Email, cfg.Log)
+	defer clean()
 	if err != nil {
 		panic(err)
 	}

@@ -36,15 +36,15 @@ var (
 
 type Option func(conf *Config)
 
-func NewJwtAuthMiddleware(secret string, authUsecase *usecase.AuthUseCase, opts ...Option) *JwtAuthMiddleware {
+func NewJwtAuthMiddleware(authUsecase *usecase.AuthUseCase) *JwtAuthMiddleware {
 	mw := &JwtAuthMiddleware{
 		conf:        defaultConf,
 		authUsecase: authUsecase,
 	}
 
-	for _, opt := range opts {
+	/* 	for _, opt := range opts {
 		opt(mw.conf)
-	}
+	} */
 
 	return mw
 }

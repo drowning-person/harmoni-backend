@@ -15,6 +15,8 @@ const (
 	UnauthorizedError = "base.unauthorized_error"
 	// DatabaseError database error
 	DatabaseError = "base.database_error"
+	// ServerError server error
+	ServerError = "base.server_error"
 )
 
 const (

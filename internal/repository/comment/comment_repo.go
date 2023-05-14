@@ -14,15 +14,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type commentRepo struct {
+var _ commententity.CommentRepository = (*CommentRepo)(nil)
+
+type CommentRepo struct {
 	db           *gorm.DB
 	rdb          *redis.Client
 	uniqueIDRepo unique.UniqueIDRepo
 	logger       *zap.SugaredLogger
 }
 
-func NewCommentRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) commententity.CommentRepository {
-	return &commentRepo{
+func NewCommentRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) *CommentRepo {
+	return &CommentRepo{
 		db:           db,
 		rdb:          rdb,
 		uniqueIDRepo: uniqueIDRepo,
@@ -30,7 +32,7 @@ func NewCommentRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueID
 	}
 }
 
-func (r *commentRepo) Create(ctx context.Context, comment *commententity.Comment) error {
+func (r *CommentRepo) Create(ctx context.Context, comment *commententity.Comment) error {
 	var err error
 	comment.CommentID, err = r.uniqueIDRepo.GenUniqueID(ctx)
 	if err != nil {
@@ -47,7 +49,7 @@ func (r *commentRepo) Create(ctx context.Context, comment *commententity.Comment
 	return nil
 }
 
-func (r *commentRepo) GetByCommentID(ctx context.Context, commentID int64) (*commententity.Comment, bool, error) {
+func (r *CommentRepo) GetByCommentID(ctx context.Context, commentID int64) (*commententity.Comment, bool, error) {
 	comment := &commententity.Comment{}
 	err := r.db.WithContext(ctx).Where("comment_id = ?", commentID).First(comment).Error
 	if err != nil {
@@ -60,7 +62,7 @@ func (r *commentRepo) GetByCommentID(ctx context.Context, commentID int64) (*com
 	return comment, true, nil
 }
 
-func (r *commentRepo) GetPage(ctx context.Context, commentQuery *commententity.CommentQuery) (paginator.Page[commententity.Comment], error) {
+func (r *CommentRepo) GetPage(ctx context.Context, commentQuery *commententity.CommentQuery) (paginator.Page[commententity.Comment], error) {
 	commentPage := paginator.Page[commententity.Comment]{CurrentPage: commentQuery.Page, PageSize: commentQuery.PageSize}
 	db := r.db.WithContext(ctx).Where("object_id = ? AND root_id = ?", commentQuery.ObjectID, commentQuery.RootID)
 
