@@ -29,13 +29,13 @@ func (s *FollowService) Follow(ctx context.Context, req *followentity.FollowRequ
 	if req.IsCancel {
 		err = s.fc.FollowCancel(ctx, &followentity.Follow{
 			FollowerID:   req.UserID,
-			FollowedID:   req.ObjectID,
+			FollowingID:  req.ObjectID,
 			FollowedType: req.Type,
 		})
 	} else {
 		err = s.fc.Follow(ctx, &followentity.Follow{
 			FollowerID:   req.UserID,
-			FollowedID:   req.ObjectID,
+			FollowingID:  req.ObjectID,
 			FollowedType: req.Type,
 		})
 	}
@@ -109,7 +109,7 @@ func (s *FollowService) GetFollowing(ctx context.Context, req *followentity.GetF
 func (s *FollowService) IsFollowing(ctx context.Context, req *followentity.IsFollowingRequest) (*followentity.IsFollowingReply, error) {
 	following, err := s.fc.IsFollowing(ctx, &followentity.Follow{
 		FollowerID:   req.UserID,
-		FollowedID:   req.ObjectID,
+		FollowingID:  req.ObjectID,
 		FollowedType: req.Type,
 	})
 	if err != nil {
