@@ -52,15 +52,3 @@ func (h *PostHandler) CreatePost(c *fiber.Ctx) error {
 
 	return fiberx.HandleResponse(c, err, reply)
 }
-
-func (h *PostHandler) LikePost(c *fiber.Ctx) error {
-	req := postentity.LikePostRequest{}
-	if err := fiberx.ParseAndCheck(c, &req); err != nil {
-		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
-	}
-
-	req.UserID = middleware.GetClaimsFromCtx(c.UserContext()).UserID
-	err := h.ps.LikePost(c.UserContext(), &req)
-
-	return fiberx.HandleResponse(c, err, nil)
-}

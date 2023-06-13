@@ -34,3 +34,11 @@ email:
   password: 1234
   from_name: noreply
   code_ttl: 5m
+
+message_queue:
+  rabbitmq:
+    username:
+    password:
+    host:
+    port:
+    vhost:

@@ -40,7 +40,7 @@ func NewUserRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRep
 		db:           db,
 		rdb:          rdb,
 		uniqueIDRepo: uniqueIDRepo,
-		logger:       logger,
+		logger:       logger.With("module", "repository/user"),
 	}
 }
 
@@ -144,6 +144,32 @@ func (r *UserRepo) ModifyPassword(ctx context.Context, user *userentity.User) er
 func (r *UserRepo) ModifyEmail(ctx context.Context, user *userentity.User) error {
 	err := r.db.WithContext(ctx).Model(user).Where("id = ?", user.ID).Update("email", user.Email).Error
 	if err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return nil
+}
+
+func (r *UserRepo) GetLikeCount(ctx context.Context, userID int64) (int64, bool, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).
+		Table("user").
+		Select([]string{"like_count"}).
+		Where("user_id = ?", userID).Scan(&count).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return 0, false, nil
+		}
+		return 0, false, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return count, true, nil
+}
+
+func (r *UserRepo) UpdateLikeCount(ctx context.Context, userID int64, count int64) error {
+	if err := r.db.WithContext(ctx).
+		Table("user").
+		Where("user_id = ?", userID).
+		Update("like_count", count).Error; err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 

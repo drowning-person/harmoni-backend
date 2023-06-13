@@ -4,6 +4,7 @@ import (
 	"harmoni/internal/conf"
 	commententity "harmoni/internal/entity/comment"
 	followentity "harmoni/internal/entity/follow"
+	likeentity "harmoni/internal/entity/like"
 	postentity "harmoni/internal/entity/post"
 	tagentity "harmoni/internal/entity/tag"
 	userentity "harmoni/internal/entity/user"
@@ -43,7 +44,7 @@ func NewDB(conf *conf.DB, logger *zap.Logger) (*gorm.DB, func(), error) {
 	// SetConnMaxLifetime 设置了连接可复用的最大时间。
 	sqlDB.SetConnMaxLifetime(conf.ConnMaxLifeTime)
 
-	db.AutoMigrate(&userentity.User{}, &commententity.Comment{}, &postentity.Post{}, &tagentity.Tag{}, &followentity.Follow{})
+	db.AutoMigrate(&userentity.User{}, &commententity.Comment{}, &postentity.Post{}, &tagentity.Tag{}, &followentity.Follow{}, &likeentity.Like{})
 
 	return db, cleanFunc, nil
 }

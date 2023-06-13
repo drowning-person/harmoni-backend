@@ -28,7 +28,7 @@ func NewCommentRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueID
 		db:           db,
 		rdb:          rdb,
 		uniqueIDRepo: uniqueIDRepo,
-		logger:       logger,
+		logger:       logger.With("module", "repository/comment"),
 	}
 }
 
@@ -62,6 +62,32 @@ func (r *CommentRepo) GetByCommentID(ctx context.Context, commentID int64) (*com
 	return comment, true, nil
 }
 
+func (r *CommentRepo) GetLikeCount(ctx context.Context, commentID int64) (int64, bool, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).
+		Table("comment").
+		Select([]string{"like_count"}).
+		Where("comment_id = ?", commentID).Scan(&count).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return 0, false, nil
+		}
+		return 0, false, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return count, true, nil
+}
+
+func (r *CommentRepo) UpdateLikeCount(ctx context.Context, commentID int64, count int64) error {
+	if err := r.db.WithContext(ctx).
+		Table("comment").
+		Where("comment_id = ?", commentID).
+		Update("like_count", count).Error; err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return nil
+}
+
 func (r *CommentRepo) GetPage(ctx context.Context, commentQuery *commententity.CommentQuery) (paginator.Page[commententity.Comment], error) {
 	commentPage := paginator.Page[commententity.Comment]{CurrentPage: commentQuery.Page, PageSize: commentQuery.PageSize}
 	db := r.db.WithContext(ctx).Where("object_id = ? AND root_id = ?", commentQuery.ObjectID, commentQuery.RootID)
@@ -73,6 +99,8 @@ func (r *CommentRepo) GetPage(ctx context.Context, commentQuery *commententity.C
 	switch commentQuery.QueryCond {
 	case "newest":
 		db.Order("created_at DESC")
+	case "score":
+		db.Order("like_count")
 	default:
 		db.Order("created_at DESC")
 	}

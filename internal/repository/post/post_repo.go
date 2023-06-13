@@ -8,7 +8,6 @@ import (
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
 	"html"
-	"strconv"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -29,7 +28,7 @@ func NewPostRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRep
 		db:           db,
 		rdb:          rdb,
 		uniqueIDRepo: uniqueIDRepo,
-		logger:       logger,
+		logger:       logger.With("module", "repository/post"),
 	}
 }
 
@@ -43,11 +42,6 @@ func (r *PostRepo) Create(ctx context.Context, post *postentity.Post) (err error
 	post.Content = html.EscapeString(post.Content)
 
 	err = r.db.WithContext(ctx).Create(post).Error
-	if err != nil {
-		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-	}
-
-	err = r.addPost(ctx, post.PostID)
 	if err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
@@ -71,12 +65,7 @@ func (r *PostRepo) GetBasicInfoByPostID(ctx context.Context, postID int64) (*pos
 func (r *PostRepo) GetByPostID(ctx context.Context, postID int64) (*postentity.Post, bool, error) {
 	post, exist, err := r.GetBasicInfoByPostID(ctx, postID)
 	if err != nil {
-		return nil, false, err
-	}
-
-	post.LikeCount, err = r.getPostLikeNumber(ctx, postID)
-	if err != nil {
-		return nil, exist, err
+		return nil, false, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 
 	return post, exist, nil
@@ -94,82 +83,63 @@ func (r *PostRepo) BatchByIDs(ctx context.Context, postIDs []int64) ([]postentit
 	return posts, nil
 }
 
+func (r *PostRepo) BatchBasicInfoByIDs(ctx context.Context, postIDs []int64) ([]postentity.Post, error) {
+	posts := make([]postentity.Post, 0, len(postIDs))
+	if err := r.db.WithContext(ctx).
+		Select([]string{"author_id", "post_id", "title", "content"}).
+		Where("post_id IN ?", postIDs).Find(&posts).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errorx.NotFound(reason.PostNotFound)
+		}
+		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return posts, nil
+}
+
+func (r *PostRepo) GetLikeCount(ctx context.Context, postID int64) (int64, bool, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).
+		Table("post").
+		Select([]string{"like_count"}).
+		Where("post_id = ?", postID).Scan(&count).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return 0, false, nil
+		}
+		return 0, false, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return count, true, nil
+}
+
+func (r *PostRepo) UpdateLikeCount(ctx context.Context, postID int64, count int64) error {
+	if err := r.db.WithContext(ctx).
+		Table("post").
+		Where("post_id = ?", postID).
+		Update("like_count", count).Error; err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return nil
+}
+
 func (r *PostRepo) GetPage(ctx context.Context, pageSize, pageNum int64, orderCond string) (paginator.Page[postentity.Post], error) {
 	db := r.db.WithContext(ctx)
-
-	var (
-		ids []string
-		err error
-	)
 
 	switch orderCond {
 	case "newest":
 		db.Order("created_at DESC")
 	case "score":
-		ids, err = r.getPostIDsByScore(ctx, pageSize, pageNum)
-		if err != nil {
-			return paginator.Page[postentity.Post]{}, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-		}
-		db.Where("post_id IN ?", ids)
+		db.Order("like_count")
 	default:
 		db.Order("created_at DESC")
 	}
 
 	postPage := paginator.Page[postentity.Post]{CurrentPage: pageNum, PageSize: pageSize}
-	err = postPage.SelectPages(db)
+	err := postPage.SelectPages(db)
 	if err != nil {
 		return paginator.Page[postentity.Post]{}, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 
-	if orderCond == "score" {
-		data := make([]postentity.Post, 0, len(postPage.Data))
-		postMap := make(map[int64]postentity.Post, len(postPage.Data))
-		for _, post := range postPage.Data {
-			postMap[post.PostID] = post
-		}
-
-		for _, id := range ids {
-			idTmp, _ := strconv.Atoi(id)
-			if post, ok := postMap[int64(idTmp)]; ok {
-				data = append(data, post)
-			}
-		}
-
-		postPage.Data = data
-	}
-
 	return postPage, nil
-}
-
-func (r *PostRepo) LikePost(ctx context.Context, postID int64, userID int64, direction int8) error {
-	_, err := r.getPostLikeNumber(ctx, postID)
-	if err != nil {
-		if err == redis.Nil {
-			return errorx.NotFound(reason.PostNotFound)
-		}
-		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-	}
-
-	liked, exist, err := r.checkLike(ctx, postID, userID)
-	if err != nil {
-		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-	}
-
-	switch direction {
-	case 1:
-		if exist && liked == 1 {
-			return errorx.BadRequest(reason.LikeAlreadyExist)
-		}
-	case 2:
-		if !exist || liked == 0 {
-			return errorx.BadRequest(reason.LikeCancelFailToNotLiked)
-		}
-	}
-
-	err = r.doLike(ctx, postID, userID, direction)
-	if err != nil {
-		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-	}
-
-	return nil
 }

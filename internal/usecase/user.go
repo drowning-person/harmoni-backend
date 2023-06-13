@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"harmoni/internal/entity/like"
 	"harmoni/internal/entity/paginator"
 	userentity "harmoni/internal/entity/user"
 	"harmoni/internal/pkg/errorx"
@@ -16,14 +17,21 @@ import (
 type UserUseCase struct {
 	userRepo    userentity.UserRepository
 	authUsecase *AuthUseCase
+	likeUsecase *LikeUsecase
 	logger      *zap.SugaredLogger
 	reg         *regexp.Regexp
 }
 
-func NewUserUseCase(userRepo userentity.UserRepository, authUsecase *AuthUseCase, logger *zap.SugaredLogger) *UserUseCase {
+func NewUserUseCase(
+	userRepo userentity.UserRepository,
+	authUsecase *AuthUseCase,
+	likeUsecase *LikeUsecase,
+	logger *zap.SugaredLogger,
+) *UserUseCase {
 	return &UserUseCase{
 		userRepo:    userRepo,
 		authUsecase: authUsecase,
+		likeUsecase: likeUsecase,
 		logger:      logger,
 		reg:         regexp.MustCompile("^[-_!a-zA-Z0-9\u4e00-\u9fa5]+$"),
 	}
@@ -65,7 +73,18 @@ func (u *UserUseCase) VerifyPassword(ctx context.Context, password, hashedPwd st
 }
 
 func (u *UserUseCase) GetByUserID(ctx context.Context, userID int64) (*userentity.User, bool, error) {
-	return u.userRepo.GetByUserID(ctx, userID)
+	user, exist, err := u.userRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, false, err
+	}
+
+	count, err := u.likeUsecase.LikeCount(ctx, &like.Like{LikingID: userID, LikeType: like.LikeUser})
+	if err != nil {
+		return nil, false, err
+	}
+	user.LikeCount = count
+
+	return user, exist, nil
 }
 
 func (u *UserUseCase) GetByUserIDs(ctx context.Context, userIDs []int64) ([]userentity.User, error) {

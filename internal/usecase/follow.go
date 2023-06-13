@@ -6,6 +6,8 @@ import (
 	"harmoni/internal/entity/paginator"
 	tagentity "harmoni/internal/entity/tag"
 	userentity "harmoni/internal/entity/user"
+	"harmoni/internal/pkg/errorx"
+	"harmoni/internal/pkg/reason"
 
 	"go.uber.org/zap"
 )
@@ -30,6 +32,9 @@ func NewFollowUseCase(followRepo followentity.FollowRepository,
 }
 
 func (u *FollowUseCase) Follow(ctx context.Context, follow *followentity.Follow) error {
+	if follow.FollowerID == follow.FollowingID {
+		return errorx.BadRequest(reason.DisallowFollow)
+	}
 	return u.followRepo.Follow(ctx, follow)
 }
 

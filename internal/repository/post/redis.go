@@ -1,14 +1,6 @@
 package post
 
-import (
-	"context"
-	"fmt"
-	"strconv"
-
-	"github.com/redis/go-redis/v9"
-)
-
-const (
+/* const (
 	// KeyPostTimeZSet key是 帖子id value 是帖子的发布时间
 	KeyPostTimeZSet = "bloom:post:time"
 	// KeyLikeNumberZSet key是 帖子id value 是帖子的点赞数量
@@ -95,3 +87,4 @@ func (r *PostRepo) doLike(ctx context.Context, postID int64, userID int64, direc
 
 	return nil
 }
+*/

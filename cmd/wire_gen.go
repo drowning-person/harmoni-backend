@@ -7,9 +7,9 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"harmoni/internal/conf"
+	"harmoni/internal/cron"
 	"harmoni/internal/data/mysql"
 	"harmoni/internal/data/redis"
 	"harmoni/internal/handler"
@@ -20,6 +20,7 @@ import (
 	"harmoni/internal/repository/comment"
 	"harmoni/internal/repository/email"
 	"harmoni/internal/repository/follow"
+	"harmoni/internal/repository/like"
 	"harmoni/internal/repository/post"
 	"harmoni/internal/repository/tag"
 	"harmoni/internal/repository/unique"
@@ -32,7 +33,7 @@ import (
 
 // Injectors from wire.go:
 
-func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *conf.Auth, emailConf *conf.Email, logConf *conf.Log) (*fiber.App, func(), error) {
+func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *conf.Auth, emailConf *conf.Email, messageConf *conf.MessageQueue, logConf *conf.Log) (*Application, func(), error) {
 	zapLogger, err := logger.NewZapLogger(logConf)
 	if err != nil {
 		return nil, nil, err
@@ -64,7 +65,16 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 		cleanup()
 		return nil, nil, err
 	}
-	userUseCase := usecase.NewUserUseCase(userRepo, authUseCase, sugaredLogger)
+	likeRepo := like.NewLikeRepo(db, client, sugaredLogger)
+	postRepo := post.NewPostRepo(db, client, uniqueIDRepo, sugaredLogger)
+	commentRepo := comment.NewCommentRepo(db, client, uniqueIDRepo, sugaredLogger)
+	likeUsecase, cleanup3, err := usecase.NewLikeUsecase(messageConf, likeRepo, postRepo, commentRepo, userRepo, sugaredLogger)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	userUseCase := usecase.NewUserUseCase(userRepo, authUseCase, likeUsecase, sugaredLogger)
 	accountUsecase := usecase.NewAccountUsecase(authUseCase, userRepo, emailUsecase, userUseCase, zapLogger)
 	accountService := service.NewAccountService(accountUsecase, sugaredLogger)
 	jwtAuthMiddleware := middleware.NewJwtAuthMiddleware(authUseCase)
@@ -77,19 +87,29 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 	followHandler := handler.NewFollowHandler(followService, sugaredLogger)
 	userService := service.NewUserService(userUseCase, authUseCase, accountUsecase, sugaredLogger)
 	userHandler := handler.NewUserHandler(userService)
-	postRepo := post.NewPostRepo(db, client, uniqueIDRepo, sugaredLogger)
-	postUseCase := usecase.NewPostUseCase(postRepo, sugaredLogger)
+	postUseCase := usecase.NewPostUseCase(postRepo, likeUsecase, sugaredLogger)
 	postService := service.NewPostService(postUseCase, sugaredLogger)
 	postHandler := handler.NewPostHandler(postService)
 	tagService := service.NewTagService(tagUseCase, sugaredLogger)
 	tagHandler := handler.NewTagHandler(tagService)
-	commentRepo := comment.NewCommentRepo(db, client, uniqueIDRepo, sugaredLogger)
-	commentUseCase := usecase.NewCommentUseCase(commentRepo, sugaredLogger)
+	commentUseCase := usecase.NewCommentUseCase(commentRepo, likeUsecase, sugaredLogger)
 	commentService := service.NewCommentService(commentUseCase, sugaredLogger)
 	commentHandler := handler.NewCommentHandler(commentService)
-	harmoniAPIRouter := router.NewHarmoniAPIRouter(accountHandler, followHandler, userHandler, postHandler, tagHandler, commentHandler)
+	likeService := service.NewLikeUsecase(likeUsecase, sugaredLogger)
+	likeHandler := handler.NewLikeHandler(likeService, sugaredLogger)
+	harmoniAPIRouter := router.NewHarmoniAPIRouter(accountHandler, followHandler, userHandler, postHandler, tagHandler, commentHandler, likeHandler)
 	app := server.NewHTTPServer(appConf, zapLogger, harmoniAPIRouter, jwtAuthMiddleware)
-	return app, func() {
+	scheduledTaskManager, cleanup4, err := cron.NewScheduledTaskManager(messageConf, likeUsecase, sugaredLogger)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	application := NewApplication(app, scheduledTaskManager)
+	return application, func() {
+		cleanup4()
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil

@@ -34,7 +34,7 @@ func NewFollowRepo(db *gorm.DB,
 		userRepo:     userRepo,
 		tagRepo:      tagRepo,
 		uniqueIDRepo: uniqueIDRepo,
-		logger:       logger,
+		logger:       logger.With("module", "repository/follow"),
 	}
 }
 
@@ -139,7 +139,7 @@ func (r *FollowRepo) updateFollows(ctx context.Context, tx *gorm.DB, follow *fol
 	case followentity.FollowTag:
 		err = tx.Table("tag").Where("tag_id = ?", follow.FollowingID).UpdateColumn("follow_count", gorm.Expr("follow_count + ? ", followCount)).Error
 	default:
-		err = errorx.InternalServer(reason.DisallowFollow).WithMsg("this object can't be followed")
+		err = errorx.BadRequest(reason.DisallowFollow).WithMsg("this object can't be followed")
 	}
 
 	return err

@@ -35,7 +35,7 @@ func refreshTokenKey(userID int64) string {
 func NewAuthRepo(rdb *redis.Client, logger *zap.SugaredLogger) *AuthRepo {
 	return &AuthRepo{
 		rdb:    rdb,
-		logger: logger,
+		logger: logger.With("module", "repository/auth"),
 	}
 }
 

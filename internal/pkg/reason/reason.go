@@ -23,6 +23,8 @@ const (
 	FollowAlreadyExist = "error.follow.already_exist"
 	FollowNotFound     = "error.follow.not_found"
 
+	TypeNotSupport = "error.type_not_support"
+
 	AuthHeaderInvalid                = "error.auth.header_invalid"
 	TokenInvalid                     = "error.token.invalid"
 	TokenNotExistOrExpired           = "error.token.not_exist_or_expired"
@@ -68,6 +70,7 @@ const (
 	RankFailToMeetTheCondition       = "error.rank.fail_to_meet_the_condition"
 	LikeAlreadyExist                 = "error.like.already_exist"
 	LikeCancelFailToNotLiked         = "error.like.cancel_fail_to_not_liked"
+	DisallowLikeYourSelf             = "error.object.disallow_like_your_self"
 	VoteRankFailToMeetTheCondition   = "error.rank.vote_fail_to_meet_the_condition"
 	ThemeNotFound                    = "error.theme.not_found"
 	LangNotFound                     = "error.lang.not_found"

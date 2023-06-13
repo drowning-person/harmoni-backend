@@ -82,13 +82,3 @@ func (s *PostService) Create(ctx context.Context, req *postentity.CreatePostRequ
 		PostDetail: postentity.ConvertPostToDisplayDetail(&post),
 	}, nil
 }
-
-func (s *PostService) LikePost(ctx context.Context, req *postentity.LikePostRequest) error {
-	err := s.pc.LikePost(ctx, req.PostID, req.UserID, req.Like)
-	if err != nil {
-		s.logger.Errorln(err)
-		return err
-	}
-
-	return nil
-}

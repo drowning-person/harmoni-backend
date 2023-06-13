@@ -14,3 +14,12 @@ func StringToBytes(s string) []byte {
 	}
 	return *(*[]byte)(unsafe.Pointer(&bh))
 }
+
+func BytesToString(b []byte) string {
+	sh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+	bh := reflect.StringHeader{
+		Data: sh.Data,
+		Len:  sh.Len,
+	}
+	return *(*string)(unsafe.Pointer(&bh))
+}

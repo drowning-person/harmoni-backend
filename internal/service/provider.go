@@ -10,4 +10,5 @@ var ProviderSetService = wire.NewSet(
 	NewPostService,
 	NewTagService,
 	NewUserService,
+	NewLikeUsecase,
 )

@@ -28,7 +28,7 @@ func NewTagRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo
 		db:           db,
 		rdb:          rdb,
 		uniqueIDRepo: uniqueIDRepo,
-		logger:       logger,
+		logger:       logger.With("module", "repository/tag"),
 	}
 }
 

@@ -16,6 +16,7 @@ type User struct {
 	Email       string `json:"email" gorm:"not null;uniqueIndex;type:varchar(100)"`
 	Password    string `json:"-" gorm:"not null;type:varchar(255)"`
 	FollowCount int64  `gorm:"not null;default:0"`
+	LikeCount   int64  `gorm:"not null;default:0"`
 }
 
 type UserBasicInfo struct {
@@ -27,6 +28,7 @@ type UserBasicInfo struct {
 type UserDetail struct {
 	UserBasicInfo
 	FollowCount int64 `json:"follow_count"`
+	LikeCount   int64 `json:"like_count"`
 }
 
 func (User) TableName() string {
@@ -49,6 +51,7 @@ func ConvertUserToDetailDisplay(u *User) UserDetail {
 			Email:  u.Email,
 		},
 		FollowCount: u.FollowCount,
+		LikeCount:   u.LikeCount,
 	}
 }
 
@@ -83,4 +86,7 @@ type UserRepository interface {
 
 	ModifyPassword(ctx context.Context, user *User) error
 	ModifyEmail(ctx context.Context, user *User) error
+
+	GetLikeCount(ctx context.Context, userID int64) (int64, bool, error)
+	UpdateLikeCount(ctx context.Context, userID int64, likeCount int64) error
 }

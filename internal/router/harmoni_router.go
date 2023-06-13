@@ -13,6 +13,7 @@ type HarmoniAPIRouter struct {
 	postHandler    *handler.PostHandler
 	tagHandler     *handler.TagHandler
 	commentHandler *handler.CommentHandler
+	likeHandler    *handler.LikeHandler
 }
 
 func NewHarmoniAPIRouter(
@@ -22,6 +23,7 @@ func NewHarmoniAPIRouter(
 	postHandler *handler.PostHandler,
 	tagHandler *handler.TagHandler,
 	commentHandler *handler.CommentHandler,
+	likeHandler *handler.LikeHandler,
 ) *HarmoniAPIRouter {
 	return &HarmoniAPIRouter{
 		accountHandler: accountHandler,
@@ -30,6 +32,7 @@ func NewHarmoniAPIRouter(
 		postHandler:    postHandler,
 		tagHandler:     tagHandler,
 		commentHandler: commentHandler,
+		likeHandler:    likeHandler,
 	}
 }
 
@@ -48,6 +51,12 @@ func (h *HarmoniAPIRouter) RegisterHarmoniAPIRouter(r fiber.Router) {
 	follow.Get("/isFollowing", h.followHandler.IsFollowing)
 	follow.Get("/arefolloweachother", h.followHandler.AreFollowEachOther)
 
+	like := r.Group("/like")
+	like.Post("", h.likeHandler.Like)
+
+	like.Get("/list", h.likeHandler.LikingList)
+	like.Get("/isLiking", h.likeHandler.IsLiking)
+
 	// user
 	r.Get("/user", h.userHandler.GetUsers)
 
@@ -58,7 +67,6 @@ func (h *HarmoniAPIRouter) RegisterHarmoniAPIRouter(r fiber.Router) {
 
 	// post
 	r.Post("/post", h.postHandler.CreatePost)
-	r.Post("/post/like", h.postHandler.LikePost)
 
 	// commnet
 	r.Post("/comment", h.commentHandler.CreateComment)

@@ -23,7 +23,7 @@ const (
 
 func (r *EmailCodeContent) ToJSONString() string {
 	codeBytes, _ := json.Marshal(r)
-	return string(codeBytes)
+	return common.BytesToString(codeBytes)
 }
 
 func (r *EmailCodeContent) FromJSONString(data string) error {

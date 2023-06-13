@@ -82,7 +82,7 @@ type Post struct {
 	TagName   string        `gorm:"type:varchar(512);index:,class:FULLTEXT,option:WITH PARSER ngram"`
 	Title     string        `gorm:"type:varchar(128)"`
 	Content   string        `gorm:"type:varchar(512)"`
-	LikeCount int64         `gorm:"-"`
+	LikeCount int64         `gorm:"not null"`
 }
 
 func (Post) TableName() string {
@@ -90,15 +90,33 @@ func (Post) TableName() string {
 }
 
 type PostDetail struct {
-	Status    int32               `json:"status"`
-	Like      int64               `json:"like"`
-	PostID    int64               `json:"post_id,string"`
-	AuthorID  int64               `json:"author_id,string"`
-	Tags      []tagentity.TagInfo `json:"tags"`
-	Title     string              `json:"title"`
-	Content   string              `json:"content"`
-	CreatedAt time.Time           `json:"created_at"`
-	UpdatedAt time.Time           `json:"updated_at"`
+	Status    int32               `json:"status,omitempty"`
+	LikeCount int64               `json:"like_count"`
+	PostID    int64               `json:"post_id,string,omitempty"`
+	AuthorID  int64               `json:"author_id,string,omitempty"`
+	Tags      []tagentity.TagInfo `json:"tags,omitempty"`
+	Title     string              `json:"title,omitempty"`
+	Content   string              `json:"content,omitempty"`
+	CreatedAt time.Time           `json:"created_at,omitempty"`
+	UpdatedAt time.Time           `json:"updated_at,omitempty"`
+}
+
+type PostBasicInfo struct {
+	AuthorID  int64  `json:"author_id,omitempty"`
+	PostID    int64  `json:"post_id,omitempty"`
+	Title     string `json:"title,omitempty"`
+	Content   string `json:"content,omitempty"`
+	LikeCount int64  `json:"like_count"`
+}
+
+func ConvertPostToDisplay(post *Post) PostBasicInfo {
+	return PostBasicInfo{
+		AuthorID:  post.AuthorID,
+		PostID:    post.PostID,
+		Title:     post.Title,
+		Content:   post.Content,
+		LikeCount: post.LikeCount,
+	}
 }
 
 func ConvertPostToDisplayDetail(post *Post) PostDetail {
@@ -120,6 +138,7 @@ func ConvertPostToDisplayDetail(post *Post) PostDetail {
 		Content:   post.Content,
 		CreatedAt: post.CreatedAt,
 		UpdatedAt: post.UpdatedAt,
+		LikeCount: post.LikeCount,
 	}
 
 	return pd
@@ -130,6 +149,8 @@ type PostRepository interface {
 	GetBasicInfoByPostID(ctx context.Context, postID int64) (*Post, bool, error)
 	GetByPostID(ctx context.Context, postID int64) (*Post, bool, error)
 	BatchByIDs(ctx context.Context, postIDs []int64) ([]Post, error)
+	BatchBasicInfoByIDs(ctx context.Context, postID []int64) ([]Post, error)
+	GetLikeCount(ctx context.Context, postID int64) (int64, bool, error)
+	UpdateLikeCount(ctx context.Context, postID int64, count int64) error
 	GetPage(ctx context.Context, pageSize, pageNum int64, orderCond string) (paginator.Page[Post], error)
-	LikePost(ctx context.Context, postID int64, userID int64, direction int8) error
 }

@@ -10,12 +10,13 @@ import (
 )
 
 type Config struct {
-	App   *App   `mapstructure:"app"`
-	Auth  *Auth  `mapstructure:"auth"`
-	DB    *DB    `mapstructure:"db"`
-	Log   *Log   `mapstructure:"log"`
-	Redis *Redis `mapstructure:"redis"`
-	Email *Email `mapstructure:"email"`
+	App          *App          `mapstructure:"app"`
+	Auth         *Auth         `mapstructure:"auth"`
+	DB           *DB           `mapstructure:"db"`
+	Log          *Log          `mapstructure:"log"`
+	Redis        *Redis        `mapstructure:"redis"`
+	Email        *Email        `mapstructure:"email"`
+	MessageQueue *MessageQueue `mapstructure:"message_queue"`
 }
 
 type App struct {
@@ -193,6 +194,18 @@ func SetEmailEnv(v *viper.Viper) error {
 	}
 
 	return nil
+}
+
+type MessageQueue struct {
+	RabbitMQ *RabbitMQConf `mapstructure:"rabbitmq,omitempty"`
+}
+
+type RabbitMQConf struct {
+	Username string `mapstructure:"username,omitempty"`
+	Password string `mapstructure:"password,omitempty"`
+	Host     string `mapstructure:"host,omitempty"`
+	Port     int    `mapstructure:"port,omitempty"`
+	VHost    string `mapstructure:"vhost,omitempty"`
 }
 
 func ReadConfig(filePath string) (*Config, error) {
