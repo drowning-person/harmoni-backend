@@ -23,7 +23,7 @@ var _ likeentity.LikeRepository = (*LikeRepo)(nil)
 const (
 	shardCounts = 5
 	userSetTTL  = time.Hour * 24 * 3
-	countTTL    = time.Hour * 24 * 7
+	countTTL    = time.Hour
 )
 
 const (
@@ -295,7 +295,12 @@ func (r *LikeRepo) CacheLikeCount(ctx context.Context, like *likeentity.Like, co
 	} else {
 		value = count
 	}
+
 	err := r.rdb.HSet(ctx, key, like.LikingID, value).Err()
+	if err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	err = r.rdb.ExpireNX(ctx, key, countTTL).Err()
 	if err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
@@ -385,20 +390,7 @@ func (r *LikeRepo) BatchLikeCountByIDs(ctx context.Context, likingIDs []int64, l
 	for key, ids := range keys {
 		counts, err := r.rdb.HMGet(ctx, key, ids...).Result()
 		if err != nil {
-			if err == redis.Nil {
-				err := r.rdb.HSet(ctx, key, entity.DefaultRedisValue, entity.DefaultRedisValue).Err()
-				if err != nil {
-					return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-				}
-				err = r.rdb.Expire(ctx, key, countTTL).Err()
-				if err != nil {
-					return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-				}
-				notCachedIDMap[key] = append(notCachedIDMap[key], ids...)
-				continue
-			} else {
-				return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-			}
+			return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 		}
 
 		for i, idStr := range ids {
@@ -451,6 +443,10 @@ func (r *LikeRepo) BatchLikeCountByIDs(ctx context.Context, likingIDs []int64, l
 			keyvals[key] = append(keyvals[key], id, likeCountsMap[id])
 		}
 		err = r.rdb.HMSet(ctx, key, keyvals[key]...).Err()
+		if err != nil {
+			return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		}
+		err = r.rdb.Expire(ctx, key, countTTL).Err()
 		if err != nil {
 			return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 		}
