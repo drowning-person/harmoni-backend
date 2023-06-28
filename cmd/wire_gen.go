@@ -65,7 +65,7 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 		cleanup()
 		return nil, nil, err
 	}
-	likeRepo := like.NewLikeRepo(db, client, sugaredLogger)
+	likeRepo := like.NewLikeRepo(db, client, userRepo, sugaredLogger)
 	postRepo := post.NewPostRepo(db, client, uniqueIDRepo, sugaredLogger)
 	commentRepo := comment.NewCommentRepo(db, client, uniqueIDRepo, sugaredLogger)
 	likeUsecase, cleanup3, err := usecase.NewLikeUsecase(messageConf, likeRepo, postRepo, commentRepo, userRepo, sugaredLogger)

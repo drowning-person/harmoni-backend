@@ -80,7 +80,7 @@ type LikeRepository interface {
 	LikeCount(ctx context.Context, like *Like) (int64, bool, error)
 	BatchLikeCount(ctx context.Context, likeType LikeType) (map[int64]int64, error)
 	BatchLikeCountByIDs(ctx context.Context, likingIDs []int64, likeType LikeType) (map[int64]int64, error)
-	UpdateLikeCount(ctx context.Context, like *Like, count int8) error
+	// UpdateLikeCount(ctx context.Context, like *Like, count int8) error
 	ListLikingIDs(ctx context.Context, query *LikeQuery) (paginator.Page[int64], error)
 	IsLiking(ctx context.Context, like *Like) (bool, error)
 	CacheLikeCount(ctx context.Context, like *Like, count int64) error

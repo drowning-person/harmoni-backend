@@ -7,6 +7,7 @@ import (
 	"harmoni/internal/entity"
 	likeentity "harmoni/internal/entity/like"
 	"harmoni/internal/entity/paginator"
+	userentity "harmoni/internal/entity/user"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
 	"hash/crc32"
@@ -72,20 +73,23 @@ func getCountCacheKey(like *likeentity.Like) string {
 }
 
 type LikeRepo struct {
-	db     *gorm.DB
-	rdb    redis.UniversalClient
-	logger *zap.SugaredLogger
+	db       *gorm.DB
+	rdb      redis.UniversalClient
+	userRepo userentity.UserRepository
+	logger   *zap.SugaredLogger
 }
 
 func NewLikeRepo(
 	db *gorm.DB,
 	rdb redis.UniversalClient,
+	userRepo userentity.UserRepository,
 	logger *zap.SugaredLogger,
 ) *LikeRepo {
 	return &LikeRepo{
-		db:     db,
-		rdb:    rdb,
-		logger: logger.With("module", "repository/like"),
+		db:       db,
+		rdb:      rdb,
+		userRepo: userRepo,
+		logger:   logger.With("module", "repository/like"),
 	}
 }
 
@@ -134,12 +138,29 @@ func (r *LikeRepo) Save(ctx context.Context, like *likeentity.Like, isCancel boo
 	return err
 }
 
-func (r *LikeRepo) UpdateLikeCount(ctx context.Context, like *likeentity.Like, count int8) error {
-	objKey := getCountCacheKey(like)
-	_, err := r.rdb.HIncrBy(ctx, objKey, strconv.FormatInt(like.LikingID, 10), int64(count)).Result()
+/*
+	 func (r *LikeRepo) UpdateLikeCount(ctx context.Context, like *likeentity.Like, count int8) error {
+		objKey := getCountCacheKey(like)
+		_, err := r.rdb.HIncrBy(ctx, objKey, strconv.FormatInt(like.LikingID, 10), int64(count)).Result()
+		if err != nil {
+			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		}
+		return nil
+	}
+*/
+
+func (r *LikeRepo) cacheHSetLikeCount(ctx context.Context, key string, id int64, count interface{}) error {
+	// set count to cache
+	err := r.rdb.HSet(ctx, key, id, count).Err()
 	if err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
+	// expire cache
+	err = r.rdb.ExpireNX(ctx, key, countTTL).Err()
+	if err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
 	return nil
 }
 
@@ -185,18 +206,28 @@ func (r *LikeRepo) likeAction(ctx context.Context, key string, like *likeentity.
 		if err != nil {
 			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 		}
-		// set count to cache
-		err = r.rdb.HSet(ctx, objKey, like.LikingID, count).Err()
+		err = r.cacheHSetLikeCount(ctx, objKey, like.LikingID, count)
 		if err != nil {
-			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-		}
-		// expire cache
-		err = r.rdb.Expire(ctx, objKey, countTTL).Err()
-		if err != nil {
-			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+			return err
 		}
 	}
 	userLikedKey := userLikeCountKey(targetUserID)
+	err := r.rdb.HGet(ctx, userLikedKey, strconv.FormatInt(targetUserID, 10)).Err()
+	if err == redis.Nil {
+		// user is impossible not exist
+		count, _, err := r.userRepo.GetLikeCount(ctx, targetUserID)
+		if err != nil {
+			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		}
+		// set count to cache
+		err = r.cacheHSetLikeCount(ctx, userLikedKey, targetUserID, count)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
 	if isCancel {
 		score, err := redis.NewScript(unlikeScript).Run(ctx, r.rdb, []string{key, objKey, userLikedKey}, like.LikingID, time.Now().Unix(), -1, targetUserID).Int()
 		if err != nil {
@@ -296,16 +327,7 @@ func (r *LikeRepo) CacheLikeCount(ctx context.Context, like *likeentity.Like, co
 		value = count
 	}
 
-	err := r.rdb.HSet(ctx, key, like.LikingID, value).Err()
-	if err != nil {
-		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-	}
-	err = r.rdb.ExpireNX(ctx, key, countTTL).Err()
-	if err != nil {
-		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-	}
-
-	return nil
+	return r.cacheHSetLikeCount(ctx, key, like.LikingID, value)
 }
 
 func (r *LikeRepo) LikeCount(ctx context.Context, like *likeentity.Like) (int64, bool, error) {

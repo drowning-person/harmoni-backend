@@ -129,15 +129,6 @@ func (u *LikeUsecase) Like(ctx context.Context, like *likeentity.Like, isCancel 
 	err = u.likeRepo.Like(ctx, like, targetUserID, isCancel)
 	if err != nil {
 		return err
-	} else if like.LikeType == likeentity.LikePost {
-		count := 1
-		if isCancel {
-			count = -1
-		}
-		err = u.likeRepo.UpdateLikeCount(ctx, &likeentity.Like{LikingID: post.AuthorID, LikeType: likeentity.LikeUser}, int8(count))
-		if err != nil {
-			return err
-		}
 	}
 
 	now := time.Now()
