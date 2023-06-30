@@ -53,8 +53,8 @@ func (u *PostUseCase) GetBasicInfoByPostID(ctx context.Context, postID int64) (*
 }
 
 // func (u *PostUseCase) BatchByIDs(ctx context.Context, postIDs []int64) ([]Post, error)
-func (u *PostUseCase) GetPage(ctx context.Context, pageSize, pageNum int64, orderCond string) (paginator.Page[postentity.Post], error) {
-	posts, err := u.postRepo.GetPage(ctx, pageSize, pageNum, orderCond)
+func (u *PostUseCase) GetPage(ctx context.Context, queryCond *postentity.PostQuery) (paginator.Page[postentity.Post], error) {
+	posts, err := u.postRepo.GetPage(ctx, queryCond)
 	if err != nil {
 		return paginator.Page[postentity.Post]{}, err
 	}

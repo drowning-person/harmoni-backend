@@ -27,7 +27,7 @@ func NewPostService(
 }
 
 func (s *PostService) GetPosts(ctx context.Context, req *postentity.GetPostsRequest) (*postentity.GetPostsReply, error) {
-	posts, err := s.pc.GetPage(ctx, req.PageSize, req.Page, req.Order)
+	posts, err := s.pc.GetPage(ctx, &postentity.PostQuery{PageCond: req.PageCond, QueryCond: req.Order})
 	if err != nil {
 		s.logger.Errorln(err)
 		return nil, err

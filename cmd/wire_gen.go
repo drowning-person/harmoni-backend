@@ -97,7 +97,10 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 	commentHandler := handler.NewCommentHandler(commentService)
 	likeService := service.NewLikeUsecase(likeUsecase, sugaredLogger)
 	likeHandler := handler.NewLikeHandler(likeService, sugaredLogger)
-	harmoniAPIRouter := router.NewHarmoniAPIRouter(accountHandler, followHandler, userHandler, postHandler, tagHandler, commentHandler, likeHandler)
+	timeLinePullUsecase := usecase.NewTimeLineUsecase(followRepo, postRepo, sugaredLogger)
+	timeLineService := service.NewTimeLineService(timeLinePullUsecase, sugaredLogger)
+	timeLineHandler := handler.NewTimeLineHandler(timeLineService)
+	harmoniAPIRouter := router.NewHarmoniAPIRouter(accountHandler, followHandler, userHandler, postHandler, tagHandler, commentHandler, likeHandler, timeLineHandler)
 	app := server.NewHTTPServer(appConf, zapLogger, harmoniAPIRouter, jwtAuthMiddleware)
 	scheduledTaskManager, cleanup4, err := cron.NewScheduledTaskManager(messageConf, likeUsecase, sugaredLogger)
 	if err != nil {

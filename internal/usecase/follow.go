@@ -43,11 +43,11 @@ func (u *FollowUseCase) FollowCancel(ctx context.Context, follow *followentity.F
 }
 
 func (u *FollowUseCase) GetFollowers(ctx context.Context, followQuery *followentity.FollowQuery) (paginator.Page[int64], error) {
-	return u.followRepo.GetFollowers(ctx, followQuery)
+	return u.followRepo.GetFollowersPage(ctx, followQuery)
 }
 
 func (u *FollowUseCase) GetFollowings(ctx context.Context, followQuery *followentity.FollowQuery) (paginator.Page[int64], error) {
-	return u.followRepo.GetFollowings(ctx, followQuery)
+	return u.followRepo.GetFollowingsPage(ctx, followQuery)
 }
 
 func (u *FollowUseCase) GetFollowingObjects(ctx context.Context, objectIDs []int64, followedType followentity.FollowedType) ([]any, error) {

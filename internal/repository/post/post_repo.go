@@ -71,6 +71,34 @@ func (r *PostRepo) GetByPostID(ctx context.Context, postID int64) (*postentity.P
 	return post, exist, nil
 }
 
+func (r *PostRepo) GetByUserID(ctx context.Context, userID int64, queryCond *postentity.PostQuery) (paginator.Page[postentity.Post], error) {
+	postPage := paginator.Page[postentity.Post]{CurrentPage: queryCond.Page, PageSize: queryCond.PageSize}
+	db := r.db.WithContext(ctx).Where("author_id = ?", userID).Order("created_at DESC")
+	err := postPage.SelectPages(db)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return paginator.Page[postentity.Post]{}, errorx.NotFound(reason.PostNotFound)
+		}
+		return paginator.Page[postentity.Post]{}, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return postPage, nil
+}
+
+func (r *PostRepo) GetByUserIDs(ctx context.Context, userIDs []int64, queryCond *postentity.PostQuery) (paginator.Page[postentity.Post], error) {
+	postPage := paginator.Page[postentity.Post]{CurrentPage: queryCond.Page, PageSize: queryCond.PageSize}
+	db := r.db.WithContext(ctx).Where("author_id IN ?", userIDs).Order("created_at DESC")
+	err := postPage.SelectPages(db)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return paginator.Page[postentity.Post]{}, errorx.NotFound(reason.PostNotFound)
+		}
+		return paginator.Page[postentity.Post]{}, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return postPage, nil
+}
+
 func (r *PostRepo) BatchByIDs(ctx context.Context, postIDs []int64) ([]postentity.Post, error) {
 	posts := make([]postentity.Post, 0, len(postIDs))
 	if err := r.db.WithContext(ctx).Where("post_id IN ?", postIDs).Find(&posts).Error; err != nil {
@@ -123,10 +151,10 @@ func (r *PostRepo) UpdateLikeCount(ctx context.Context, postID int64, count int6
 	return nil
 }
 
-func (r *PostRepo) GetPage(ctx context.Context, pageSize, pageNum int64, orderCond string) (paginator.Page[postentity.Post], error) {
+func (r *PostRepo) GetPage(ctx context.Context, queryCond *postentity.PostQuery) (paginator.Page[postentity.Post], error) {
 	db := r.db.WithContext(ctx)
 
-	switch orderCond {
+	switch queryCond.QueryCond {
 	case "newest":
 		db.Order("created_at DESC")
 	case "score":
@@ -135,7 +163,7 @@ func (r *PostRepo) GetPage(ctx context.Context, pageSize, pageNum int64, orderCo
 		db.Order("created_at DESC")
 	}
 
-	postPage := paginator.Page[postentity.Post]{CurrentPage: pageNum, PageSize: pageSize}
+	postPage := paginator.Page[postentity.Post]{CurrentPage: queryCond.Page, PageSize: queryCond.PageSize}
 	err := postPage.SelectPages(db)
 	if err != nil {
 		return paginator.Page[postentity.Post]{}, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()

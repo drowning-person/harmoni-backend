@@ -24,6 +24,15 @@ func NewEmailRepo(rdb *redis.Client) *EmailRepo {
 	}
 }
 
+func (e *EmailRepo) DelCode(ctx context.Context, codeKey string) error {
+	err := e.rdb.Del(ctx, codeKey).Err()
+	if err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return nil
+}
+
 // SetCode The email code is used to verify that the link in the message is out of date
 func (e *EmailRepo) SetCode(ctx context.Context, codeKey, content string, duration time.Duration) (bool, error) {
 	err := e.rdb.SetArgs(ctx, codeKey, content, redis.SetArgs{

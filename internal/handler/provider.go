@@ -11,4 +11,5 @@ var ProviderSetHandler = wire.NewSet(
 	NewTagHandler,
 	NewUserHandler,
 	NewLikeHandler,
+	NewTimeLineHandler,
 )

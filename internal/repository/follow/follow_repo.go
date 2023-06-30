@@ -145,7 +145,7 @@ func (r *FollowRepo) updateFollows(ctx context.Context, tx *gorm.DB, follow *fol
 	return err
 }
 
-func (r *FollowRepo) GetFollowers(ctx context.Context, followQuery *followentity.FollowQuery) (paginator.Page[int64], error) {
+func (r *FollowRepo) GetFollowersPage(ctx context.Context, followQuery *followentity.FollowQuery) (paginator.Page[int64], error) {
 	idPage := paginator.Page[int64]{
 		CurrentPage: followQuery.Page,
 		PageSize:    followQuery.PageSize,
@@ -171,7 +171,7 @@ func (r *FollowRepo) GetFollowers(ctx context.Context, followQuery *followentity
 	return idPage, nil
 }
 
-func (r *FollowRepo) GetFollowings(ctx context.Context, followQuery *followentity.FollowQuery) (paginator.Page[int64], error) {
+func (r *FollowRepo) GetFollowingsPage(ctx context.Context, followQuery *followentity.FollowQuery) (paginator.Page[int64], error) {
 	idPage := paginator.Page[int64]{
 		CurrentPage: followQuery.Page,
 		PageSize:    followQuery.PageSize,
@@ -195,6 +195,19 @@ func (r *FollowRepo) GetFollowings(ctx context.Context, followQuery *followentit
 	}
 
 	return idPage, nil
+}
+
+func (r *FollowRepo) GetFollowingUsersAll(ctx context.Context, userID int64) ([]int64, error) {
+	followings := []int64{}
+	err := r.db.WithContext(ctx).Table("follow").
+		Select("following_id").
+		Where("follower_id = ? AND followed_type = ? AND deleted_at is NULL", userID, followentity.FollowUser).
+		Find(&followings).Error
+	if err != nil {
+		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return followings, nil
 }
 
 func (r *FollowRepo) IsFollowing(ctx context.Context, follow *followentity.Follow) (bool, error) {

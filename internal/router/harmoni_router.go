@@ -7,13 +7,14 @@ import (
 )
 
 type HarmoniAPIRouter struct {
-	accountHandler *handler.AccountHandler
-	followHandler  *handler.FollowHandler
-	userHandler    *handler.UserHandler
-	postHandler    *handler.PostHandler
-	tagHandler     *handler.TagHandler
-	commentHandler *handler.CommentHandler
-	likeHandler    *handler.LikeHandler
+	accountHandler  *handler.AccountHandler
+	followHandler   *handler.FollowHandler
+	userHandler     *handler.UserHandler
+	postHandler     *handler.PostHandler
+	tagHandler      *handler.TagHandler
+	commentHandler  *handler.CommentHandler
+	likeHandler     *handler.LikeHandler
+	timelineHandler *handler.TimeLineHandler
 }
 
 func NewHarmoniAPIRouter(
@@ -24,15 +25,17 @@ func NewHarmoniAPIRouter(
 	tagHandler *handler.TagHandler,
 	commentHandler *handler.CommentHandler,
 	likeHandler *handler.LikeHandler,
+	timelineHandler *handler.TimeLineHandler,
 ) *HarmoniAPIRouter {
 	return &HarmoniAPIRouter{
-		accountHandler: accountHandler,
-		followHandler:  followHandler,
-		userHandler:    userHandler,
-		postHandler:    postHandler,
-		tagHandler:     tagHandler,
-		commentHandler: commentHandler,
-		likeHandler:    likeHandler,
+		accountHandler:  accountHandler,
+		followHandler:   followHandler,
+		userHandler:     userHandler,
+		postHandler:     postHandler,
+		tagHandler:      tagHandler,
+		commentHandler:  commentHandler,
+		likeHandler:     likeHandler,
+		timelineHandler: timelineHandler,
 	}
 }
 
@@ -67,6 +70,10 @@ func (h *HarmoniAPIRouter) RegisterHarmoniAPIRouter(r fiber.Router) {
 
 	// post
 	r.Post("/post", h.postHandler.CreatePost)
+
+	// timeline
+	r.Get("/timeline", h.timelineHandler.GetUserTimeLine)
+	r.Get("/timeline/home", h.timelineHandler.GetHomeTimeLine)
 
 	// commnet
 	r.Post("/comment", h.commentHandler.CreateComment)

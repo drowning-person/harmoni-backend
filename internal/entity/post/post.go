@@ -147,10 +147,12 @@ func ConvertPostToDisplayDetail(post *Post) PostDetail {
 type PostRepository interface {
 	Create(ctx context.Context, post *Post) error
 	GetBasicInfoByPostID(ctx context.Context, postID int64) (*Post, bool, error)
+	GetByUserID(ctx context.Context, userID int64, queryCond *PostQuery) (paginator.Page[Post], error)
+	GetByUserIDs(ctx context.Context, userID []int64, queryCond *PostQuery) (paginator.Page[Post], error)
 	GetByPostID(ctx context.Context, postID int64) (*Post, bool, error)
 	BatchByIDs(ctx context.Context, postIDs []int64) ([]Post, error)
 	BatchBasicInfoByIDs(ctx context.Context, postID []int64) ([]Post, error)
 	GetLikeCount(ctx context.Context, postID int64) (int64, bool, error)
 	UpdateLikeCount(ctx context.Context, postID int64, count int64) error
-	GetPage(ctx context.Context, pageSize, pageNum int64, orderCond string) (paginator.Page[Post], error)
+	GetPage(ctx context.Context, queryCond *PostQuery) (paginator.Page[Post], error)
 }

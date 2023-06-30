@@ -70,7 +70,9 @@ func NewZapLogger(conf *conf.Log) (*zap.Logger, error) {
 	}
 
 	core := zapcore.NewCore(zapcore.NewJSONEncoder(encoderConfig), zapcore.AddSync(file), level)
-	logger := zap.New(core, zap.AddCaller(), zap.Development())
+	consoleCore := zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), zapcore.AddSync(os.Stdout), level)
+	tee := zapcore.NewTee(consoleCore, core)
+	logger := zap.New(tee, zap.AddCaller(), zap.Development())
 
 	zap.ReplaceGlobals(logger)
 

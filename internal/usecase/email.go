@@ -171,6 +171,12 @@ func (u *EmailUsecase) CheckBeforeSendCode(ctx context.Context, email string, em
 			return errorx.BadRequest(reason.EmailShouldRequestLater)
 		} else if time.Now().Unix()-data.LastReqTime < int64(time.Minute/time.Second) {
 			return errorx.BadRequest(reason.EmailShouldRequestLater)
+		} else {
+			err = u.emailRepo.DelCode(ctx, key)
+			if err != nil {
+				u.logger.Error(err)
+				return errorx.BadRequest(reason.EmailShouldRequestLater)
+			}
 		}
 	}
 
@@ -180,11 +186,9 @@ func (u *EmailUsecase) CheckBeforeSendCode(ctx context.Context, email string, em
 // SendAndSaveCode send email and save code
 func (u *EmailUsecase) SendAndSaveCode(ctx context.Context, toEmailAddr, subject, body, codeContent string, emailType emailentity.EmailType) error {
 	key := emailcodeKey(toEmailAddr, emailType)
-	exist, err := u.emailRepo.SetCode(ctx, key, codeContent, u.conf.CodeTTL)
+	_, err := u.emailRepo.SetCode(ctx, key, codeContent, u.conf.CodeTTL)
 	if err != nil {
 		u.logger.Error(err)
-	} else if exist {
-		return errorx.BadRequest(reason.EmailShouldRequestLater)
 	}
 
 	go u.Send(ctx, toEmailAddr, subject, body)
@@ -195,11 +199,9 @@ func (u *EmailUsecase) SendAndSaveCode(ctx context.Context, toEmailAddr, subject
 func (u *EmailUsecase) SendAndSaveCodeWithTime(
 	ctx context.Context, toEmailAddr, subject, body, codeContent string, emailType emailentity.EmailType, duration time.Duration) error {
 	key := emailcodeKey(toEmailAddr, emailType)
-	exist, err := u.emailRepo.SetCode(ctx, key, codeContent, duration)
+	_, err := u.emailRepo.SetCode(ctx, key, codeContent, duration)
 	if err != nil {
 		u.logger.Error(err)
-	} else if exist {
-		return errorx.BadRequest(reason.EmailShouldRequestLater)
 	}
 
 	go u.Send(ctx, toEmailAddr, subject, body)
@@ -217,7 +219,7 @@ func (u *EmailUsecase) Send(ctx context.Context, toEmailAddr, subject, body stri
 	m.Subject = subject
 	m.HTML = common.StringToBytes(body)
 
-	if err := u.emailPool.Send(m, time.Second*5); err != nil {
+	if err := u.emailPool.Send(m, -1); err != nil {
 		u.logger.Errorf("send email to %s failed: %s", toEmailAddr, err)
 	} else {
 		u.logger.Infof("send email to %s success", toEmailAddr)

@@ -45,8 +45,9 @@ const (
 type FollowRepository interface {
 	Follow(ctx context.Context, follow *Follow) error
 	FollowCancel(ctx context.Context, follow *Follow) error
-	GetFollowers(ctx context.Context, followQuery *FollowQuery) (paginator.Page[int64], error)
-	GetFollowings(ctx context.Context, followQuery *FollowQuery) (paginator.Page[int64], error)
+	GetFollowersPage(ctx context.Context, followQuery *FollowQuery) (paginator.Page[int64], error)
+	GetFollowingsPage(ctx context.Context, followQuery *FollowQuery) (paginator.Page[int64], error)
+	GetFollowingUsersAll(ctx context.Context, userID int64) ([]int64, error)
 	IsFollowing(ctx context.Context, follow *Follow) (bool, error)
 	AreFollowEachOther(ctx context.Context, userIDx int64, userIDy int64) (bool, error)
 }
