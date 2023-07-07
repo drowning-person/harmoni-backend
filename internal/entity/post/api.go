@@ -23,10 +23,10 @@ type GetPostDetailReply struct {
 }
 
 type CreatePostRequest struct {
-	TagID   Int64toString `json:"tag_id" validate:"lte=4" label:"话题ID"`
-	UserID  int64         `json:"-"`
-	Title   string        `json:"title" validate:"required,gte=3,lte=128" label:"帖子标题"`
-	Content string        `json:"content" validate:"required,gte=10,lte=512" label:"帖子内容"`
+	TagIDs  entity.Int64Slice `json:"tag_ids" validate:"lte=4" label:"话题ID"`
+	UserID  int64             `json:"-"`
+	Title   string            `json:"title" validate:"required,gte=3,lte=128" label:"帖子标题"`
+	Content string            `json:"content" validate:"required,gte=10,lte=512" label:"帖子内容"`
 }
 
 type CreatePostReply struct {

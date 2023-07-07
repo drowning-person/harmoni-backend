@@ -66,7 +66,8 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 		return nil, nil, err
 	}
 	likeRepo := like.NewLikeRepo(db, client, userRepo, sugaredLogger)
-	postRepo := post.NewPostRepo(db, client, uniqueIDRepo, sugaredLogger)
+	tagRepo := tag.NewTagRepo(db, client, uniqueIDRepo, sugaredLogger)
+	postRepo := post.NewPostRepo(db, client, tagRepo, uniqueIDRepo, sugaredLogger)
 	commentRepo := comment.NewCommentRepo(db, client, uniqueIDRepo, sugaredLogger)
 	likeUsecase, cleanup3, err := usecase.NewLikeUsecase(messageConf, likeRepo, postRepo, commentRepo, userRepo, sugaredLogger)
 	if err != nil {
@@ -79,7 +80,6 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 	accountService := service.NewAccountService(accountUsecase, sugaredLogger)
 	jwtAuthMiddleware := middleware.NewJwtAuthMiddleware(authUseCase)
 	accountHandler := handler.NewAccountHandler(accountService, jwtAuthMiddleware, sugaredLogger)
-	tagRepo := tag.NewTagRepo(db, client, uniqueIDRepo, sugaredLogger)
 	followRepo := follow.NewFollowRepo(db, userRepo, tagRepo, uniqueIDRepo, sugaredLogger)
 	tagUseCase := usecase.NewTagUseCase(tagRepo, sugaredLogger)
 	followUseCase := usecase.NewFollowUseCase(followRepo, userUseCase, tagUseCase, sugaredLogger)
@@ -87,8 +87,8 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 	followHandler := handler.NewFollowHandler(followService, sugaredLogger)
 	userService := service.NewUserService(userUseCase, authUseCase, accountUsecase, sugaredLogger)
 	userHandler := handler.NewUserHandler(userService)
-	postUseCase := usecase.NewPostUseCase(postRepo, likeUsecase, sugaredLogger)
-	postService := service.NewPostService(postUseCase, sugaredLogger)
+	postUseCase := usecase.NewPostUseCase(postRepo, likeUsecase, tagRepo, sugaredLogger)
+	postService := service.NewPostService(postUseCase, tagUseCase, sugaredLogger)
 	postHandler := handler.NewPostHandler(postService)
 	tagService := service.NewTagService(tagUseCase, sugaredLogger)
 	tagHandler := handler.NewTagHandler(tagService)

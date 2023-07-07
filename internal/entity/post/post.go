@@ -75,14 +75,13 @@ func (is Int64toString) Value() (driver.Value, error) {
 
 type Post struct {
 	gorm.Model
-	Status    int32         `gorm:"not null"`
-	PostID    int64         `gorm:"uniqueIndex"`
-	AuthorID  int64         `gorm:"index"`
-	TagID     Int64toString `gorm:"type:varchar(128)"`
-	TagName   string        `gorm:"type:varchar(512);index:,class:FULLTEXT,option:WITH PARSER ngram"`
-	Title     string        `gorm:"type:varchar(128)"`
-	Content   string        `gorm:"type:varchar(512)"`
-	LikeCount int64         `gorm:"not null"`
+	Status    int32   `gorm:"not null"`
+	PostID    int64   `gorm:"uniqueIndex"`
+	AuthorID  int64   `gorm:"index"`
+	Title     string  `gorm:"type:varchar(128)"`
+	Content   string  `gorm:"type:varchar(512)"`
+	LikeCount int64   `gorm:"not null"`
+	TagIDs    []int64 `gorm:"-"`
 }
 
 func (Post) TableName() string {
@@ -119,21 +118,16 @@ func ConvertPostToDisplay(post *Post) PostBasicInfo {
 	}
 }
 
-func ConvertPostToDisplayDetail(post *Post) PostDetail {
-	tagNames := strings.Split(post.TagName, ",")
-	tags := make([]tagentity.TagInfo, len(post.TagID))
-	for i := 0; i < len(post.TagID); i++ {
-		tags[i] = tagentity.TagInfo{
-			TagName: tagNames[i],
-			TagID:   post.TagID[i],
-		}
+func ConvertPostToDisplayDetail(post *Post, tags []tagentity.Tag) PostDetail {
+	tagInfos := make([]tagentity.TagInfo, len(tags))
+	for i, tag := range tags {
+		tagInfos[i] = tagentity.ConvertTagToDisplay(&tag)
 	}
-
 	pd := PostDetail{
 		Status:    post.Status,
 		PostID:    post.PostID,
 		AuthorID:  post.AuthorID,
-		Tags:      tags,
+		Tags:      tagInfos,
 		Title:     post.Title,
 		Content:   post.Content,
 		CreatedAt: post.CreatedAt,
@@ -146,10 +140,12 @@ func ConvertPostToDisplayDetail(post *Post) PostDetail {
 
 type PostRepository interface {
 	Create(ctx context.Context, post *Post) error
+	Delete(ctx context.Context, postID int64) error
 	GetBasicInfoByPostID(ctx context.Context, postID int64) (*Post, bool, error)
 	GetByUserID(ctx context.Context, userID int64, queryCond *PostQuery) (paginator.Page[Post], error)
 	GetByUserIDs(ctx context.Context, userID []int64, queryCond *PostQuery) (paginator.Page[Post], error)
 	GetByPostID(ctx context.Context, postID int64) (*Post, bool, error)
+	GetPostsByTagID(ctx context.Context, tagID int64) ([]Post, error)
 	BatchByIDs(ctx context.Context, postIDs []int64) ([]Post, error)
 	BatchBasicInfoByIDs(ctx context.Context, postID []int64) ([]Post, error)
 	GetLikeCount(ctx context.Context, postID int64) (int64, bool, error)

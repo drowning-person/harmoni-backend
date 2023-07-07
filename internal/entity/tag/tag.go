@@ -56,6 +56,7 @@ type TagRepository interface {
 	Create(ctx context.Context, tag *Tag) error
 	GetByTagID(ctx context.Context, tagID int64) (*Tag, bool, error)
 	GetByTagIDs(ctx context.Context, tagID []int64) ([]Tag, error)
+	GetTagsByPostID(ctx context.Context, postID int64) ([]Tag, error)
 	GetByTagName(ctx context.Context, tagName string) (*Tag, bool, error)
 	GetPage(ctx context.Context, pageSize, pageNum int64) (paginator.Page[Tag], error)
 }

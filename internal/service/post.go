@@ -13,15 +13,18 @@ import (
 
 type PostService struct {
 	pc     *usecase.PostUseCase
+	tc     *usecase.TagUseCase
 	logger *zap.SugaredLogger
 }
 
 func NewPostService(
 	pc *usecase.PostUseCase,
+	tc *usecase.TagUseCase,
 	logger *zap.SugaredLogger,
 ) *PostService {
 	return &PostService{
 		pc:     pc,
+		tc:     tc,
 		logger: logger,
 	}
 }
@@ -42,7 +45,13 @@ func (s *PostService) GetPosts(ctx context.Context, req *postentity.GetPostsRequ
 	}
 
 	for _, post := range posts.Data {
-		res.Data = append(res.Data, postentity.ConvertPostToDisplayDetail(&post))
+		tags, err := s.tc.GetTagsByPostID(ctx, post.PostID)
+		if err != nil {
+			s.logger.Errorln(err)
+			return nil, err
+		}
+
+		res.Data = append(res.Data, postentity.ConvertPostToDisplayDetail(&post, tags))
 	}
 
 	return &postentity.GetPostsReply{
@@ -58,27 +67,32 @@ func (s *PostService) GetPostDetail(ctx context.Context, req *postentity.GetPost
 	} else if !exist {
 		return nil, errorx.NotFound(reason.PostNotFound)
 	}
+	tags, err := s.tc.GetTagsByPostID(ctx, post.PostID)
+	if err != nil {
+		s.logger.Errorln(err)
+		return nil, err
+	}
 
 	return &postentity.GetPostDetailReply{
-		PostDetail: postentity.ConvertPostToDisplayDetail(post),
+		PostDetail: postentity.ConvertPostToDisplayDetail(post, tags),
 	}, nil
 }
 
 func (s *PostService) Create(ctx context.Context, req *postentity.CreatePostRequest) (*postentity.CreatePostReply, error) {
 	post := postentity.Post{
 		AuthorID: req.UserID,
-		TagID:    req.TagID,
+		TagIDs:   req.TagIDs,
 		Title:    req.Title,
 		Content:  req.Content,
 	}
 
-	post, err := s.pc.Create(ctx, &post)
+	post, tags, err := s.pc.Create(ctx, &post)
 	if err != nil {
 		s.logger.Errorln(err)
 		return nil, err
 	}
 
 	return &postentity.CreatePostReply{
-		PostDetail: postentity.ConvertPostToDisplayDetail(&post),
+		PostDetail: postentity.ConvertPostToDisplayDetail(&post, tags),
 	}, nil
 }
