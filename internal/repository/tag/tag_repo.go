@@ -3,6 +3,7 @@ package tag
 import (
 	"context"
 	"harmoni/internal/entity/paginator"
+	postreltagentity "harmoni/internal/entity/post_rel_tag"
 	tagentity "harmoni/internal/entity/tag"
 	"harmoni/internal/entity/unique"
 	"harmoni/internal/pkg/errorx"
@@ -98,4 +99,18 @@ func (r *TagRepo) GetPage(ctx context.Context, pageSize, pageNum int64) (paginat
 	}
 
 	return tagPage, nil
+}
+
+func (r *TagRepo) GetTagsByPostID(ctx context.Context, postID int64) ([]tagentity.Tag, error) {
+	tags := []tagentity.Tag{}
+	err := r.db.Table(postreltagentity.TableName).
+		Select("tag.tag_id", "tag.tag_name").
+		Where("post_id = ?", postID).
+		Joins("JOIN tag on post_tags.tag_id = tag.tag_id").
+		Find(&tags).Error
+	if err != nil {
+		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return tags, nil
 }

@@ -12,6 +12,7 @@ import (
 
 type TimeLineService struct {
 	tc     *usecase.TimeLinePullUsecase
+	tagc   *usecase.TagUseCase
 	logger *zap.SugaredLogger
 }
 
@@ -40,7 +41,13 @@ func (s *TimeLineService) GetUserTimeLine(ctx context.Context, req *timelineenti
 	}
 
 	for _, post := range timeline.Data {
-		res.Data = append(res.Data, postentity.ConvertPostToDisplayDetail(&post))
+		tags, err := s.tagc.GetTagsByPostID(ctx, post.PostID)
+		if err != nil {
+			s.logger.Errorln(err)
+			return nil, err
+		}
+
+		res.Data = append(res.Data, postentity.ConvertPostToDisplayDetail(&post, tags))
 	}
 
 	return &timelineentity.GetUserTimeLineReply{
@@ -63,7 +70,13 @@ func (s *TimeLineService) GetHomeTimeLine(ctx context.Context, req *timelineenti
 	}
 
 	for _, post := range timeline.Data {
-		res.Data = append(res.Data, postentity.ConvertPostToDisplayDetail(&post))
+		tags, err := s.tagc.GetTagsByPostID(ctx, post.PostID)
+		if err != nil {
+			s.logger.Errorln(err)
+			return nil, err
+		}
+
+		res.Data = append(res.Data, postentity.ConvertPostToDisplayDetail(&post, tags))
 	}
 
 	return &timelineentity.GetHomeTimeLineReply{

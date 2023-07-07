@@ -2,34 +2,65 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"harmoni/internal/entity/like"
 	"harmoni/internal/entity/paginator"
 	postentity "harmoni/internal/entity/post"
+	tagentity "harmoni/internal/entity/tag"
+	"harmoni/internal/pkg/errorx"
+	"harmoni/internal/pkg/reason"
 
 	"go.uber.org/zap"
 )
 
 type PostUseCase struct {
 	postRepo    postentity.PostRepository
+	tagRepo     tagentity.TagRepository
 	likeUsecase *LikeUsecase
 	logger      *zap.SugaredLogger
 }
 
-func NewPostUseCase(postRepo postentity.PostRepository, likeUsecase *LikeUsecase, logger *zap.SugaredLogger) *PostUseCase {
+func NewPostUseCase(
+	postRepo postentity.PostRepository,
+	likeUsecase *LikeUsecase,
+	tagRepo tagentity.TagRepository,
+	logger *zap.SugaredLogger,
+) *PostUseCase {
 	return &PostUseCase{
 		postRepo:    postRepo,
+		tagRepo:     tagRepo,
 		likeUsecase: likeUsecase,
 		logger:      logger,
 	}
 }
 
-func (u *PostUseCase) Create(ctx context.Context, post *postentity.Post) (postentity.Post, error) {
-	err := u.postRepo.Create(ctx, post)
-	if err != nil {
-		return postentity.Post{}, err
+func (u *PostUseCase) Create(ctx context.Context, post *postentity.Post) (postentity.Post, []tagentity.Tag, error) {
+	var res []tagentity.Tag
+	if len(post.TagIDs) != 0 {
+		tags, err := u.tagRepo.GetByTagIDs(ctx, post.TagIDs)
+		if err != nil {
+			return postentity.Post{}, nil, err
+		}
+
+		tagIDMap := map[int64]bool{}
+		for _, tag := range tags {
+			tagIDMap[tag.TagID] = true
+		}
+		fmt.Println(post.TagIDs, tags)
+		for _, tagID := range post.TagIDs {
+			if !tagIDMap[tagID] {
+				return postentity.Post{}, nil, errorx.BadRequest(reason.TagNotFound)
+			}
+		}
+		res = tags
 	}
 
-	return *post, err
+	err := u.postRepo.Create(ctx, post)
+	if err != nil {
+		return postentity.Post{}, nil, err
+	}
+
+	return *post, res, err
 }
 
 func (u *PostUseCase) GetByPostID(ctx context.Context, postID int64) (*postentity.Post, bool, error) {
@@ -75,6 +106,10 @@ func (u *PostUseCase) GetPage(ctx context.Context, queryCond *postentity.PostQue
 
 func (u *PostUseCase) BatchBasicInfoByIDs(ctx context.Context, postIDs []int64) ([]postentity.Post, error) {
 	return u.postRepo.BatchBasicInfoByIDs(ctx, postIDs)
+}
+
+func (u *PostUseCase) GetPostsByTagID(ctx context.Context, tagID int64) ([]postentity.Post, error) {
+	return u.postRepo.GetPostsByTagID(ctx, tagID)
 }
 
 /* func (u *PostUseCase) LikePost(ctx context.Context, postID int64, userID int64, direction int8) error {

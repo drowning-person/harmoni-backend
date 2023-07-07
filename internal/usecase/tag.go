@@ -44,3 +44,7 @@ func (u *TagUseCase) GetByTagName(ctx context.Context, name string) (*tagentity.
 func (u *TagUseCase) GetPage(ctx context.Context, pageSize int64, pageNum int64) (paginator.Page[tagentity.Tag], error) {
 	return u.tagRepo.GetPage(ctx, pageSize, pageNum)
 }
+
+func (u *TagUseCase) GetTagsByPostID(ctx context.Context, postID int64) ([]tagentity.Tag, error) {
+	return u.tagRepo.GetTagsByPostID(ctx, postID)
+}

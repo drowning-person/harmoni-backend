@@ -4,6 +4,8 @@ import (
 	"context"
 	"harmoni/internal/entity/paginator"
 	postentity "harmoni/internal/entity/post"
+	postreltagentity "harmoni/internal/entity/post_rel_tag"
+	tagentity "harmoni/internal/entity/tag"
 	"harmoni/internal/entity/unique"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
@@ -19,14 +21,21 @@ var _ postentity.PostRepository = (*PostRepo)(nil)
 type PostRepo struct {
 	db           *gorm.DB
 	rdb          *redis.Client
+	tagRepo      tagentity.TagRepository
 	uniqueIDRepo unique.UniqueIDRepo
 	logger       *zap.SugaredLogger
 }
 
-func NewPostRepo(db *gorm.DB, rdb *redis.Client, uniqueIDRepo unique.UniqueIDRepo, logger *zap.SugaredLogger) *PostRepo {
+func NewPostRepo(
+	db *gorm.DB,
+	rdb *redis.Client,
+	tagRepo tagentity.TagRepository,
+	uniqueIDRepo unique.UniqueIDRepo,
+	logger *zap.SugaredLogger) *PostRepo {
 	return &PostRepo{
 		db:           db,
 		rdb:          rdb,
+		tagRepo:      tagRepo,
 		uniqueIDRepo: uniqueIDRepo,
 		logger:       logger.With("module", "repository/post"),
 	}
@@ -41,12 +50,44 @@ func (r *PostRepo) Create(ctx context.Context, post *postentity.Post) (err error
 	post.Title = html.EscapeString(post.Title)
 	post.Content = html.EscapeString(post.Content)
 
-	err = r.db.WithContext(ctx).Create(post).Error
+	err = r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Create(&post).Error
+		if err != nil {
+			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		}
+
+		// add relationship between post and tags
+		err = r.associateTags(ctx, tx, post.PostID, post.TagIDs)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
-		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		return err
 	}
 
 	return nil
+}
+
+func (r *PostRepo) Delete(ctx context.Context, postID int64) error {
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Where("post_id = ?", postID).
+			Delete(&postentity.Post{}).Error
+		if err != nil {
+			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		}
+
+		err = r.removeAllTagsFromPost(ctx, tx, postID)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
 }
 
 func (r *PostRepo) GetBasicInfoByPostID(ctx context.Context, postID int64) (*postentity.Post, bool, error) {
@@ -170,4 +211,65 @@ func (r *PostRepo) GetPage(ctx context.Context, queryCond *postentity.PostQuery)
 	}
 
 	return postPage, nil
+}
+
+func (r *PostRepo) associateTags(ctx context.Context, tx *gorm.DB, postID int64, tagIDs []int64) error {
+	if len(tagIDs) == 0 {
+		return nil
+	}
+
+	prt := make([]postreltagentity.PostTag, len(tagIDs))
+	prtID, err := r.uniqueIDRepo.GenUniqueID(ctx)
+	if err != nil {
+		return err
+	}
+
+	for i, tagID := range tagIDs {
+		prt[i] = postreltagentity.PostTag{
+			PostTagID: prtID,
+			PostID:    postID,
+			TagID:     tagID,
+		}
+	}
+
+	err = tx.Create(&prt).Error
+	if err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return nil
+}
+
+func (r *PostRepo) GetPostsByTagID(ctx context.Context, tagID int64) ([]postentity.Post, error) {
+	posts := []postentity.Post{}
+	err := r.db.Table(postreltagentity.TableName).
+		Where("tag_id = ?", tagID).
+		Find(posts).Error
+	if err != nil {
+		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return posts, nil
+}
+
+/* func (r *PostRepo) RemoveTagsFromPost(ctx context.Context, postID int64, tagIDs []int64) error {
+	err := r.db.Table(postreltagentity.TableName).
+		Where("post_id = ? and tag_id in ?", postID, tagIDs).
+		Delete(&postreltagentity.PostTag{}).Error
+	if err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return nil
+} */
+
+func (r *PostRepo) removeAllTagsFromPost(ctx context.Context, tx *gorm.DB, postID int64) error {
+	err := r.db.Table(postreltagentity.TableName).
+		Where("post_id = ?", postID).
+		Delete(&postreltagentity.PostTag{}).Error
+	if err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return nil
 }
