@@ -9,6 +9,7 @@ import (
 type HarmoniAPIRouter struct {
 	accountHandler  *handler.AccountHandler
 	followHandler   *handler.FollowHandler
+	fileHandler     *handler.FileHandler
 	userHandler     *handler.UserHandler
 	postHandler     *handler.PostHandler
 	tagHandler      *handler.TagHandler
@@ -20,6 +21,7 @@ type HarmoniAPIRouter struct {
 func NewHarmoniAPIRouter(
 	accountHandler *handler.AccountHandler,
 	followHandler *handler.FollowHandler,
+	fileHandler *handler.FileHandler,
 	userHandler *handler.UserHandler,
 	postHandler *handler.PostHandler,
 	tagHandler *handler.TagHandler,
@@ -30,6 +32,7 @@ func NewHarmoniAPIRouter(
 	return &HarmoniAPIRouter{
 		accountHandler:  accountHandler,
 		followHandler:   followHandler,
+		fileHandler:     fileHandler,
 		userHandler:     userHandler,
 		postHandler:     postHandler,
 		tagHandler:      tagHandler,
@@ -62,6 +65,7 @@ func (h *HarmoniAPIRouter) RegisterHarmoniAPIRouter(r fiber.Router) {
 
 	// user
 	r.Get("/user", h.userHandler.GetUsers)
+	r.Post("/user/avatar", h.fileHandler.UploadAvatar)
 
 	r.Post("/logout", h.userHandler.Logout)
 
@@ -102,4 +106,8 @@ func (h *HarmoniAPIRouter) RegisterUnAuthHarmoniAPIRouter(r fiber.Router) {
 
 	// commnet
 	r.Get("/comment", h.commentHandler.GetComments)
+}
+
+func (h *HarmoniAPIRouter) RegisterStaticRouter(r fiber.Router) {
+	r.Static("/static", "./static")
 }

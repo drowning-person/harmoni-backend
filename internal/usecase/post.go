@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"harmoni/internal/entity/like"
 	"harmoni/internal/entity/paginator"
 	postentity "harmoni/internal/entity/post"
@@ -46,7 +45,7 @@ func (u *PostUseCase) Create(ctx context.Context, post *postentity.Post) (posten
 		for _, tag := range tags {
 			tagIDMap[tag.TagID] = true
 		}
-		fmt.Println(post.TagIDs, tags)
+
 		for _, tagID := range post.TagIDs {
 			if !tagIDMap[tagID] {
 				return postentity.Post{}, nil, errorx.BadRequest(reason.TagNotFound)

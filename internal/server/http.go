@@ -43,6 +43,8 @@ func NewHTTPServer(
 		Fields: []string{"latency", "status", "method", "url", "ip", "call"},
 	}))
 
+	harmoniRouter.RegisterStaticRouter(r.Group(""))
+
 	unauthV1 := r.Group("/api/v1")
 	harmoniRouter.RegisterUnAuthHarmoniAPIRouter(unauthV1)
 

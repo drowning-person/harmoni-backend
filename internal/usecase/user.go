@@ -17,6 +17,7 @@ import (
 type UserUseCase struct {
 	userRepo    userentity.UserRepository
 	authUsecase *AuthUseCase
+	fileUsecase *FileUseCase
 	likeUsecase *LikeUsecase
 	logger      *zap.SugaredLogger
 	reg         *regexp.Regexp
@@ -25,12 +26,14 @@ type UserUseCase struct {
 func NewUserUseCase(
 	userRepo userentity.UserRepository,
 	authUsecase *AuthUseCase,
+	fileUsecase *FileUseCase,
 	likeUsecase *LikeUsecase,
 	logger *zap.SugaredLogger,
 ) *UserUseCase {
 	return &UserUseCase{
 		userRepo:    userRepo,
 		authUsecase: authUsecase,
+		fileUsecase: fileUsecase,
 		likeUsecase: likeUsecase,
 		logger:      logger,
 		reg:         regexp.MustCompile("^[-_!a-zA-Z0-9\u4e00-\u9fa5]+$"),
@@ -97,6 +100,26 @@ func (u *UserUseCase) GetUserByEmail(ctx context.Context, email string) (*useren
 
 func (u *UserUseCase) GetPage(ctx context.Context, pageSize int64, pageNum int64) (paginator.Page[userentity.User], error) {
 	return u.userRepo.GetPage(ctx, pageSize, pageNum)
+}
+
+func (u *UserUseCase) SetAvatar(ctx context.Context, userID int64, fileID int64) error {
+	err := u.userRepo.SetAvatarID(ctx, userID, fileID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *UserUseCase) GetAvatarLink(ctx context.Context, userID int64) (string, error) {
+	avatarID, err := u.userRepo.GetAvatarID(ctx, userID)
+	if err != nil {
+		if errx, ok := err.(*errorx.Error); ok && errorx.IsNotFound(errx) {
+			return u.fileUsecase.GetFileLink(ctx, 0)
+		}
+		return "", err
+	}
+	return u.fileUsecase.GetFileLink(ctx, avatarID)
 }
 
 // ValidUsername 验证用户

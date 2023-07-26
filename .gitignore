@@ -24,4 +24,5 @@ log/
 bin/
 start.sh
 
+static/
 configs/

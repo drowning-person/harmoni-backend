@@ -22,7 +22,7 @@ func main() {
 		panic(err)
 	}
 
-	app, clean, err := initApplication(cfg.App, cfg.DB, cfg.Redis, cfg.Auth, cfg.Email, cfg.MessageQueue, cfg.Log)
+	app, clean, err := initApplication(cfg.App, cfg.DB, cfg.Redis, cfg.Auth, cfg.Email, cfg.MessageQueue, cfg.FileStorage, cfg.Log)
 	defer clean()
 	if err != nil {
 		panic(err)

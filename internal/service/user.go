@@ -42,9 +42,14 @@ func (s *UserService) GetUserByUserID(ctx context.Context, req *userentity.GetUs
 	} else if !exist {
 		return nil, errorx.NotFound(reason.UserNotFound)
 	}
+	link, err := s.uc.GetAvatarLink(ctx, user.UserID)
+	if err != nil {
+		s.logger.Errorln(err)
+		return nil, err
+	}
 
 	return &userentity.GetUserDetailReply{
-		UserDetail: userentity.ConvertUserToDetailDisplay(user),
+		UserDetail: userentity.ConvertUserToDetailDisplay(user, link),
 	}, nil
 }
 
@@ -65,7 +70,12 @@ func (s *UserService) GetUsers(ctx context.Context, req *userentity.GetUsersRequ
 	}
 
 	for _, user := range users.Data {
-		res.Data = append(res.Data, userentity.ConvertUserToDisplay(&user))
+		link, err := s.uc.GetAvatarLink(ctx, user.UserID)
+		if err != nil {
+			s.logger.Errorln(err)
+			return nil, err
+		}
+		res.Data = append(res.Data, userentity.ConvertUserToDisplay(&user, link))
 	}
 
 	return &userentity.GetUsersReply{
@@ -116,8 +126,14 @@ func (s *UserService) RegisterByEmail(ctx context.Context, req *userentity.UserR
 		return nil, err
 	}
 
+	link, err := s.uc.GetAvatarLink(ctx, user.UserID)
+	if err != nil {
+		s.logger.Errorln(err)
+		return nil, err
+	}
+
 	return &userentity.UserRegisterReply{
-		User:         userentity.ConvertUserToDisplay(&user),
+		User:         userentity.ConvertUserToDisplay(&user, link),
 		AccessToken:  token,
 		RefreshToken: refreshToken,
 	}, nil
@@ -151,8 +167,14 @@ func (s *UserService) Login(ctx context.Context, req *userentity.UserLoginRequse
 		return nil, err
 	}
 
+	link, err := s.uc.GetAvatarLink(ctx, user.UserID)
+	if err != nil {
+		s.logger.Errorln(err)
+		return nil, err
+	}
+
 	return &userentity.UserLoginReply{
-		User:         userentity.ConvertUserToDisplay(user),
+		User:         userentity.ConvertUserToDisplay(user, link),
 		AccessToken:  token,
 		RefreshToken: refreshToken,
 	}, nil

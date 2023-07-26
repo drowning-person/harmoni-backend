@@ -73,7 +73,12 @@ func (s *FollowService) GetFollowers(ctx context.Context, req *followentity.GetF
 	}
 
 	for i, v := range users {
-		res.Data[i] = userentity.ConvertUserToDisplay(&v)
+		link, err := s.uc.GetAvatarLink(ctx, v.UserID)
+		if err != nil {
+			s.logger.Errorln(err)
+			return nil, err
+		}
+		res.Data[i] = userentity.ConvertUserToDisplay(&v, link)
 	}
 
 	return &followentity.GetFollowerReply{Page: res}, nil
