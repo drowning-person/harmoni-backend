@@ -60,7 +60,11 @@ func (u *FollowUseCase) GetFollowingObjects(ctx context.Context, objectIDs []int
 
 		objects := make([]any, len(users))
 		for i := 0; i < len(users); i++ {
-			objects[i] = userentity.ConvertUserToDisplay(&users[i])
+			link, err := u.userUseCase.GetAvatarLink(ctx, users[i].UserID)
+			if err != nil {
+				return nil, err
+			}
+			objects[i] = userentity.ConvertUserToDisplay(&users[i], link)
 		}
 		return objects, nil
 

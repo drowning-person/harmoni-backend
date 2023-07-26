@@ -175,3 +175,25 @@ func (r *UserRepo) UpdateLikeCount(ctx context.Context, userID int64, count int6
 
 	return nil
 }
+
+func (r *UserRepo) SetAvatarID(ctx context.Context, userID int64, avatarID int64) error {
+	if err := r.db.WithContext(ctx).
+		Model(&userentity.User{}).
+		Where("user_id = ?", userID).
+		UpdateColumn("avatar", avatarID).Error; err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	return nil
+}
+
+func (r *UserRepo) GetAvatarID(ctx context.Context, userID int64) (int64, error) {
+	user := userentity.User{}
+	if err := r.db.WithContext(ctx).
+		Select("avatar").
+		Where("user_id = ?", userID).
+		First(&user).Error; err != nil {
+		return 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return user.Avatar, nil
+}

@@ -51,7 +51,12 @@ func (is *Int64Slice) UnmarshalJSON(data []byte) error {
 type BaseModel struct {
 	ID uint64 `gorm:"primarykey"`
 	TimeMixin
-	SoftDeletes
+	SoftDelete
+}
+
+type BaseModelWithNoSoftDelete struct {
+	ID uint64 `gorm:"primarykey"`
+	TimeMixin
 }
 
 type TimeMixin struct {
@@ -59,6 +64,6 @@ type TimeMixin struct {
 	UpdatedAt time.Time
 }
 
-type SoftDeletes struct {
+type SoftDelete struct {
 	DeletedAt gorm.DeletedAt
 }

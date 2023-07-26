@@ -17,11 +17,13 @@ type Config struct {
 	Redis        *Redis        `mapstructure:"redis"`
 	Email        *Email        `mapstructure:"email"`
 	MessageQueue *MessageQueue `mapstructure:"message_queue"`
+	FileStorage  *FileStorage  `mapstructure:"file_storage"`
 }
 
 type App struct {
 	Debug     bool   `default:"false" mapstructure:"debug"`
 	Addr      string `default:"127.0.0.1:80" mapstructure:"addr"`
+	BaseURL   string `mapstructure:"base_url"`
 	StartTime string `mapstructure:"start_time"`
 	AppID     int64  `mapstructure:"app_id"`
 }
@@ -30,6 +32,7 @@ func SetAppDefault(v *viper.Viper) {
 	v.SetDefault("app", map[string]interface{}{
 		"debug":      false,
 		"addr":       "127.0.0.1:80",
+		"base_url":   "localhost",
 		"start_time": time.Now().Format("2006-01-02"),
 		"app_id":     1,
 	})
@@ -208,6 +211,24 @@ type RabbitMQConf struct {
 	VHost    string `mapstructure:"vhost,omitempty"`
 }
 
+type Local struct {
+	Path string `mapstructure:"path,omitempty"`
+}
+
+type FileStorage struct {
+	Type  string `mapstructure:"type,omitempty"`
+	Local *Local `mapstructure:"local,omitempty"`
+}
+
+func SetFileStorageDefault(v *viper.Viper) {
+	v.SetDefault("file_storage", map[string]interface{}{
+		"type": "local",
+		"local": map[string]interface{}{
+			"path": "./static",
+		},
+	})
+}
+
 func ReadConfig(filePath string) (*Config, error) {
 	v := viper.New()
 
@@ -217,6 +238,7 @@ func ReadConfig(filePath string) (*Config, error) {
 	SetLogDefault(v)
 	SetRedisDefault(v)
 	SetEmailDefault(v)
+	SetFileStorageDefault(v)
 
 	filename := path.Base(filePath)
 	fileext := path.Ext(filePath)

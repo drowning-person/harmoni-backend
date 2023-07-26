@@ -19,6 +19,7 @@ import (
 	"harmoni/internal/repository/auth"
 	"harmoni/internal/repository/comment"
 	"harmoni/internal/repository/email"
+	"harmoni/internal/repository/file"
 	"harmoni/internal/repository/follow"
 	"harmoni/internal/repository/like"
 	"harmoni/internal/repository/post"
@@ -33,7 +34,7 @@ import (
 
 // Injectors from wire.go:
 
-func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *conf.Auth, emailConf *conf.Email, messageConf *conf.MessageQueue, logConf *conf.Log) (*Application, func(), error) {
+func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, authConf *conf.Auth, emailConf *conf.Email, messageConf *conf.MessageQueue, fileConf *conf.FileStorage, logConf *conf.Log) (*Application, func(), error) {
 	zapLogger, err := logger.NewZapLogger(logConf)
 	if err != nil {
 		return nil, nil, err
@@ -65,6 +66,8 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 		cleanup()
 		return nil, nil, err
 	}
+	fileRepo := file.NewFileRepository(db, uniqueIDRepo, sugaredLogger)
+	fileUseCase := usecase.NewFileUseCase(appConf, fileConf, fileRepo, sugaredLogger)
 	likeRepo := like.NewLikeRepo(db, client, userRepo, sugaredLogger)
 	tagRepo := tag.NewTagRepo(db, client, uniqueIDRepo, sugaredLogger)
 	postRepo := post.NewPostRepo(db, client, tagRepo, uniqueIDRepo, sugaredLogger)
@@ -75,7 +78,7 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 		cleanup()
 		return nil, nil, err
 	}
-	userUseCase := usecase.NewUserUseCase(userRepo, authUseCase, likeUsecase, sugaredLogger)
+	userUseCase := usecase.NewUserUseCase(userRepo, authUseCase, fileUseCase, likeUsecase, sugaredLogger)
 	accountUsecase := usecase.NewAccountUsecase(authUseCase, userRepo, emailUsecase, userUseCase, zapLogger)
 	accountService := service.NewAccountService(accountUsecase, sugaredLogger)
 	jwtAuthMiddleware := middleware.NewJwtAuthMiddleware(authUseCase)
@@ -85,6 +88,8 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 	followUseCase := usecase.NewFollowUseCase(followRepo, userUseCase, tagUseCase, sugaredLogger)
 	followService := service.NewFollowService(followUseCase, userUseCase, sugaredLogger)
 	followHandler := handler.NewFollowHandler(followService, sugaredLogger)
+	fileService := service.NewFileService(fileUseCase, userUseCase, sugaredLogger)
+	fileHandler := handler.NewFileHandler(fileService, sugaredLogger)
 	userService := service.NewUserService(userUseCase, authUseCase, accountUsecase, sugaredLogger)
 	userHandler := handler.NewUserHandler(userService)
 	postUseCase := usecase.NewPostUseCase(postRepo, likeUsecase, tagRepo, sugaredLogger)
@@ -100,7 +105,7 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 	timeLinePullUsecase := usecase.NewTimeLineUsecase(followRepo, postRepo, sugaredLogger)
 	timeLineService := service.NewTimeLineService(timeLinePullUsecase, sugaredLogger)
 	timeLineHandler := handler.NewTimeLineHandler(timeLineService)
-	harmoniAPIRouter := router.NewHarmoniAPIRouter(accountHandler, followHandler, userHandler, postHandler, tagHandler, commentHandler, likeHandler, timeLineHandler)
+	harmoniAPIRouter := router.NewHarmoniAPIRouter(accountHandler, followHandler, fileHandler, userHandler, postHandler, tagHandler, commentHandler, likeHandler, timeLineHandler)
 	app := server.NewHTTPServer(appConf, zapLogger, harmoniAPIRouter, jwtAuthMiddleware)
 	scheduledTaskManager, cleanup4, err := cron.NewScheduledTaskManager(messageConf, likeUsecase, sugaredLogger)
 	if err != nil {

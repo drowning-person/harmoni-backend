@@ -17,12 +17,14 @@ type User struct {
 	Password    string `json:"-" gorm:"not null;type:varchar(255)"`
 	FollowCount int64  `gorm:"not null;default:0"`
 	LikeCount   int64  `gorm:"not null;default:0"`
+	Avatar      int64  `json:"avatar" gorm:"type:varchar(255)"`
 }
 
 type UserBasicInfo struct {
 	UserID int64  `json:"user_id,string,omitempty"`
 	Name   string `json:"name,omitempty"`
 	Email  string `json:"email,omitempty"`
+	Avatar string `json:"avatar,omitempty"`
 }
 
 type UserDetail struct {
@@ -35,23 +37,20 @@ func (User) TableName() string {
 	return "user"
 }
 
-func ConvertUserToDisplay(u *User) UserBasicInfo {
+func ConvertUserToDisplay(u *User, avatarLink string) UserBasicInfo {
 	return UserBasicInfo{
 		UserID: u.UserID,
 		Name:   u.Name,
 		Email:  u.Email,
+		Avatar: avatarLink,
 	}
 }
 
-func ConvertUserToDetailDisplay(u *User) UserDetail {
+func ConvertUserToDetailDisplay(u *User, avatarLink string) UserDetail {
 	return UserDetail{
-		UserBasicInfo: UserBasicInfo{
-			UserID: u.UserID,
-			Name:   u.Name,
-			Email:  u.Email,
-		},
-		FollowCount: u.FollowCount,
-		LikeCount:   u.LikeCount,
+		UserBasicInfo: ConvertUserToDisplay(u, avatarLink),
+		FollowCount:   u.FollowCount,
+		LikeCount:     u.LikeCount,
 	}
 }
 
@@ -89,4 +88,7 @@ type UserRepository interface {
 
 	GetLikeCount(ctx context.Context, userID int64) (int64, bool, error)
 	UpdateLikeCount(ctx context.Context, userID int64, likeCount int64) error
+
+	SetAvatarID(ctx context.Context, userID int64, fileID int64) error
+	GetAvatarID(ctx context.Context, userID int64) (int64, error)
 }

@@ -14,4 +14,5 @@ var ProviderSetUsecase = wire.NewSet(
 	NewUserUseCase,
 	NewLikeUsecase,
 	NewTimeLineUsecase,
+	NewFileUseCase,
 )

@@ -33,6 +33,7 @@ func initApplication(
 	authConf *conf.Auth,
 	emailConf *conf.Email,
 	messageConf *conf.MessageQueue,
+	fileConf *conf.FileStorage,
 	logConf *conf.Log) (*Application, func(), error) {
 	panic(wire.Build(
 		// validator.InitTrans("zh"),

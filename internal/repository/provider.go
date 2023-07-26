@@ -6,6 +6,7 @@ import (
 	authentity "harmoni/internal/entity/auth"
 	commententity "harmoni/internal/entity/comment"
 	eamilentity "harmoni/internal/entity/email"
+	fileentity "harmoni/internal/entity/file"
 	followentity "harmoni/internal/entity/follow"
 	likeentity "harmoni/internal/entity/like"
 	postentity "harmoni/internal/entity/post"
@@ -15,6 +16,7 @@ import (
 	"harmoni/internal/repository/auth"
 	"harmoni/internal/repository/comment"
 	"harmoni/internal/repository/email"
+	"harmoni/internal/repository/file"
 	"harmoni/internal/repository/follow"
 	"harmoni/internal/repository/like"
 	"harmoni/internal/repository/post"
@@ -40,6 +42,7 @@ var ProviderSetRepo = wire.NewSet(
 	wire.Bind(new(userentity.UserRepository), new(*user.UserRepo)),
 	wire.Bind(new(likeentity.LikeRepository), new(*like.LikeRepo)),
 	wire.Bind(new(redis.UniversalClient), new(*redis.Client)),
+	wire.Bind(new(fileentity.FileRepository), new(*file.FileRepo)),
 
 	auth.NewAuthRepo,
 	comment.NewCommentRepo,
@@ -50,4 +53,5 @@ var ProviderSetRepo = wire.NewSet(
 	unique.NewUniqueIDRepo,
 	user.NewUserRepo,
 	like.NewLikeRepo,
+	file.NewFileRepository,
 )
