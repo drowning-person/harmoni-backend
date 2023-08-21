@@ -79,6 +79,8 @@ func (u *UserUseCase) GetByUserID(ctx context.Context, userID int64) (*userentit
 	user, exist, err := u.userRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, false, err
+	} else if !exist {
+		return nil, false, nil
 	}
 
 	count, err := u.likeUsecase.LikeCount(ctx, &like.Like{LikingID: userID, LikeType: like.LikeUser})
