@@ -39,9 +39,12 @@ func HandleResponse(c *fiber.Ctx, err error, data interface{}) error {
 }
 
 func Parser(c *fiber.Ctx, out interface{}) error {
-	if err := c.BodyParser(out); err != nil {
-		if err != fiber.ErrUnprocessableEntity {
-			return err
+	method := c.Method()
+	if method != http.MethodHead && method != http.MethodGet {
+		if err := c.BodyParser(out); err != nil {
+			if err != fiber.ErrUnprocessableEntity {
+				return err
+			}
 		}
 	}
 	if err := c.ParamsParser(out); err != nil {

@@ -3,6 +3,8 @@ package file
 import (
 	"context"
 	"harmoni/internal/entity"
+	"harmoni/internal/pkg/filesystem/upload"
+	"time"
 )
 
 const (
@@ -22,6 +24,7 @@ type File struct {
 	Path   string `gorm:"not null"`
 	Ext    string `gorm:"not null"`
 	Hash   string `gorm:"not null"`
+	ETag   string `gorm:"not null"`
 	Size   uint64 `gorm:"not null"`
 }
 
@@ -34,4 +37,9 @@ type FileRepository interface {
 	Save(ctx context.Context, file *File) (*File, error)
 	GetByFileID(ctx context.Context, fileID int64) (*File, error)
 	GetByFileHash(ctx context.Context, fileHash string) (*File, error)
+	UpdatePartInfo(ctx context.Context, file *File) error
+
+	CreateUploadSession(ctx context.Context, uploadSession *upload.UploadSession, ttl time.Duration) error
+	GetUploadSession(ctx context.Context, uploadID string) (*upload.UploadSession, error)
+	DeleteUploadSession(ctx context.Context, uploadID string) error
 }

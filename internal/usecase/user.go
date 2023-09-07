@@ -7,6 +7,7 @@ import (
 	userentity "harmoni/internal/entity/user"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
+	fileusecase "harmoni/internal/usecase/file"
 	"regexp"
 	"unicode/utf8"
 
@@ -17,7 +18,7 @@ import (
 type UserUseCase struct {
 	userRepo    userentity.UserRepository
 	authUsecase *AuthUseCase
-	fileUsecase *FileUseCase
+	fileUsecase *fileusecase.FileUseCase
 	likeUsecase *LikeUsecase
 	logger      *zap.SugaredLogger
 	reg         *regexp.Regexp
@@ -26,7 +27,7 @@ type UserUseCase struct {
 func NewUserUseCase(
 	userRepo userentity.UserRepository,
 	authUsecase *AuthUseCase,
-	fileUsecase *FileUseCase,
+	fileUsecase *fileusecase.FileUseCase,
 	likeUsecase *LikeUsecase,
 	logger *zap.SugaredLogger,
 ) *UserUseCase {

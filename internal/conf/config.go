@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"harmoni/internal/pkg/filesystem/policy"
 	"path"
 	"runtime"
 	"strings"
@@ -16,8 +17,8 @@ type Config struct {
 	Log          *Log          `mapstructure:"log"`
 	Redis        *Redis        `mapstructure:"redis"`
 	Email        *Email        `mapstructure:"email"`
-	MessageQueue *MessageQueue `mapstructure:"message_queue"`
-	FileStorage  *FileStorage  `mapstructure:"file_storage"`
+	MessageQueue *MessageQueue `mapstructure:"messageQueue"`
+	FileStorage  *FileStorage  `mapstructure:"fileStorage"`
 }
 
 type App struct {
@@ -211,20 +212,37 @@ type RabbitMQConf struct {
 	VHost    string `mapstructure:"vhost,omitempty"`
 }
 
-type Local struct {
-	Path string `mapstructure:"path,omitempty"`
+type FilePolicyOption struct {
+	// 允许的文件扩展名
+	FileType []string `json:"fileType"`
+	// 分片上传的分片大小
+	ChunkSize uint64 `json:"chunkSize,omitempty"`
+}
+
+type FilePolicy struct {
+	Type       string `mapstructure:"type"`
+	BucketName string `mapstructure:"bucketName"`
+	MaxSize    uint64 `mapstructure:"maxSize"`
+	// key type, value dir
+	DirRule map[policy.FileType]string `mapstructure:"dirRule"`
+	Option  FilePolicyOption           `mapstructure:"option"`
 }
 
 type FileStorage struct {
-	Type  string `mapstructure:"type,omitempty"`
-	Local *Local `mapstructure:"local,omitempty"`
+	UploadSessionTimeout time.Duration `mapstructure:"uploadSessionTimeout"`
+	Policy               *FilePolicy   `mapstructure:"policy,omitempty"`
 }
 
 func SetFileStorageDefault(v *viper.Viper) {
 	v.SetDefault("file_storage", map[string]interface{}{
-		"type": "local",
-		"local": map[string]interface{}{
-			"path": "./static",
+		"uploadSessionTimeout": "2h",
+		"policy": FilePolicy{
+			Type:       "local",
+			BucketName: "./static",
+			MaxSize:    1024 * 1024 * 100,
+			Option: FilePolicyOption{
+				ChunkSize: 5 * 1024 * 1024,
+			},
 		},
 	})
 }

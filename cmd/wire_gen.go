@@ -13,13 +13,14 @@ import (
 	"harmoni/internal/data/mysql"
 	"harmoni/internal/data/redis"
 	"harmoni/internal/handler"
+	"harmoni/internal/pkg/filesystem"
 	"harmoni/internal/pkg/logger"
 	"harmoni/internal/pkg/middleware"
 	"harmoni/internal/pkg/snowflakex"
 	"harmoni/internal/repository/auth"
 	"harmoni/internal/repository/comment"
 	"harmoni/internal/repository/email"
-	"harmoni/internal/repository/file"
+	file2 "harmoni/internal/repository/file"
 	"harmoni/internal/repository/follow"
 	"harmoni/internal/repository/like"
 	"harmoni/internal/repository/post"
@@ -30,6 +31,7 @@ import (
 	"harmoni/internal/server"
 	"harmoni/internal/service"
 	"harmoni/internal/usecase"
+	"harmoni/internal/usecase/file"
 )
 
 // Injectors from wire.go:
@@ -66,8 +68,15 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 		cleanup()
 		return nil, nil, err
 	}
-	fileRepo := file.NewFileRepository(db, uniqueIDRepo, sugaredLogger)
-	fileUseCase := usecase.NewFileUseCase(appConf, fileConf, fileRepo, sugaredLogger)
+	policy := file.NewPolicy(fileConf)
+	fileSystem, err := filesystem.NewFileSystem(policy, client)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	fileRepo := file2.NewFileRepository(db, client, uniqueIDRepo, sugaredLogger)
+	fileUseCase := file.NewFileUseCase(appConf, client, fileConf, fileSystem, fileRepo, sugaredLogger)
 	likeRepo := like.NewLikeRepo(db, client, userRepo, sugaredLogger)
 	tagRepo := tag.NewTagRepo(db, client, uniqueIDRepo, sugaredLogger)
 	postRepo := post.NewPostRepo(db, client, tagRepo, uniqueIDRepo, sugaredLogger)

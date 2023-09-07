@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
+	"harmoni/internal/entity"
 	"harmoni/internal/entity/paginator"
 	tagentity "harmoni/internal/entity/tag"
 	"strconv"
@@ -71,6 +72,34 @@ func (is Int64toString) Value() (driver.Value, error) {
 		s = append(s, strconv.FormatInt(v, 10))
 	}
 	return strings.Join(s, ","), nil
+}
+
+type PostContentT int
+
+const (
+	ContentTypeTitle PostContentT = iota + 1
+	ContentTypeText
+	ContentTypeImage
+	ContentTypeVideo
+	ContentTypeAudio
+	ContentTypeLink
+)
+
+var (
+	mediaContentType = []PostContentT{
+		ContentTypeImage,
+		ContentTypeVideo,
+		ContentTypeAudio,
+	}
+)
+
+type PostContent struct {
+	*entity.BaseModelWithNoSoftDelete
+	PostID  int64        `json:"post_id"`
+	UserID  int64        `json:"user_id"`
+	Content string       `json:"content"`
+	Type    PostContentT `json:"type"`
+	Sort    int64        `json:"sort"`
 }
 
 type Post struct {
