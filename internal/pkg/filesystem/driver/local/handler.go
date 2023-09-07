@@ -171,7 +171,7 @@ func (ls LocalStorage) Put(ctx context.Context, file fsctx.FileHeader) (string, 
 
 	hasher := md5.New()
 	hasher.Write(data)
-	eTag := hex.EncodeToString(hasher.Sum(nil))
+	hashed := hex.EncodeToString(hasher.Sum(nil))
 	if fileInfo.IsPart {
 		ls.rdb.ZAdd(ctx, getStorePrefix(*fileInfo.UploadSessionID), redis.Z{
 			Score: float64(fileInfo.PartNumber),
@@ -180,12 +180,12 @@ func (ls LocalStorage) Put(ctx context.Context, file fsctx.FileHeader) (string, 
 				Size:         len(data),
 				Path:         dst,
 				LastModified: time.Now().Format("2006-01-02 15:04:05.000"),
-				Etag:         eTag,
+				Etag:         hashed,
 			}).ToJSON(),
 		})
 	}
 
-	return eTag, nil
+	return hashed, nil
 }
 
 func (ls LocalStorage) Merge(ctx context.Context, file fsctx.FileHeader, parts []driver.Part) (string, error) {

@@ -61,6 +61,38 @@ func (h *FileHandler) GetFileContent(c *fiber.Ctx) error {
 	return c.Type(filepath.Ext(req.FilePath)).SendStream(reply.Content)
 }
 
+func (h *FileHandler) UploadObject(c *fiber.Ctx) error {
+	req := fileentity.UploadObjectRequest{}
+	if err := fiberx.ParseAndCheck(c, &req); err != nil {
+		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
+	}
+
+	header, err := c.FormFile("file")
+	if err != nil {
+		h.logger.Errorln(err)
+		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError), nil)
+	}
+	req.Content, req.FileName, req.Size, err = common.ConvertMultipartFile(header)
+	if err != nil {
+		h.logger.Errorln(err)
+		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError), nil)
+	}
+	req.UserID = middleware.GetClaimsFromCtx(c.UserContext()).UserID
+
+	reply, err := h.ffs.UploadObject(c.Context(), &req)
+	return fiberx.HandleResponse(c, err, reply)
+}
+
+func (h *FileHandler) IsObjectUploaded(c *fiber.Ctx) error {
+	req := fileentity.IsObjectUploadedRequest{}
+	if err := fiberx.ParseAndCheck(c, &req); err != nil {
+		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
+	}
+
+	reply, err := h.ffs.IsObjectUploaded(c.Context(), &req)
+	return fiberx.HandleResponse(c, err, reply)
+}
+
 func (h *FileHandler) UploadPrepare(c *fiber.Ctx) error {
 	req := fileentity.UploadPrepareRequest{}
 	if err := fiberx.ParseAndCheck(c, &req); err != nil {

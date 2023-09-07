@@ -62,6 +62,34 @@ func (s *FileService) GetFileContent(ctx context.Context, req *fileentity.GetFil
 	return &fileentity.GetFileContentResponse{Content: content}, nil
 }
 
+func (s *FileService) UploadObject(ctx context.Context, req *fileentity.UploadObjectRequest) (*fileentity.UploadObjectResponse, error) {
+	file, err := s.fc.Save(ctx, &fileentity.File{
+		Name: req.FileName,
+		Size: uint64(req.Size),
+	}, req.Content)
+	if err != nil {
+		s.logger.Errorln(err)
+		return nil, err
+	}
+
+	link, err := s.fc.GetFileLink(ctx, file.FileID)
+	if err != nil {
+		s.logger.Errorln(err)
+		return nil, err
+	}
+
+	return &fileentity.UploadObjectResponse{Location: link}, nil
+}
+
+func (s *FileService) IsObjectUploaded(ctx context.Context, req *fileentity.IsObjectUploadedRequest) (*fileentity.IsObjectUploadedResponse, error) {
+	location, err := s.fc.IsObjectUploaded(ctx, req.Hash)
+	if err != nil {
+		s.logger.Errorln(err)
+		return nil, err
+	}
+	return &fileentity.IsObjectUploadedResponse{Location: location}, nil
+}
+
 func (s *FileService) UploadPrepare(ctx context.Context, req *fileentity.UploadPrepareRequest) (*fileentity.CreateUploadSessionResponse, error) {
 	credential, err := s.fc.UploadPrepare(ctx, req.Key, req.MD5, req.UserID)
 	if err != nil {

@@ -36,14 +36,22 @@ type GetFileContentResponse struct {
 	Content response.RSCloser
 }
 
-type UploadRequest struct {
+type UploadObjectRequest struct {
 	UserID   int64             `json:"-"`
 	FileName string            `json:"file_name,omitempty"`
 	Size     int64             `json:"size,omitempty"`
 	Content  io.ReadSeekCloser `json:"-"`
 }
 
-type UploadResponse struct {
+type UploadObjectResponse struct {
+	Location string `json:"location"`
+}
+
+type IsObjectUploadedRequest struct {
+	Hash string `query:"hash" validate:"required"`
+}
+
+type IsObjectUploadedResponse struct {
 	Location string `json:"location"`
 }
 

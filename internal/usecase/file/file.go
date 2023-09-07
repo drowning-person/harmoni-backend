@@ -132,6 +132,17 @@ func (u *FileUseCase) GetFileContent(ctx context.Context, filepath string) (resp
 	return content, nil
 }
 
+func (u *FileUseCase) IsObjectUploaded(ctx context.Context, hash string) (string, error) {
+	file, err := u.fileRepository.GetByFileHash(ctx, hash)
+	if err != nil {
+		return "", err
+	} else if file == nil {
+		return "", nil
+	}
+
+	return u.GetFileLink(ctx, file.FileID)
+}
+
 func (u *FileUseCase) UploadPrepare(ctx context.Context, key string, md5 string, userID int64) (*upload.UploadCredential, error) {
 	defer u.fs.CleanHooks("")
 	if file, err := u.fileRepository.GetByFileHash(ctx, md5); err != nil {
