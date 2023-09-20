@@ -229,6 +229,7 @@ type FilePolicy struct {
 }
 
 type FileStorage struct {
+	DefaultAvatar        string        `mapstructure:"defaultAvatar"`
 	UploadSessionTimeout time.Duration `mapstructure:"uploadSessionTimeout"`
 	Policy               *FilePolicy   `mapstructure:"policy,omitempty"`
 }

@@ -64,6 +64,9 @@ func (r *FileRepo) Save(ctx context.Context, file *fileentity.File) (*fileentity
 func (r *FileRepo) GetByFileID(ctx context.Context, fileID int64) (*fileentity.File, error) {
 	var file fileentity.File
 	if err := r.db.Where("file_id = ?", fileID).First(&file).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errorx.NotFound(reason.FileNotFound)
+		}
 		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 	return &file, nil

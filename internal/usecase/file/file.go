@@ -16,6 +16,7 @@ import (
 	"harmoni/internal/pkg/filesystem/upload"
 	"harmoni/internal/pkg/reason"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,8 +45,7 @@ func NewFileUseCase(
 	fileRepository fileentity.FileRepository,
 	logger *zap.SugaredLogger,
 ) *FileUseCase {
-
-	return &FileUseCase{
+	u := &FileUseCase{
 		appConf:        appConf,
 		rdb:            rdb,
 		fileConf:       fileConf,
@@ -53,6 +53,10 @@ func NewFileUseCase(
 		fileRepository: fileRepository,
 		logger:         logger,
 	}
+	if u.fileConf.DefaultAvatar == "" {
+		u.fileConf.DefaultAvatar = basic_avatar
+	}
+	return u
 }
 
 const (
@@ -101,24 +105,45 @@ func (u *FileUseCase) Save(ctx context.Context, file *fileentity.File, fileConte
 	return file, nil
 }
 
+func (u *FileUseCase) getFilelinkCore(ctx context.Context, path string) (string, error) {
+	rootURL := ""
+	if u.fs.Policy.Type == string(fileentity.LocalStorageType) {
+		rootURL = u.appConf.BaseURL
+	}
+	link, err := u.fs.Handler.Source(ctx, rootURL, path, 0, false, 0)
+	if err != nil {
+		u.logger.Errorf("get file link err {%s}", err)
+		return "", errorx.NotFound(reason.FileNotFound)
+	}
+
+	return link, nil
+}
+
+func (u *FileUseCase) getDefaultAvatar(ctx context.Context) (string, error) {
+	if u.fileConf.DefaultAvatar == "" {
+		return url.JoinPath(u.appConf.BaseURL, basic_avatar)
+	}
+	urll, err := url.Parse(u.fileConf.DefaultAvatar)
+	if err != nil {
+		u.logger.Errorln(err)
+		return "", errorx.NotFound(reason.FileNotFound)
+	}
+	if urll.Scheme == "" {
+		return u.getFilelinkCore(ctx, u.fileConf.DefaultAvatar)
+	}
+	return urll.String(), nil
+}
+
 func (u *FileUseCase) GetFileLink(ctx context.Context, fileID int64) (string, error) {
 	if fileID == 0 {
-		return filepath.Join(u.appConf.BaseURL, basic_avatar), nil
+		return u.getDefaultAvatar(ctx)
 	}
 	file, err := u.fileRepository.GetByFileID(ctx, fileID)
 	if err != nil {
 		return "", err
 	}
-	rootURL := ""
-	if u.fs.Policy.Type == string(fileentity.LocalStorageType) {
-		rootURL = u.appConf.BaseURL
-	}
-	link, err := u.fs.Handler.Source(ctx, rootURL, file.Path, 0, false, 0)
-	if err != nil {
-		return "", err
-	}
 
-	return link, nil
+	return u.getFilelinkCore(ctx, file.Path)
 }
 
 func (u *FileUseCase) GetFileContent(ctx context.Context, filepath string) (response.RSCloser, error) {
