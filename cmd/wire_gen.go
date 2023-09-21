@@ -68,6 +68,7 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 		cleanup()
 		return nil, nil, err
 	}
+	likeRepo := like.NewLikeRepo(db, client, userRepo, sugaredLogger)
 	policy := file.NewPolicy(fileConf)
 	fileSystem, err := filesystem.NewFileSystem(policy, client)
 	if err != nil {
@@ -77,21 +78,12 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 	}
 	fileRepo := file2.NewFileRepository(db, client, uniqueIDRepo, sugaredLogger)
 	fileUseCase := file.NewFileUseCase(appConf, client, fileConf, fileSystem, fileRepo, sugaredLogger)
-	likeRepo := like.NewLikeRepo(db, client, userRepo, sugaredLogger)
-	tagRepo := tag.NewTagRepo(db, client, uniqueIDRepo, sugaredLogger)
-	postRepo := post.NewPostRepo(db, client, tagRepo, uniqueIDRepo, sugaredLogger)
-	commentRepo := comment.NewCommentRepo(db, client, uniqueIDRepo, sugaredLogger)
-	likeUsecase, cleanup3, err := usecase.NewLikeUsecase(messageConf, likeRepo, postRepo, commentRepo, userRepo, sugaredLogger)
-	if err != nil {
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	userUseCase := usecase.NewUserUseCase(userRepo, authUseCase, fileUseCase, likeUsecase, sugaredLogger)
+	userUseCase := usecase.NewUserUseCase(likeRepo, userRepo, authUseCase, fileUseCase, sugaredLogger)
 	accountUsecase := usecase.NewAccountUsecase(authUseCase, userRepo, emailUsecase, userUseCase, zapLogger)
 	accountService := service.NewAccountService(accountUsecase, sugaredLogger)
 	jwtAuthMiddleware := middleware.NewJwtAuthMiddleware(authUseCase)
 	accountHandler := handler.NewAccountHandler(accountService, jwtAuthMiddleware, sugaredLogger)
+	tagRepo := tag.NewTagRepo(db, client, uniqueIDRepo, sugaredLogger)
 	followRepo := follow.NewFollowRepo(db, userRepo, tagRepo, uniqueIDRepo, sugaredLogger)
 	tagUseCase := usecase.NewTagUseCase(tagRepo, sugaredLogger)
 	followUseCase := usecase.NewFollowUseCase(followRepo, userUseCase, tagUseCase, sugaredLogger)
@@ -101,17 +93,25 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 	fileHandler := handler.NewFileHandler(fileService, sugaredLogger)
 	userService := service.NewUserService(userUseCase, authUseCase, accountUsecase, sugaredLogger)
 	userHandler := handler.NewUserHandler(userService)
-	postUseCase := usecase.NewPostUseCase(postRepo, likeUsecase, tagRepo, sugaredLogger)
+	postRepo := post.NewPostRepo(db, client, tagRepo, uniqueIDRepo, sugaredLogger)
+	postUseCase := usecase.NewPostUseCase(postRepo, likeRepo, userUseCase, tagUseCase, sugaredLogger)
 	postService := service.NewPostService(postUseCase, tagUseCase, sugaredLogger)
 	postHandler := handler.NewPostHandler(postService)
 	tagService := service.NewTagService(tagUseCase, sugaredLogger)
 	tagHandler := handler.NewTagHandler(tagService)
+	commentRepo := comment.NewCommentRepo(db, client, uniqueIDRepo, sugaredLogger)
+	likeUsecase, cleanup3, err := usecase.NewLikeUsecase(messageConf, likeRepo, postRepo, postUseCase, commentRepo, userRepo, sugaredLogger)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	commentUseCase := usecase.NewCommentUseCase(commentRepo, likeUsecase, sugaredLogger)
 	commentService := service.NewCommentService(commentUseCase, sugaredLogger)
 	commentHandler := handler.NewCommentHandler(commentService)
 	likeService := service.NewLikeUsecase(likeUsecase, sugaredLogger)
 	likeHandler := handler.NewLikeHandler(likeService, sugaredLogger)
-	timeLinePullUsecase := usecase.NewTimeLineUsecase(followRepo, postRepo, sugaredLogger)
+	timeLinePullUsecase := usecase.NewTimeLineUsecase(followRepo, postUseCase, sugaredLogger)
 	timeLineService := service.NewTimeLineService(timeLinePullUsecase, sugaredLogger)
 	timeLineHandler := handler.NewTimeLineHandler(timeLineService)
 	harmoniAPIRouter := router.NewHarmoniAPIRouter(accountHandler, followHandler, fileHandler, userHandler, postHandler, tagHandler, commentHandler, likeHandler, timeLineHandler)

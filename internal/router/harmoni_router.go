@@ -115,7 +115,7 @@ func (h *HarmoniAPIRouter) RegisterUnAuthHarmoniAPIRouter(r fiber.Router) {
 
 	// post
 	r.Get("/post", h.postHandler.GetPosts)
-	r.Get("/post/:id", h.postHandler.GetPostDetail)
+	r.Get("/post/:id", h.postHandler.GetPostInfo)
 
 	// commnet
 	r.Get("/comment", h.commentHandler.GetComments)

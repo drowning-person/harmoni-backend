@@ -10,32 +10,42 @@ import (
 )
 
 type TimeLinePullUsecase struct {
-	followRepo followentity.FollowRepository
-	postRepo   postentity.PostRepository
-	logger     *zap.SugaredLogger
+	followRepo  followentity.FollowRepository
+	postUseCase *PostUseCase
+	logger      *zap.SugaredLogger
 }
 
 func NewTimeLineUsecase(
 	followRepo followentity.FollowRepository,
-	postRepo postentity.PostRepository,
+	postUseCase *PostUseCase,
 	loggger *zap.SugaredLogger,
 ) *TimeLinePullUsecase {
 	return &TimeLinePullUsecase{
-		followRepo: followRepo,
-		postRepo:   postRepo,
-		logger:     loggger,
+		followRepo:  followRepo,
+		postUseCase: postUseCase,
+		logger:      loggger,
 	}
 }
 
-func (u *TimeLinePullUsecase) GetTimeLineByUserID(ctx context.Context, userID int64, queryCond *postentity.PostQuery) (paginator.Page[postentity.Post], error) {
-	return u.postRepo.GetByUserID(ctx, userID, queryCond)
+// GetTimeLineByUserID Get user's timeline
+func (u *TimeLinePullUsecase) GetTimeLineByUserID(ctx context.Context, authorID int64, userID int64, queryCond *postentity.PostQuery) (*paginator.Page[postentity.PostBasicInfo], error) {
+	return u.postUseCase.GetPage(ctx, &postentity.PostQuery{
+		PageCond:  queryCond.PageCond,
+		AuthorIDs: []int64{authorID},
+		UserID:    userID,
+	})
 }
 
-func (u *TimeLinePullUsecase) GetTimeLine(ctx context.Context, userID int64, queryCond *postentity.PostQuery) (paginator.Page[postentity.Post], error) {
+// GetTimeLine get user's followings timeline
+func (u *TimeLinePullUsecase) GetTimeLine(ctx context.Context, userID int64, queryCond *postentity.PostQuery) (*paginator.Page[postentity.PostBasicInfo], error) {
 	followings, err := u.followRepo.GetFollowingUsersAll(ctx, userID)
 	if err != nil {
-		return paginator.Page[postentity.Post]{}, err
+		return nil, err
 	}
 
-	return u.postRepo.GetByUserIDs(ctx, followings, queryCond)
+	return u.postUseCase.GetPage(ctx, &postentity.PostQuery{
+		PageCond:  queryCond.PageCond,
+		AuthorIDs: followings,
+		UserID:    userID,
+	})
 }

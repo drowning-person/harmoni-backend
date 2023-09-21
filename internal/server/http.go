@@ -34,7 +34,9 @@ func NewHTTPServer(
 	})
 
 	r.Use(cors.New())
-	r.Use(recover.New())
+	recoverconf := recover.ConfigDefault
+	recoverconf.EnableStackTrace = true
+	r.Use(recover.New(recoverconf))
 	r.Use(compress.New(compress.Config{
 		Level: compress.LevelBestCompression, // 1
 	}))

@@ -19,13 +19,17 @@ func NewPostHandler(ps *service.PostService) *PostHandler {
 	return &PostHandler{ps: ps}
 }
 
-func (h *PostHandler) GetPostDetail(c *fiber.Ctx) error {
-	req := postentity.GetPostDetailRequest{}
+func (h *PostHandler) GetPostInfo(c *fiber.Ctx) error {
+	req := postentity.GetPostInfoRequest{}
 	if err := fiberx.ParseAndCheck(c, &req); err != nil {
 		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
 	}
 
-	reply, err := h.ps.GetPostDetail(c.UserContext(), &req)
+	claim := middleware.GetClaimsFromCtx(c.UserContext())
+	if claim != nil {
+		req.UserID = claim.UserID
+	}
+	reply, err := h.ps.GetPostInfo(c.UserContext(), &req)
 
 	return fiberx.HandleResponse(c, err, reply)
 }
@@ -36,6 +40,10 @@ func (h *PostHandler) GetPosts(c *fiber.Ctx) error {
 		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
 	}
 
+	claim := middleware.GetClaimsFromCtx(c.UserContext())
+	if claim != nil {
+		req.UserID = claim.UserID
+	}
 	reply, err := h.ps.GetPosts(c.UserContext(), &req)
 
 	return fiberx.HandleResponse(c, err, reply)

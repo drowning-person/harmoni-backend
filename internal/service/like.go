@@ -39,7 +39,7 @@ func (s *LikeService) Like(ctx context.Context, req *likeentity.LikeRequest) (*l
 func (s *LikeService) GetLikings(ctx context.Context, req *likeentity.GetLikingsRequest) (*likeentity.GetLikingsReply[any], error) {
 	idPage, err := s.lc.ListLikingIDs(ctx, &likeentity.LikeQuery{
 		PageCond: req.PageCond,
-		UserID:   req.UserID,
+		UserID:   req.TargetUserID,
 		Type:     req.Type,
 	})
 	if err != nil {
@@ -54,12 +54,13 @@ func (s *LikeService) GetLikings(ctx context.Context, req *likeentity.GetLikings
 		Pages:       idPage.Pages,
 	}
 
-	res.Data, err = s.lc.GetLikingObjects(ctx, idPage.Data, req.Type)
+	tmp, err := s.lc.GetLikingObjects(ctx, req.UserID, idPage.Data, req.Type)
 	if err != nil {
 		s.logger.Error(err)
 		return nil, err
 	}
 
+	res.Data = append(res.Data, tmp)
 	return &likeentity.GetLikingsReply[any]{Page: res}, nil
 }
 

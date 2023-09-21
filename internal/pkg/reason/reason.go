@@ -70,6 +70,7 @@ const (
 	RankFailToMeetTheCondition       = "error.rank.fail_to_meet_the_condition"
 	LikeAlreadyExist                 = "error.like.already_exist"
 	LikeCancelFailToNotLiked         = "error.like.cancel_fail_to_not_liked"
+	LikeUnknownType                  = "error.like.unknown_type"
 	DisallowLikeYourSelf             = "error.object.disallow_like_your_self"
 	VoteRankFailToMeetTheCondition   = "error.rank.vote_fail_to_meet_the_condition"
 	ThemeNotFound                    = "error.theme.not_found"

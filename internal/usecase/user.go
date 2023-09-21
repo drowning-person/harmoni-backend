@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"context"
-	"harmoni/internal/entity/like"
+	likeentity "harmoni/internal/entity/like"
 	"harmoni/internal/entity/paginator"
 	userentity "harmoni/internal/entity/user"
 	"harmoni/internal/pkg/errorx"
@@ -16,26 +16,26 @@ import (
 )
 
 type UserUseCase struct {
+	likeRepo    likeentity.LikeRepository
 	userRepo    userentity.UserRepository
 	authUsecase *AuthUseCase
 	fileUsecase *fileusecase.FileUseCase
-	likeUsecase *LikeUsecase
 	logger      *zap.SugaredLogger
 	reg         *regexp.Regexp
 }
 
 func NewUserUseCase(
+	likeRepo likeentity.LikeRepository,
 	userRepo userentity.UserRepository,
 	authUsecase *AuthUseCase,
 	fileUsecase *fileusecase.FileUseCase,
-	likeUsecase *LikeUsecase,
 	logger *zap.SugaredLogger,
 ) *UserUseCase {
 	return &UserUseCase{
 		userRepo:    userRepo,
 		authUsecase: authUsecase,
 		fileUsecase: fileUsecase,
-		likeUsecase: likeUsecase,
+		likeRepo:    likeRepo,
 		logger:      logger,
 		reg:         regexp.MustCompile("^[-_!a-zA-Z0-9\u4e00-\u9fa5]+$"),
 	}
@@ -76,17 +76,33 @@ func (u *UserUseCase) VerifyPassword(ctx context.Context, password, hashedPwd st
 	return nil
 }
 
+func (u *UserUseCase) GetBasicByUserID(ctx context.Context, userID int64) (*userentity.UserBasicInfo, bool, error) {
+	user, exist, err := u.userRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, false, err
+	}
+
+	link, err := u.GetAvatarLink(ctx, userID)
+	if err != nil {
+		return nil, false, err
+	}
+
+	userBasicInfo := user.ToBasicInfo(link)
+	return &userBasicInfo, exist, nil
+}
+
 func (u *UserUseCase) GetByUserID(ctx context.Context, userID int64) (*userentity.User, bool, error) {
 	user, exist, err := u.userRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, false, err
 	}
 
-	count, err := u.likeUsecase.LikeCount(ctx, &like.Like{LikingID: userID, LikeType: like.LikeUser})
+	count, existCount, err := u.likeRepo.LikeCount(ctx, &likeentity.Like{LikingID: userID, LikeType: likeentity.LikeUser})
 	if err != nil {
 		return nil, false, err
+	} else if existCount {
+		user.LikeCount = count
 	}
-	user.LikeCount = count
 
 	return user, exist, nil
 }
