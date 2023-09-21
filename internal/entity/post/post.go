@@ -16,7 +16,7 @@ type Post struct {
 	PostID    int64   `gorm:"uniqueIndex"`
 	AuthorID  int64   `gorm:"index"`
 	Title     string  `gorm:"type:varchar(128)"`
-	Content   string  `gorm:"type:varchar(512)"`
+	Content   string  `gorm:"type:text"`
 	LikeCount int64   `gorm:"not null"`
 	TagIDs    []int64 `gorm:"-"`
 }
