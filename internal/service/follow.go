@@ -78,7 +78,7 @@ func (s *FollowService) GetFollowers(ctx context.Context, req *followentity.GetF
 			s.logger.Errorln(err)
 			return nil, err
 		}
-		res.Data[i] = userentity.ConvertUserToDisplay(&v, link)
+		res.Data[i] = v.ToBasicInfo(link)
 	}
 
 	return &followentity.GetFollowerReply{Page: res}, nil

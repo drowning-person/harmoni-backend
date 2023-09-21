@@ -142,20 +142,8 @@ func (r *PostRepo) GetByUserIDs(ctx context.Context, userIDs []int64, queryCond 
 
 func (r *PostRepo) BatchByIDs(ctx context.Context, postIDs []int64) ([]postentity.Post, error) {
 	posts := make([]postentity.Post, 0, len(postIDs))
-	if err := r.db.WithContext(ctx).Where("post_id IN ?", postIDs).Find(&posts).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errorx.NotFound(reason.PostNotFound)
-		}
-		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-	}
-
-	return posts, nil
-}
-
-func (r *PostRepo) BatchBasicInfoByIDs(ctx context.Context, postIDs []int64) ([]postentity.Post, error) {
-	posts := make([]postentity.Post, 0, len(postIDs))
 	if err := r.db.WithContext(ctx).
-		Select([]string{"author_id", "post_id", "title", "content"}).
+		Select([]string{"author_id", "post_id", "title", "content", "status"}).
 		Where("post_id IN ?", postIDs).Find(&posts).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errorx.NotFound(reason.PostNotFound)
@@ -194,14 +182,25 @@ func (r *PostRepo) UpdateLikeCount(ctx context.Context, postID int64, count int6
 
 func (r *PostRepo) GetPage(ctx context.Context, queryCond *postentity.PostQuery) (paginator.Page[postentity.Post], error) {
 	db := r.db.WithContext(ctx)
-
-	switch queryCond.QueryCond {
-	case "newest":
-		db.Order("created_at DESC")
-	case "score":
-		db.Order("like_count")
-	default:
-		db.Order("created_at DESC")
+	if len(queryCond.AuthorIDs) != 0 {
+		if len(queryCond.AuthorIDs) == 1 {
+			db = db.Where("author_id in ?", queryCond.AuthorIDs)
+		} else {
+			db = db.Where("author_id = ?", queryCond.AuthorIDs[0])
+		}
+		db = db.Order("created_at DESC")
+	} else {
+		if queryCond.TagID != 0 {
+			db = db.Joins("INNER JOIN post_tags AS pt ON pt.post_id = post.post_id").Where("pt.tag_id = ?", queryCond.TagID)
+		}
+		switch queryCond.QueryCond {
+		case postentity.PostOrderByCreatedTime:
+			db = db.Order("created_at DESC")
+		case postentity.PostOrderByLike:
+			db = db.Order("like_count")
+		default:
+			db = db.Order("created_at DESC")
+		}
 	}
 
 	postPage := paginator.Page[postentity.Post]{CurrentPage: queryCond.Page, PageSize: queryCond.PageSize}

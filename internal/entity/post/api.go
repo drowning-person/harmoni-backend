@@ -7,30 +7,33 @@ import (
 
 type GetPostsRequest struct {
 	entity.PageCond
-	Order string `query:"order" validate:"omitempty,oneof=newest score" label:"排序"`
+	UserID int64  `json:"-"`
+	Order  string `query:"order" validate:"omitempty,oneof=like rtime ctime" label:"排序"`
+	TagID  int64  `query:"tag_id"`
 }
 
 type GetPostsReply struct {
-	paginator.Page[PostDetail] `json:"posts"`
+	*paginator.Page[PostBasicInfo] `json:"posts"`
 }
 
-type GetPostDetailRequest struct {
+type GetPostInfoRequest struct {
+	UserID int64 `json:"-"`
 	PostID int64 `params:"id" label:"帖子ID"`
 }
 
-type GetPostDetailReply struct {
-	PostDetail
+type GetPostInfoReply struct {
+	PostInfo
 }
 
 type CreatePostRequest struct {
 	TagIDs  entity.Int64Slice `json:"tag_ids" validate:"lte=4" label:"话题ID"`
 	UserID  int64             `json:"-"`
 	Title   string            `json:"title" validate:"required,gte=3,lte=128" label:"帖子标题"`
-	Content string            `json:"content" validate:"required,gte=10,lte=512" label:"帖子内容"`
+	Content string            `json:"content" validate:"required,gte=6,lte=65535" label:"帖子内容"`
 }
 
 type CreatePostReply struct {
-	PostDetail
+	PostInfo
 }
 
 type LikePostRequest struct {

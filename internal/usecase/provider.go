@@ -1,6 +1,11 @@
 package usecase
 
-import "github.com/google/wire"
+import (
+	"harmoni/internal/pkg/filesystem"
+	"harmoni/internal/usecase/file"
+
+	"github.com/google/wire"
+)
 
 // ProviderSetUsecase is providers.
 var ProviderSetUsecase = wire.NewSet(
@@ -14,5 +19,7 @@ var ProviderSetUsecase = wire.NewSet(
 	NewUserUseCase,
 	NewLikeUsecase,
 	NewTimeLineUsecase,
-	NewFileUseCase,
+	file.NewPolicy,
+	filesystem.NewFileSystem,
+	file.NewFileUseCase,
 )

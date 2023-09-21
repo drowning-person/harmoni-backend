@@ -81,6 +81,19 @@ func (h *HarmoniAPIRouter) RegisterHarmoniAPIRouter(r fiber.Router) {
 
 	// commnet
 	r.Post("/comment", h.commentHandler.CreateComment)
+
+	// file upload
+	r.Get("/file/uploaded", h.fileHandler.IsObjectUploaded)
+	{
+		up := r.Group("/file/upload")
+		up.Get("/list/:key", h.fileHandler.ListParts)
+
+		up.Post("", h.fileHandler.UploadObject)
+		up.Post("/prepare", h.fileHandler.UploadPrepare)
+		up.Post("/part", h.fileHandler.UploadPart)
+		up.Post("/complete", h.fileHandler.UploadComplete)
+		up.Post("/abort", h.fileHandler.AbortMultipartUpload)
+	}
 }
 
 func (h *HarmoniAPIRouter) RegisterUnAuthHarmoniAPIRouter(r fiber.Router) {
@@ -102,10 +115,13 @@ func (h *HarmoniAPIRouter) RegisterUnAuthHarmoniAPIRouter(r fiber.Router) {
 
 	// post
 	r.Get("/post", h.postHandler.GetPosts)
-	r.Get("/post/:id", h.postHandler.GetPostDetail)
+	r.Get("/post/:id", h.postHandler.GetPostInfo)
 
 	// commnet
 	r.Get("/comment", h.commentHandler.GetComments)
+
+	// file
+	r.Get("/file/get/:filepath", h.fileHandler.GetFileContent)
 }
 
 func (h *HarmoniAPIRouter) RegisterStaticRouter(r fiber.Router) {

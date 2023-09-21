@@ -8,11 +8,12 @@ import (
 
 type GetUserTimeLineRequest struct {
 	entity.PageCond
-	UserID int64 `json:"user_id,omitempty"`
+	AuthorID int64 `json:"author_id" validate:"required"`
+	UserID   int64 `json:"-"`
 }
 
 type GetUserTimeLineReply struct {
-	paginator.Page[postentity.PostDetail]
+	paginator.Page[postentity.PostBasicInfo]
 }
 
 type GetHomeTimeLineRequest struct {
@@ -21,5 +22,5 @@ type GetHomeTimeLineRequest struct {
 }
 
 type GetHomeTimeLineReply struct {
-	paginator.Page[postentity.PostDetail]
+	paginator.Page[postentity.PostBasicInfo]
 }

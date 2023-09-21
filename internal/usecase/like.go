@@ -25,9 +25,9 @@ const (
 
 type LikeUsecase struct {
 	likeRepo    likeentity.LikeRepository
-	postRepo    postentity.PostRepository
 	userRepo    userentity.UserRepository
 	commentRepo commententity.CommentRepository
+	postUseCase *PostUseCase
 	consumers   *rabbitmq.RabbitListener
 	producers   *rabbitmq.RabbitMqSender
 	logger      *zap.SugaredLogger
@@ -37,15 +37,16 @@ func NewLikeUsecase(
 	conf *conf.MessageQueue,
 	likeRepo likeentity.LikeRepository,
 	postRepo postentity.PostRepository,
+	postUseCase *PostUseCase,
 	commentRepo commententity.CommentRepository,
 	userRepo userentity.UserRepository,
 	logger *zap.SugaredLogger) (*LikeUsecase, func(), error) {
 	logger.Debugf("conf is %#v, rabbitmq conf is %#v", *conf, conf.RabbitMQ)
 	lc := &LikeUsecase{
 		likeRepo:    likeRepo,
-		postRepo:    postRepo,
 		commentRepo: commentRepo,
 		userRepo:    userRepo,
+		postUseCase: postUseCase,
 		logger:      logger.With("module", "usecase/like"),
 	}
 	if conf.RabbitMQ != nil {
@@ -107,18 +108,20 @@ func (u *LikeUsecase) Like(ctx context.Context, like *likeentity.Like, isCancel 
 	var (
 		exist        bool
 		err          error
-		post         *postentity.Post
+		post         *postentity.PostInfo
 		comment      *commententity.Comment
 		targetUserID int64
 	)
 	// TODO: cache post and comment existence
 	switch like.LikeType {
 	case likeentity.LikePost:
-		post, exist, err = u.postRepo.GetByPostID(ctx, like.LikingID)
-		targetUserID = post.AuthorID
+		post, exist, err = u.postUseCase.GetByPostID(ctx, 0, like.LikingID)
+		targetUserID = post.User.UserID
 	case likeentity.LikeComment:
 		comment, exist, err = u.commentRepo.GetByCommentID(ctx, like.LikingID)
 		targetUserID = comment.AuthorID
+	default:
+		return errorx.BadRequest(reason.LikeUnknownType)
 	}
 	if err != nil {
 		return err
@@ -174,7 +177,7 @@ func (u *LikeUsecase) LikeCount(ctx context.Context, like *likeentity.Like) (int
 	case likeentity.LikePost:
 		count, exist, err = u.commentRepo.GetLikeCount(ctx, like.LikingID)
 	case likeentity.LikeComment:
-		count, exist, err = u.postRepo.GetLikeCount(ctx, like.LikingID)
+		count, exist, err = u.postUseCase.GetLikeCount(ctx, like.LikingID)
 	case likeentity.LikeUser:
 		count, exist, err = u.userRepo.GetLikeCount(ctx, like.LikingID)
 	}
@@ -201,27 +204,22 @@ func (u *LikeUsecase) BatchLikeCountByIDs(ctx context.Context, likingIDs []int64
 	return u.likeRepo.BatchLikeCountByIDs(ctx, likingIDs, likeType)
 }
 
-func (u *LikeUsecase) GetLikingObjects(ctx context.Context, objectIDs []int64, likeType likeentity.LikeType) ([]any, error) {
+func (u *LikeUsecase) GetLikingObjects(ctx context.Context, userID int64, objectIDs []int64, likeType likeentity.LikeType) (any, error) {
 	switch likeType {
 	case likeentity.LikePost:
-		posts, err := u.postRepo.BatchBasicInfoByIDs(ctx, objectIDs)
+		postInfos, err := u.postUseCase.BatchByIDs(ctx, objectIDs)
 		if err != nil {
 			return nil, err
 		}
 
-		likeCounts, err := u.likeRepo.BatchLikeCountByIDs(ctx, objectIDs, likeType)
+		postInfos, err = u.postUseCase.MergeList(ctx, userID, postInfos)
 		if err != nil {
 			return nil, err
 		}
 
-		objects := make([]any, len(posts))
-		for i := 0; i < len(posts); i++ {
-			posts[i].LikeCount = likeCounts[posts[i].PostID]
-			objects[i] = postentity.ConvertPostToDisplay(&posts[i])
-		}
-		return objects, nil
+		return postInfos, nil
 	default:
-		return []any{}, errorx.BadRequest(reason.TypeNotSupport)
+		return nil, errorx.BadRequest(reason.TypeNotSupport)
 	}
 }
 
@@ -238,7 +236,7 @@ func (u *LikeUsecase) Consume(message []byte) error {
 		switch msg.LikeType {
 		case likeentity.LikePost:
 			for likingID, likeCount := range msg.CountMessage.Counts {
-				err = u.postRepo.UpdateLikeCount(ctx, likingID, likeCount)
+				err = u.postUseCase.UpdateLikeCount(ctx, likingID, likeCount)
 			}
 		case likeentity.LikeComment:
 			for likingID, likeCount := range msg.CountMessage.Counts {

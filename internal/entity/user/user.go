@@ -23,7 +23,6 @@ type User struct {
 type UserBasicInfo struct {
 	UserID int64  `json:"user_id,string,omitempty"`
 	Name   string `json:"name,omitempty"`
-	Email  string `json:"email,omitempty"`
 	Avatar string `json:"avatar,omitempty"`
 }
 
@@ -37,18 +36,17 @@ func (User) TableName() string {
 	return "user"
 }
 
-func ConvertUserToDisplay(u *User, avatarLink string) UserBasicInfo {
+func (u *User) ToBasicInfo(avatarLink string) UserBasicInfo {
 	return UserBasicInfo{
 		UserID: u.UserID,
 		Name:   u.Name,
-		Email:  u.Email,
 		Avatar: avatarLink,
 	}
 }
 
 func ConvertUserToDetailDisplay(u *User, avatarLink string) UserDetail {
 	return UserDetail{
-		UserBasicInfo: ConvertUserToDisplay(u, avatarLink),
+		UserBasicInfo: u.ToBasicInfo(avatarLink),
 		FollowCount:   u.FollowCount,
 		LikeCount:     u.LikeCount,
 	}

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"harmoni/internal/entity/paginator"
 	postentity "harmoni/internal/entity/post"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
@@ -30,51 +29,28 @@ func NewPostService(
 }
 
 func (s *PostService) GetPosts(ctx context.Context, req *postentity.GetPostsRequest) (*postentity.GetPostsReply, error) {
-	posts, err := s.pc.GetPage(ctx, &postentity.PostQuery{PageCond: req.PageCond, QueryCond: req.Order})
+	posts, err := s.pc.GetPage(ctx, &postentity.PostQuery{PageCond: req.PageCond, QueryCond: req.Order, TagID: req.TagID, UserID: req.UserID})
 	if err != nil {
 		s.logger.Errorln(err)
 		return nil, err
 	}
 
-	res := paginator.Page[postentity.PostDetail]{
-		CurrentPage: posts.CurrentPage,
-		PageSize:    posts.PageSize,
-		Total:       posts.Total,
-		Pages:       posts.Pages,
-		Data:        make([]postentity.PostDetail, 0, len(posts.Data)),
-	}
-
-	for _, post := range posts.Data {
-		tags, err := s.tc.GetTagsByPostID(ctx, post.PostID)
-		if err != nil {
-			s.logger.Errorln(err)
-			return nil, err
-		}
-
-		res.Data = append(res.Data, postentity.ConvertPostToDisplayDetail(&post, tags))
-	}
-
 	return &postentity.GetPostsReply{
-		Page: res,
+		Page: posts,
 	}, nil
 }
 
-func (s *PostService) GetPostDetail(ctx context.Context, req *postentity.GetPostDetailRequest) (*postentity.GetPostDetailReply, error) {
-	post, exist, err := s.pc.GetByPostID(ctx, req.PostID)
+func (s *PostService) GetPostInfo(ctx context.Context, req *postentity.GetPostInfoRequest) (*postentity.GetPostInfoReply, error) {
+	post, exist, err := s.pc.GetByPostID(ctx, req.UserID, req.PostID)
 	if err != nil {
 		s.logger.Errorln(err)
 		return nil, err
 	} else if !exist {
 		return nil, errorx.NotFound(reason.PostNotFound)
 	}
-	tags, err := s.tc.GetTagsByPostID(ctx, post.PostID)
-	if err != nil {
-		s.logger.Errorln(err)
-		return nil, err
-	}
 
-	return &postentity.GetPostDetailReply{
-		PostDetail: postentity.ConvertPostToDisplayDetail(post, tags),
+	return &postentity.GetPostInfoReply{
+		PostInfo: *post,
 	}, nil
 }
 
@@ -86,13 +62,13 @@ func (s *PostService) Create(ctx context.Context, req *postentity.CreatePostRequ
 		Content:  req.Content,
 	}
 
-	post, tags, err := s.pc.Create(ctx, &post)
+	postInfo, err := s.pc.Create(ctx, &post)
 	if err != nil {
 		s.logger.Errorln(err)
 		return nil, err
 	}
 
 	return &postentity.CreatePostReply{
-		PostDetail: postentity.ConvertPostToDisplayDetail(&post, tags),
+		PostInfo: *postInfo,
 	}, nil
 }

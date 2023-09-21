@@ -42,3 +42,17 @@ message_queue:
     host:
     port:
     vhost:
+
+fileStorage:
+  uploadSessionTimeout: 1h # unit is s,m,h
+  policy:
+    type: local # storage type, only local for now
+    bucketName: ./static # storage path for local type
+    maxSize: 104857600 # max upload size per file
+    option:
+      # allowed file extension
+      # if not present, all extension is allowd
+      fileType:
+        - .jpg
+        - .png
+      chunkSize: 5242880 # The minimum required file size in chunked uploading.

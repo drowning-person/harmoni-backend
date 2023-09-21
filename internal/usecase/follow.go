@@ -4,8 +4,6 @@ import (
 	"context"
 	followentity "harmoni/internal/entity/follow"
 	"harmoni/internal/entity/paginator"
-	tagentity "harmoni/internal/entity/tag"
-	userentity "harmoni/internal/entity/user"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
 
@@ -64,7 +62,7 @@ func (u *FollowUseCase) GetFollowingObjects(ctx context.Context, objectIDs []int
 			if err != nil {
 				return nil, err
 			}
-			objects[i] = userentity.ConvertUserToDisplay(&users[i], link)
+			objects[i] = users[i].ToBasicInfo(link)
 		}
 		return objects, nil
 
@@ -76,7 +74,7 @@ func (u *FollowUseCase) GetFollowingObjects(ctx context.Context, objectIDs []int
 
 		objects := make([]any, len(tags))
 		for i := 0; i < len(tags); i++ {
-			objects[i] = tagentity.ConvertTagToDisplay(&tags[i])
+			objects[i] = tags[i].ToBasicInfo()
 		}
 		return objects, nil
 	}

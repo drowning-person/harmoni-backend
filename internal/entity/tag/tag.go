@@ -34,7 +34,7 @@ func (*Tag) TableName() string {
 	return "tag"
 }
 
-func ConvertTagToDisplay(t *Tag) TagInfo {
+func (t *Tag) ToBasicInfo() TagInfo {
 	return TagInfo{
 		TagID:   t.TagID,
 		TagName: t.TagName,

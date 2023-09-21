@@ -17,8 +17,9 @@ type LikeReply struct {
 
 type GetLikingsRequest struct {
 	entity.PageCond
-	Type   LikeType `query:"type,omitempty" validate:"required"`
-	UserID int64    `json:"user_id,omitempty"`
+	Type         LikeType `query:"type,omitempty" validate:"required"`
+	UserID       int64    `json:"-"`
+	TargetUserID int64    `json:"user_id" validate:"required"`
 }
 
 type GetLikingsReply[T any] struct {

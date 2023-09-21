@@ -43,7 +43,7 @@ func (s *TagService) GetTags(ctx context.Context, req *tagentity.GetTagsRequest)
 	}
 
 	for _, tag := range tags.Data {
-		res.Data = append(res.Data, tagentity.ConvertTagToDisplay(&tag))
+		res.Data = append(res.Data, tag.ToBasicInfo())
 	}
 
 	return &tagentity.GetTagsReply{

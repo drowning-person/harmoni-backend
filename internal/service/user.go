@@ -75,7 +75,7 @@ func (s *UserService) GetUsers(ctx context.Context, req *userentity.GetUsersRequ
 			s.logger.Errorln(err)
 			return nil, err
 		}
-		res.Data = append(res.Data, userentity.ConvertUserToDisplay(&user, link))
+		res.Data = append(res.Data, user.ToBasicInfo(link))
 	}
 
 	return &userentity.GetUsersReply{
@@ -133,7 +133,7 @@ func (s *UserService) RegisterByEmail(ctx context.Context, req *userentity.UserR
 	}
 
 	return &userentity.UserRegisterReply{
-		User:         userentity.ConvertUserToDisplay(&user, link),
+		User:         user.ToBasicInfo(link),
 		AccessToken:  token,
 		RefreshToken: refreshToken,
 	}, nil
@@ -174,7 +174,7 @@ func (s *UserService) Login(ctx context.Context, req *userentity.UserLoginRequse
 	}
 
 	return &userentity.UserLoginReply{
-		User:         userentity.ConvertUserToDisplay(user, link),
+		User:         user.ToBasicInfo(link),
 		AccessToken:  token,
 		RefreshToken: refreshToken,
 	}, nil

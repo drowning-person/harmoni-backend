@@ -1,77 +1,14 @@
 package post
 
 import (
-	"bytes"
 	"context"
-	"database/sql/driver"
-	"fmt"
 	"harmoni/internal/entity/paginator"
 	tagentity "harmoni/internal/entity/tag"
-	"strconv"
-	"strings"
+	"harmoni/internal/entity/user"
 	"time"
 
 	"gorm.io/gorm"
 )
-
-type Int64toString []int64
-
-func (is Int64toString) MarshalJSON() ([]byte, error) {
-	b := bytes.Buffer{}
-	b.Grow(64)
-	b.WriteByte('[')
-	for i, v := range is {
-		b.WriteByte('"')
-		b.Write([]byte(strconv.FormatInt(v, 10)))
-		b.WriteByte('"')
-		if i+1 != len(is) {
-			b.WriteByte(',')
-		}
-	}
-	b.WriteByte(']')
-	return b.Bytes(), nil
-}
-
-func (is *Int64toString) UnmarshalJSON(data []byte) error {
-	str := strings.Split(strings.Trim(string(data), "[]"), ",")
-	for _, v := range str {
-		num, err := strconv.ParseInt(strings.Trim(v, " \""), 10, 64)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-		*is = append(*is, num)
-	}
-	return nil
-}
-
-// Scan 方法实现了 sql.Scanner 接口
-func (is *Int64toString) Scan(v interface{}) error {
-	if s, ok := v.([]uint8); !ok {
-		return fmt.Errorf("断言失败")
-	} else {
-		str := strings.Split(string(s), ",")
-		for _, v := range str {
-			num, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				return err
-			}
-			*is = append(*is, num)
-		}
-	}
-	return nil
-}
-
-func (is Int64toString) Value() (driver.Value, error) {
-	if len(is) == 0 {
-		return nil, nil
-	}
-	s := make([]string, 0, 4)
-	for _, v := range is {
-		s = append(s, strconv.FormatInt(v, 10))
-	}
-	return strings.Join(s, ","), nil
-}
 
 type Post struct {
 	gorm.Model
@@ -79,7 +16,7 @@ type Post struct {
 	PostID    int64   `gorm:"uniqueIndex"`
 	AuthorID  int64   `gorm:"index"`
 	Title     string  `gorm:"type:varchar(128)"`
-	Content   string  `gorm:"type:varchar(512)"`
+	Content   string  `gorm:"type:text"`
 	LikeCount int64   `gorm:"not null"`
 	TagIDs    []int64 `gorm:"-"`
 }
@@ -88,51 +25,44 @@ func (Post) TableName() string {
 	return "post"
 }
 
-type PostDetail struct {
-	Status    int32               `json:"status,omitempty"`
-	LikeCount int64               `json:"like_count"`
-	PostID    int64               `json:"post_id,string,omitempty"`
-	AuthorID  int64               `json:"author_id,string,omitempty"`
-	Tags      []tagentity.TagInfo `json:"tags,omitempty"`
-	Title     string              `json:"title,omitempty"`
-	Content   string              `json:"content,omitempty"`
-	CreatedAt time.Time           `json:"created_at,omitempty"`
-	UpdatedAt time.Time           `json:"updated_at,omitempty"`
+type PostInfo struct {
+	PostBasicInfo
+	CollectCount int64 `json:"collect_count"`
+	Collected    bool  `json:"collected"`
 }
 
 type PostBasicInfo struct {
-	AuthorID  int64  `json:"author_id,omitempty"`
-	PostID    int64  `json:"post_id,omitempty"`
-	Title     string `json:"title,omitempty"`
-	Content   string `json:"content,omitempty"`
-	LikeCount int64  `json:"like_count"`
+	Liked        bool                `json:"liked"`
+	Status       int32               `json:"status"`
+	LikeCount    int64               `json:"like_count"`
+	CommentCount int64               `json:"comment_count"`
+	PostID       int64               `json:"post_id,string"`
+	User         *user.UserBasicInfo `json:"user_info"`
+	Tags         []tagentity.TagInfo `json:"tags"`
+	Title        string              `json:"title"`
+	Content      string              `json:"content"`
+	CreatedAt    time.Time           `json:"created_at"`
+	UpdatedAt    time.Time           `json:"updated_at"`
 }
 
-func ConvertPostToDisplay(post *Post) PostBasicInfo {
+func (p *Post) ToBasic() PostBasicInfo {
 	return PostBasicInfo{
-		AuthorID:  post.AuthorID,
-		PostID:    post.PostID,
-		Title:     post.Title,
-		Content:   post.Content,
-		LikeCount: post.LikeCount,
+		User: &user.UserBasicInfo{
+			UserID: p.AuthorID,
+		},
+		Status:    p.Status,
+		PostID:    p.PostID,
+		Title:     p.Title,
+		Content:   p.Content,
+		LikeCount: p.LikeCount,
+		CreatedAt: p.CreatedAt,
+		UpdatedAt: p.UpdatedAt,
 	}
 }
 
-func ConvertPostToDisplayDetail(post *Post, tags []tagentity.Tag) PostDetail {
-	tagInfos := make([]tagentity.TagInfo, len(tags))
-	for i, tag := range tags {
-		tagInfos[i] = tagentity.ConvertTagToDisplay(&tag)
-	}
-	pd := PostDetail{
-		Status:    post.Status,
-		PostID:    post.PostID,
-		AuthorID:  post.AuthorID,
-		Tags:      tagInfos,
-		Title:     post.Title,
-		Content:   post.Content,
-		CreatedAt: post.CreatedAt,
-		UpdatedAt: post.UpdatedAt,
-		LikeCount: post.LikeCount,
+func (p *Post) ToInfo() PostInfo {
+	pd := PostInfo{
+		PostBasicInfo: p.ToBasic(),
 	}
 
 	return pd
@@ -147,7 +77,6 @@ type PostRepository interface {
 	GetByPostID(ctx context.Context, postID int64) (*Post, bool, error)
 	GetPostsByTagID(ctx context.Context, tagID int64) ([]Post, error)
 	BatchByIDs(ctx context.Context, postIDs []int64) ([]Post, error)
-	BatchBasicInfoByIDs(ctx context.Context, postID []int64) ([]Post, error)
 	GetLikeCount(ctx context.Context, postID int64) (int64, bool, error)
 	UpdateLikeCount(ctx context.Context, postID int64, count int64) error
 	GetPage(ctx context.Context, queryCond *PostQuery) (paginator.Page[Post], error)

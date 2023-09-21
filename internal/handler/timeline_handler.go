@@ -25,6 +25,7 @@ func (h *TimeLineHandler) GetUserTimeLine(c *fiber.Ctx) error {
 		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
 	}
 
+	req.UserID = middleware.GetClaimsFromCtx(c.UserContext()).UserID
 	reply, err := h.ts.GetUserTimeLine(c.UserContext(), &req)
 
 	return fiberx.HandleResponse(c, err, reply)
