@@ -379,9 +379,6 @@ func (r *LikeRepo) BatchLikeCount(ctx context.Context, likeType likeentity.LikeT
 				continue
 			}
 			vNum, _ := strconv.ParseInt(v, 10, 64)
-			if vNum == 0 {
-				continue
-			}
 
 			kNum, _ := strconv.ParseInt(k, 10, 64)
 			m[kNum] = vNum
