@@ -197,7 +197,7 @@ func (r *PostRepo) GetPage(ctx context.Context, queryCond *postentity.PostQuery)
 		case postentity.PostOrderByCreatedTime:
 			db = db.Order("created_at DESC")
 		case postentity.PostOrderByLike:
-			db = db.Order("like_count")
+			db = db.Order("like_count DESC")
 		default:
 			db = db.Order("created_at DESC")
 		}
