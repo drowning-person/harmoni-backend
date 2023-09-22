@@ -32,7 +32,7 @@ func (h *AccountHandler) MailSend(c *fiber.Ctx) error {
 		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
 	}
 	if req.Type != accountentity.RegisterAct {
-		if err := h.jwtmw.ParseAndVerifyToken(c); err != nil {
+		if err := h.jwtmw.ParseAndVerifyToken(c, true); err != nil {
 			return fiberx.HandleResponse(c, err, nil)
 		}
 		req.UserID = middleware.GetClaimsFromCtx(c.UserContext()).UserID
@@ -48,7 +48,7 @@ func (h *AccountHandler) MailCheck(c *fiber.Ctx) error {
 		return fiberx.HandleResponse(c, errorx.BadRequest(reason.RequestFormatError).WithMsg(err.Error()), nil)
 	}
 	if req.Type != accountentity.RegisterAct {
-		if err := h.jwtmw.ParseAndVerifyToken(c); err != nil {
+		if err := h.jwtmw.ParseAndVerifyToken(c, true); err != nil {
 			return fiberx.HandleResponse(c, err, nil)
 		}
 		req.UserID = middleware.GetClaimsFromCtx(c.UserContext()).UserID

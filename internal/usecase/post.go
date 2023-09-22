@@ -84,7 +84,7 @@ func (u *PostUseCase) MergeList(ctx context.Context, userID int64, postInfos []p
 			if err != nil {
 				return nil, err
 			}
-			postInfo.Liked = isLiked
+			postInfos[i].Liked = isLiked
 		}
 
 		err = u.setTagInfos(ctx, &postInfos[i], nil)
@@ -98,7 +98,7 @@ func (u *PostUseCase) MergeList(ctx context.Context, userID int64, postInfos []p
 			return nil, err
 		}
 
-		postInfo.LikeCount = likes[postInfo.PostID]
+		postInfos[i].LikeCount = likes[postInfo.PostID]
 	}
 
 	return postInfos, nil

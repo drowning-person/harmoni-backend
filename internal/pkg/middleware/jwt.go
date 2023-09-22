@@ -51,7 +51,18 @@ func NewJwtAuthMiddleware(authUsecase *usecase.AuthUseCase) *JwtAuthMiddleware {
 
 func (mw *JwtAuthMiddleware) Auth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		err := mw.ParseAndVerifyToken(c)
+		err := mw.ParseAndVerifyToken(c, false)
+		if err != nil {
+			return err
+		}
+
+		return c.Next()
+	}
+}
+
+func (mw *JwtAuthMiddleware) MustAuth() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		err := mw.ParseAndVerifyToken(c, true)
 		if err != nil {
 			return err
 		}
@@ -104,7 +115,7 @@ func (mw *JwtAuthMiddleware) jwtFromParam(c *fiber.Ctx, key string) (string, err
 	return token, nil
 }
 
-func (mw *JwtAuthMiddleware) ParseAndVerifyToken(c *fiber.Ctx) error {
+func (mw *JwtAuthMiddleware) ParseAndVerifyToken(c *fiber.Ctx, must bool) error {
 	var token string
 	var err error
 
@@ -128,17 +139,18 @@ func (mw *JwtAuthMiddleware) ParseAndVerifyToken(c *fiber.Ctx) error {
 		}
 	}
 
-	if err != nil {
+	if err != nil && must {
 		return err
 	}
 
 	claims, err := mw.authUsecase.VerifyToken(c.UserContext(), token, authentity.AccessTokenType)
-	if err != nil {
+	if err != nil && must {
 		return err
 	}
-
-	ctx := context.WithValue(c.UserContext(), mw.conf.TokenCtxName, claims)
-	c.SetUserContext(ctx)
+	if claims != nil {
+		ctx := context.WithValue(c.UserContext(), mw.conf.TokenCtxName, claims)
+		c.SetUserContext(ctx)
+	}
 
 	return nil
 }

@@ -49,10 +49,11 @@ func NewHTTPServer(
 	harmoniRouter.RegisterStaticRouter(r.Group(""))
 
 	unauthV1 := r.Group("/api/v1")
+	unauthV1.Use(authMiddleware.Auth())
 	harmoniRouter.RegisterUnAuthHarmoniAPIRouter(unauthV1)
 
 	authV1 := r.Group("/api/v1")
-	authV1.Use(authMiddleware.Auth())
+	authV1.Use(authMiddleware.MustAuth())
 	harmoniRouter.RegisterHarmoniAPIRouter(authV1)
 
 	return r
