@@ -9,6 +9,7 @@ import (
 	"harmoni/internal/conf"
 	"harmoni/internal/cron"
 	"harmoni/internal/handler"
+	"harmoni/internal/infrastructure/data"
 	"harmoni/internal/pkg/logger"
 	"harmoni/internal/pkg/middleware"
 	"harmoni/internal/pkg/snowflakex"
@@ -49,5 +50,7 @@ func initApplication(
 		server.NewHTTPServer,
 		cron.NewScheduledTaskManager,
 		NewApplication,
+		data.NewDB,
+		data.CacheProvider,
 	))
 }

@@ -1,8 +1,7 @@
-package mysql
+package data
 
 import (
 	"harmoni/internal/conf"
-	commententity "harmoni/internal/entity/comment"
 	fileentity "harmoni/internal/entity/file"
 	followentity "harmoni/internal/entity/follow"
 	likeentity "harmoni/internal/entity/like"
@@ -10,6 +9,7 @@ import (
 	postreltag "harmoni/internal/entity/post_rel_tag"
 	tagentity "harmoni/internal/entity/tag"
 	userentity "harmoni/internal/entity/user"
+	"harmoni/internal/infrastructure/po/comment"
 
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
@@ -46,7 +46,7 @@ func NewDB(conf *conf.DB, logger *zap.Logger) (*gorm.DB, func(), error) {
 	// SetConnMaxLifetime 设置了连接可复用的最大时间。
 	sqlDB.SetConnMaxLifetime(conf.ConnMaxLifeTime)
 
-	db.AutoMigrate(&userentity.User{}, &commententity.Comment{}, &postentity.Post{}, &tagentity.Tag{}, &followentity.Follow{}, &likeentity.Like{}, &postreltag.PostTag{}, &fileentity.File{})
+	db.AutoMigrate(&userentity.User{}, &comment.Comment{}, &postentity.Post{}, &tagentity.Tag{}, &followentity.Follow{}, &likeentity.Like{}, &postreltag.PostTag{}, &fileentity.File{})
 
 	return db, cleanFunc, nil
 }

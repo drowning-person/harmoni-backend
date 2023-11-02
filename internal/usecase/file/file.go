@@ -146,6 +146,29 @@ func (u *FileUseCase) GetFileLink(ctx context.Context, fileID int64) (string, er
 	return u.getFilelinkCore(ctx, file.Path)
 }
 
+func (u *FileUseCase) ListFileLinkMap(ctx context.Context, fileIDs []int64) (map[int64]string, error) {
+	files, err := u.fileRepository.ListByFileID(ctx, fileIDs)
+	if err != nil {
+		return nil, err
+	}
+	fileMap := files.ToMap()
+	m := map[int64]string{}
+	for _, fileID := range fileIDs {
+		if fileID == 0 {
+			m[fileID], err = u.getDefaultAvatar(ctx)
+			if err != nil {
+				return nil, err
+			}
+			continue
+		}
+		m[fileID], err = u.getFilelinkCore(ctx, fileMap[fileID].Path)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return m, nil
+}
+
 func (u *FileUseCase) GetFileContent(ctx context.Context, filepath string) (response.RSCloser, error) {
 	content, err := u.fs.Handler.Get(ctx, filepath)
 	if err != nil {

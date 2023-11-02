@@ -119,7 +119,7 @@ func (u *LikeUsecase) Like(ctx context.Context, like *likeentity.Like, isCancel 
 		targetUserID = post.User.UserID
 	case likeentity.LikeComment:
 		comment, exist, err = u.commentRepo.GetByCommentID(ctx, like.LikingID)
-		targetUserID = comment.AuthorID
+		targetUserID = comment.Author.UserID
 	default:
 		return errorx.BadRequest(reason.LikeUnknownType)
 	}

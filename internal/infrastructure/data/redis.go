@@ -1,11 +1,17 @@
-package redis
+package data
 
 import (
 	"context"
 	"fmt"
 	"harmoni/internal/conf"
 
+	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
+)
+
+var CacheProvider = wire.NewSet(
+	NewRedis,
+	wire.Bind(new(redis.UniversalClient), new(*redis.Client)),
 )
 
 func NewRedis(conf *conf.Redis) (*redis.Client, func(), error) {

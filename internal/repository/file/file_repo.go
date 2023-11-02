@@ -72,6 +72,17 @@ func (r *FileRepo) GetByFileID(ctx context.Context, fileID int64) (*fileentity.F
 	return &file, nil
 }
 
+func (r *FileRepo) ListByFileID(ctx context.Context, fileIDs []int64) (fileentity.FileList, error) {
+	fileList := make([]*fileentity.File, 0, len(fileIDs))
+	if err := r.db.Where("file_id IN ?", fileIDs).Find(&fileList).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errorx.NotFound(reason.FileNotFound)
+		}
+		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	return fileList, nil
+}
+
 func (r *FileRepo) GetByFileHash(ctx context.Context, fileHash string) (*fileentity.File, error) {
 	var file fileentity.File
 	if err := r.db.WithContext(ctx).Where("hash = ?", fileHash).First(&file).Error; err != nil {

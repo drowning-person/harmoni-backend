@@ -1,8 +1,6 @@
 package repository
 
 import (
-	datamysql "harmoni/internal/data/mysql"
-	dataredis "harmoni/internal/data/redis"
 	authentity "harmoni/internal/entity/auth"
 	commententity "harmoni/internal/entity/comment"
 	eamilentity "harmoni/internal/entity/email"
@@ -13,6 +11,7 @@ import (
 	tagentity "harmoni/internal/entity/tag"
 	uniqueentity "harmoni/internal/entity/unique"
 	userentity "harmoni/internal/entity/user"
+
 	"harmoni/internal/repository/auth"
 	"harmoni/internal/repository/comment"
 	"harmoni/internal/repository/email"
@@ -25,13 +24,11 @@ import (
 	"harmoni/internal/repository/user"
 
 	"github.com/google/wire"
-	"github.com/redis/go-redis/v9"
 )
 
 // ProviderSetRepo is providers.
 var ProviderSetRepo = wire.NewSet(
-	dataredis.NewRedis,
-	datamysql.NewDB,
+
 	wire.Bind(new(authentity.AuthRepository), new(*auth.AuthRepo)),
 	wire.Bind(new(commententity.CommentRepository), new(*comment.CommentRepo)),
 	wire.Bind(new(eamilentity.EmailRepo), new(*email.EmailRepo)),
@@ -41,7 +38,7 @@ var ProviderSetRepo = wire.NewSet(
 	wire.Bind(new(uniqueentity.UniqueIDRepo), new(*unique.UniqueIDRepo)),
 	wire.Bind(new(userentity.UserRepository), new(*user.UserRepo)),
 	wire.Bind(new(likeentity.LikeRepository), new(*like.LikeRepo)),
-	wire.Bind(new(redis.UniversalClient), new(*redis.Client)),
+
 	wire.Bind(new(fileentity.FileRepository), new(*file.FileRepo)),
 
 	auth.NewAuthRepo,

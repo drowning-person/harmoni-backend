@@ -20,10 +20,20 @@ type User struct {
 	Avatar      int64  `json:"avatar" gorm:"type:varchar(255)"`
 }
 
+type UserList []User
+
+func (l UserList) ToUserIDMap() map[int64]User {
+	m := make(map[int64]User, len(l))
+	for _, user := range l {
+		m[user.UserID] = user
+	}
+	return m
+}
+
 type UserBasicInfo struct {
-	UserID int64  `json:"user_id,string,omitempty"`
-	Name   string `json:"name,omitempty"`
-	Avatar string `json:"avatar,omitempty"`
+	UserID int64  `json:"user_id,string"`
+	Name   string `json:"name"`
+	Avatar string `json:"avatar"`
 }
 
 type UserDetail struct {

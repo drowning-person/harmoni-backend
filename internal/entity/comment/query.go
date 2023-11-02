@@ -7,7 +7,7 @@ type CommentQuery struct {
 	// object id
 	ObjectID string
 	// root id
-	RootID string
+	RootID int64
 	// query condition
 	QueryCond string
 	// user id

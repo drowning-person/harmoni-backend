@@ -10,9 +10,8 @@ import (
 	"go.uber.org/zap"
 	"harmoni/internal/conf"
 	"harmoni/internal/cron"
-	"harmoni/internal/data/mysql"
-	"harmoni/internal/data/redis"
 	"harmoni/internal/handler"
+	"harmoni/internal/infrastructure/data"
 	"harmoni/internal/pkg/filesystem"
 	"harmoni/internal/pkg/logger"
 	"harmoni/internal/pkg/middleware"
@@ -41,14 +40,14 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 	if err != nil {
 		return nil, nil, err
 	}
-	client, cleanup, err := redis.NewRedis(rdbconf)
+	client, cleanup, err := data.NewRedis(rdbconf)
 	if err != nil {
 		return nil, nil, err
 	}
 	sugaredLogger := sugar(zapLogger)
 	authRepo := auth.NewAuthRepo(client, sugaredLogger)
 	authUseCase := usecase.NewAuthUseCase(authConf, authRepo, sugaredLogger)
-	db, cleanup2, err := mysql.NewDB(dbconf, zapLogger)
+	db, cleanup2, err := data.NewDB(dbconf, zapLogger)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
@@ -106,7 +105,7 @@ func initApplication(appConf *conf.App, dbconf *conf.DB, rdbconf *conf.Redis, au
 		cleanup()
 		return nil, nil, err
 	}
-	commentUseCase := usecase.NewCommentUseCase(commentRepo, likeUsecase, sugaredLogger)
+	commentUseCase := usecase.NewCommentUseCase(commentRepo, userRepo, fileUseCase, likeUsecase, sugaredLogger)
 	commentService := service.NewCommentService(commentUseCase, sugaredLogger)
 	commentHandler := handler.NewCommentHandler(commentService)
 	likeService := service.NewLikeUsecase(likeUsecase, sugaredLogger)

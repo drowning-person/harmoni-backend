@@ -33,9 +33,20 @@ func (File) TableName() string {
 	return TableName
 }
 
+type FileList []*File
+
+func (f FileList) ToMap() map[int64]*File {
+	m := make(map[int64]*File)
+	for i, file := range f {
+		m[file.FileID] = f[i]
+	}
+	return m
+}
+
 type FileRepository interface {
 	Save(ctx context.Context, file *File) (*File, error)
 	GetByFileID(ctx context.Context, fileID int64) (*File, error)
+	ListByFileID(ctx context.Context, fileIDs []int64) (FileList, error)
 	GetByFileHash(ctx context.Context, fileHash string) (*File, error)
 	UpdatePartInfo(ctx context.Context, file *File) error
 
