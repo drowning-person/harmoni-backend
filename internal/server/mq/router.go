@@ -3,7 +3,6 @@ package mq
 import (
 	"context"
 	"harmoni/internal/infrastructure/config"
-	"harmoni/internal/infrastructure/mq/subscriber"
 	"harmoni/internal/server/mq/group/comment"
 	"harmoni/internal/server/mq/group/like"
 	"harmoni/internal/server/mq/group/post"
@@ -55,17 +54,30 @@ func NewMQRouter(
 	if err != nil {
 		return nil, err
 	}
-	var sub message.Subscriber
-	if conf.RabbitMQ != nil {
-		sub, err = subscriber.NewAMQPSubscriber(conf.RabbitMQ)
+
+	{
+		err = comment.NewCommentGroup(conf, r, commentEventsHandler)
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	comment.NewCommentGroup(r, commentEventsHandler, sub)
-	like.NewLikeGroup(r, likeevent, sub)
-	post.NewPostGroup(r, postEventsHandler, sub)
-	user.NewUserGroup(r, userevent, sub)
+	{
+		err = like.NewLikeGroup(conf, r, likeevent)
+		if err != nil {
+			return nil, err
+		}
+	}
+	{
+		err = post.NewPostGroup(conf, r, postEventsHandler)
+		if err != nil {
+			return nil, err
+		}
+	}
+	{
+		err = user.NewUserGroup(conf, r, userevent)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return r, nil
 }

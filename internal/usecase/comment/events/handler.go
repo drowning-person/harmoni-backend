@@ -17,7 +17,7 @@ func NewCommentEventsHandler(userRepo userentity.CommentRepository) *CommentEven
 }
 
 func (h *CommentEventsHandler) HandleLikeStore(ctx context.Context, msg *event.LikeStoreMessage) error {
-	if msg.LikeType != event.LikePost {
+	if msg.LikeType != event.LikeComment {
 		return nil
 	}
 	for k, v := range msg.Counts {

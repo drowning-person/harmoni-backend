@@ -6,6 +6,7 @@ import (
 	"harmoni/internal/entity"
 	"harmoni/internal/entity/paginator"
 	"harmoni/internal/pkg/common"
+	"harmoni/internal/types/events/like"
 )
 
 type LikeType uint8
@@ -15,6 +16,18 @@ const (
 	LikeComment
 	LikeUser
 )
+
+func (t *LikeType) ToEventLikeType() like.LikeType {
+	switch *t {
+	case LikePost:
+		return like.LikePost
+	case LikeComment:
+		return like.LikeComment
+	case LikeUser:
+		return like.LikeUser
+	}
+	return like.LikePost
+}
 
 type Like struct {
 	ID uint `gorm:"primarykey;type:BIGINT UNSIGNED not NULL AUTO_INCREMENT;"`

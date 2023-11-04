@@ -52,6 +52,9 @@ func (s *ScheduledTaskManager) likeCountTask() {
 		}
 
 		likeMsg := &eventlike.LikeStoreMessage{
+			BaseMessage: eventlike.BaseMessage{
+				LikeType: likeType.ToEventLikeType(),
+			},
 			Counts: counts,
 		}
 		err = s.publisher.Publish(ctx, eventlike.TopicLikeStore, likeMsg)

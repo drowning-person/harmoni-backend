@@ -27,7 +27,7 @@ func NewPublisher(conf *config.MessageQueue) (message.Publisher, error) {
 	)
 	switch {
 	case conf.RabbitMQ != nil:
-		amqpConfig := amqp.NewDurableQueueConfig(conf.RabbitMQ.BuildURL())
+		amqpConfig := amqp.NewDurablePubSubConfig(conf.RabbitMQ.BuildURL(), nil)
 		pub, err = amqp.NewPublisher(amqpConfig, watermill.NewStdLogger(false, false))
 		if err != nil {
 			return nil, err

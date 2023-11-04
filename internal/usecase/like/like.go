@@ -93,7 +93,7 @@ func (u *LikeUsecase) Like(ctx context.Context, like *likeentity.Like, isCancel 
 	now := time.Now()
 	msg := event.LikeCreatedMessage{
 		BaseMessage: event.BaseMessage{
-			LikeType: event.LikePost,
+			LikeType: like.LikeType.ToEventLikeType(),
 		},
 		TargetUserID: like.TargetUserID,
 		UserID:       like.UserID,

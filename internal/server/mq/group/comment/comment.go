@@ -2,22 +2,32 @@ package comment
 
 import (
 	"encoding/json"
+	"harmoni/internal/infrastructure/config"
 	"harmoni/internal/infrastructure/mq"
+	"harmoni/internal/infrastructure/mq/subscriber"
 	eventlike "harmoni/internal/types/events/like"
 	"harmoni/internal/usecase/comment/events"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
+const (
+	groupName = "comment"
+)
+
 func NewCommentGroup(
+	conf *config.MessageQueue,
 	r *message.Router,
 	commentEventsHandler *events.CommentEventsHandler,
-	sub message.Subscriber,
 	m ...message.HandlerMiddleware,
-) {
+) error {
+	sub, err := subscriber.NewSubscriber(conf, groupName)
+	if err != nil {
+		return err
+	}
 	g := &mq.Group{
 		Router: r,
-		Name:   "comment",
+		Name:   groupName,
 		Sub:    sub,
 	}
 	g.Handle(eventlike.TopicLikeStore, func(msg *message.Message) error {
@@ -27,4 +37,5 @@ func NewCommentGroup(
 		}
 		return commentEventsHandler.HandleLikeStore(msg.Context(), &m)
 	})
+	return nil
 }

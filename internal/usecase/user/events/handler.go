@@ -17,7 +17,7 @@ func NewUserEventsHandler(userRepo userentity.UserRepository) *UserEventsHandler
 }
 
 func (h *UserEventsHandler) HandleLikeStore(ctx context.Context, msg *event.LikeStoreMessage) error {
-	if msg.LikeType != event.LikePost {
+	if msg.LikeType != event.LikeUser {
 		return nil
 	}
 	for k, v := range msg.Counts {
