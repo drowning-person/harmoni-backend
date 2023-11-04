@@ -1,4 +1,4 @@
-package usecase
+package user
 
 import (
 	"context"
@@ -6,27 +6,33 @@ import (
 	"harmoni/internal/entity/auth"
 	emailentity "harmoni/internal/entity/email"
 	userentity "harmoni/internal/entity/user"
+	"harmoni/internal/infrastructure/config"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
+	"harmoni/internal/usecase/email"
 	"time"
 
 	"go.uber.org/zap"
 )
 
 type AccountUsecase struct {
+	conf         *config.Email
 	authUsecase  *AuthUseCase
 	userRepo     userentity.UserRepository
 	userUseCase  *UserUseCase
-	emailUsecase *EmailUsecase
+	emailUsecase *email.EmailUsecase
 	logger       *zap.Logger
 }
 
-func NewAccountUsecase(authUsecase *AuthUseCase,
+func NewAccountUsecase(
+	conf *config.Email,
+	authUsecase *AuthUseCase,
 	userRepo userentity.UserRepository,
-	emailUsecase *EmailUsecase,
+	emailUsecase *email.EmailUsecase,
 	userUseCase *UserUseCase,
 	logger *zap.Logger) *AccountUsecase {
 	return &AccountUsecase{
+		conf:         conf,
 		authUsecase:  authUsecase,
 		userRepo:     userRepo,
 		emailUsecase: emailUsecase,
@@ -112,7 +118,7 @@ func (u *AccountUsecase) CheckVerificationCodeByEmail(ctx context.Context, user 
 		return nil
 	}
 
-	err = u.userRepo.SetModifyStatus(ctx, user.UserID, userentity.VerifiedEmail, userentity.VerifyByEmail, actionType, u.emailUsecase.conf.CodeTTL)
+	err = u.userRepo.SetModifyStatus(ctx, user.UserID, userentity.VerifiedEmail, userentity.VerifyByEmail, actionType, u.conf.CodeTTL)
 	if err != nil {
 		return err
 	}

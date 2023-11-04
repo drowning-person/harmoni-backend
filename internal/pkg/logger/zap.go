@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"harmoni/internal/conf"
+	"harmoni/internal/infrastructure/config"
 	"os"
 	"path"
 	"strings"
@@ -22,7 +22,7 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func NewZapLogger(conf *conf.Log) (*zap.Logger, error) {
+func NewZapLogger(conf *config.Log) (*zap.Logger, error) {
 	dirname, filename := path.Split(conf.Path)
 	exist, err := PathExists(dirname)
 	if err != nil {
@@ -49,13 +49,16 @@ func NewZapLogger(conf *conf.Log) (*zap.Logger, error) {
 		FunctionKey:    "func",
 		StacktraceKey:  "stacktrace",
 		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
 		EncodeTime:     zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000"),
 		EncodeDuration: zapcore.SecondsDurationEncoder,
 		EncodeCaller:   zapcore.FullCallerEncoder,
 		EncodeName:     zapcore.FullNameEncoder,
 	}
 
+	if conf.Color {
+		encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	}
 	level := zap.InfoLevel
 	logLevel := strings.ToLower(conf.Level)
 	switch logLevel {

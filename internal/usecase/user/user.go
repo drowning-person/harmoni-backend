@@ -1,4 +1,4 @@
-package usecase
+package user
 
 import (
 	"context"
@@ -8,11 +8,20 @@ import (
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
 	fileusecase "harmoni/internal/usecase/file"
+	"harmoni/internal/usecase/user/events"
 	"regexp"
 	"unicode/utf8"
 
+	"github.com/google/wire"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+)
+
+var ProviderSetUser = wire.NewSet(
+	NewUserUseCase,
+	NewAuthUseCase,
+	NewAccountUsecase,
+	events.NewUserEventsHandler,
 )
 
 type UserUseCase struct {

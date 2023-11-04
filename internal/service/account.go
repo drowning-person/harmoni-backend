@@ -4,17 +4,17 @@ import (
 	"context"
 	accountentity "harmoni/internal/entity/account"
 	userentity "harmoni/internal/entity/user"
-	"harmoni/internal/usecase"
+	"harmoni/internal/usecase/user"
 
 	"go.uber.org/zap"
 )
 
 type AccountService struct {
-	ac     *usecase.AccountUsecase
+	ac     *user.AccountUsecase
 	logger *zap.SugaredLogger
 }
 
-func NewAccountService(ac *usecase.AccountUsecase, logger *zap.SugaredLogger) *AccountService {
+func NewAccountService(ac *user.AccountUsecase, logger *zap.SugaredLogger) *AccountService {
 	return &AccountService{
 		ac:     ac,
 		logger: logger,

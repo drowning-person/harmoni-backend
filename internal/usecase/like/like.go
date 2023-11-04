@@ -1,107 +1,62 @@
-package usecase
+package like
 
 import (
 	"context"
-	"encoding/json"
-	"harmoni/internal/conf"
-	"harmoni/internal/entity"
 	commententity "harmoni/internal/entity/comment"
 	likeentity "harmoni/internal/entity/like"
 	"harmoni/internal/entity/paginator"
 	postentity "harmoni/internal/entity/post"
 	userentity "harmoni/internal/entity/user"
+	"harmoni/internal/infrastructure/config"
 	"harmoni/internal/pkg/errorx"
-	"harmoni/internal/pkg/queue/rabbitmq"
 	"harmoni/internal/pkg/reason"
+	event "harmoni/internal/types/events/like"
+	"harmoni/internal/types/iface"
+	"harmoni/internal/usecase/like/events"
+	postuse "harmoni/internal/usecase/post"
+
 	"time"
 
-	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/google/wire"
 	"go.uber.org/zap"
 )
 
-const (
-	jsonType = "application/json"
+var ProviderSetLikeUsecase = wire.NewSet(
+	NewLikeUsecase,
+	events.NewLikeEventsHandler,
 )
 
 type LikeUsecase struct {
 	likeRepo    likeentity.LikeRepository
 	userRepo    userentity.UserRepository
 	commentRepo commententity.CommentRepository
-	postUseCase *PostUseCase
-	consumers   *rabbitmq.RabbitListener
-	producers   *rabbitmq.RabbitMqSender
+	postUseCase *postuse.PostUseCase
 	logger      *zap.SugaredLogger
+
+	publisher iface.Publisher
 }
 
 func NewLikeUsecase(
-	conf *conf.MessageQueue,
+	conf *config.MessageQueue,
 	likeRepo likeentity.LikeRepository,
-	postRepo postentity.PostRepository,
-	postUseCase *PostUseCase,
+	postUseCase *postuse.PostUseCase,
 	commentRepo commententity.CommentRepository,
 	userRepo userentity.UserRepository,
-	logger *zap.SugaredLogger) (*LikeUsecase, func(), error) {
-	logger.Debugf("conf is %#v, rabbitmq conf is %#v", *conf, conf.RabbitMQ)
+	logger *zap.SugaredLogger,
+	publisher iface.Publisher,
+) (*LikeUsecase, func(), error) {
 	lc := &LikeUsecase{
 		likeRepo:    likeRepo,
 		commentRepo: commentRepo,
 		userRepo:    userRepo,
 		postUseCase: postUseCase,
 		logger:      logger.With("module", "usecase/like"),
-	}
-	if conf.RabbitMQ != nil {
-		rabbitConf := rabbitmq.RabbitConf{
-			Username: conf.RabbitMQ.Username,
-			Password: conf.RabbitMQ.Password,
-			Host:     conf.RabbitMQ.Host,
-			Port:     conf.RabbitMQ.Port,
-			VHost:    conf.RabbitMQ.VHost,
-		}
-
-		admin := rabbitmq.MustNewAdmin(rabbitConf)
-		err := admin.DeclareExchange(rabbitmq.ExchangeConf{
-			ExchangeName: entity.LikeExchange,
-			Type:         amqp.ExchangeDirect,
-			Durable:      true,
-		}, nil)
-		if err != nil {
-			return nil, func() {}, err
-		}
-		err = admin.DeclareQueue(rabbitmq.QueueConf{
-			Name:    entity.LikeQueue,
-			Durable: true,
-		}, nil)
-		if err != nil {
-			return nil, func() {}, err
-		}
-		err = admin.Bind(entity.LikeQueue, entity.LikeBindKey, entity.LikeExchange, false, nil)
-		if err != nil {
-			return nil, func() {}, err
-		}
-
-		lc.consumers = rabbitmq.MustNewListener(rabbitmq.RabbitListenerConf{
-			RabbitConf: rabbitConf,
-			ListenerQueues: []rabbitmq.ConsumerConf{
-				{
-					Name:      entity.LikeQueue,
-					AutoAck:   false,
-					Exclusive: false,
-					NoLocal:   false,
-					NoWait:    false,
-				},
-			},
-		}, lc)
-
-		go lc.consumers.Start()
-
-		lc.producers = rabbitmq.MustNewSender(rabbitmq.RabbitSenderConf{
-			RabbitConf:  rabbitConf,
-			ContentType: jsonType,
-		})
-
+		publisher:   publisher,
 	}
 
-	return lc, func() { lc.consumers.Stop() }, nil
+	return lc, func() {
+		lc.publisher.Close()
+	}, nil
 }
 
 func (u *LikeUsecase) Like(ctx context.Context, like *likeentity.Like, isCancel bool) error {
@@ -129,24 +84,25 @@ func (u *LikeUsecase) Like(ctx context.Context, like *likeentity.Like, isCancel 
 		return errorx.NotFound(reason.ObjectNotFound)
 	}
 
-	err = u.likeRepo.Like(ctx, like, targetUserID, isCancel)
+	like.TargetUserID = targetUserID
+	err = u.likeRepo.Like(ctx, like, like.TargetUserID, isCancel)
 	if err != nil {
 		return err
 	}
 
 	now := time.Now()
-	msg := likeentity.LikeMessage{
-		Type:     likeentity.LikeActionMessage,
-		LikeType: like.LikeType,
-		ActionMessage: &likeentity.ActionMessage{
-			UserID:    like.UserID,
-			IsCancel:  isCancel,
-			LikingID:  like.LikingID,
-			CreatedAt: &now,
+	msg := event.LikeCreatedMessage{
+		BaseMessage: event.BaseMessage{
+			LikeType: event.LikePost,
 		},
+		TargetUserID: like.TargetUserID,
+		UserID:       like.UserID,
+		IsCancel:     isCancel,
+		LikingID:     like.LikingID,
+		CreatedAt:    &now,
 	}
-	data, _ := json.Marshal(msg)
-	err = u.producers.Send(ctx, entity.LikeExchange, entity.LikeBindKey, data)
+
+	err = u.publisher.Publish(ctx, event.TopicLikeCreated, &msg)
 	if err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err)
 	}
@@ -221,39 +177,4 @@ func (u *LikeUsecase) GetLikingObjects(ctx context.Context, userID int64, object
 	default:
 		return nil, errorx.BadRequest(reason.TypeNotSupport)
 	}
-}
-
-func (u *LikeUsecase) Consume(message []byte) error {
-	msg := likeentity.LikeMessage{}
-	err := json.Unmarshal(message, &msg)
-	if err != nil {
-		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-	}
-	u.logger.Debugf("receive msg %#v", msg)
-	ctx := context.Background()
-	switch msg.Type {
-	case likeentity.LikeCountMessage:
-		switch msg.LikeType {
-		case likeentity.LikePost:
-			for likingID, likeCount := range msg.CountMessage.Counts {
-				err = u.postUseCase.UpdateLikeCount(ctx, likingID, likeCount)
-			}
-		case likeentity.LikeComment:
-			for likingID, likeCount := range msg.CountMessage.Counts {
-				err = u.commentRepo.UpdateLikeCount(ctx, likingID, likeCount)
-			}
-		case likeentity.LikeUser:
-			for likingID, likeCount := range msg.CountMessage.Counts {
-				err = u.userRepo.UpdateLikeCount(ctx, likingID, likeCount)
-			}
-		}
-	case likeentity.LikeActionMessage:
-		err = u.likeRepo.Save(ctx, &likeentity.Like{
-			UserID:   msg.ActionMessage.UserID,
-			LikingID: msg.ActionMessage.LikingID,
-			LikeType: msg.LikeType,
-		}, msg.ActionMessage.IsCancel)
-	}
-
-	return err
 }

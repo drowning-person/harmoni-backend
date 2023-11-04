@@ -3,18 +3,18 @@ package service
 import (
 	"context"
 	commententity "harmoni/internal/entity/comment"
-	"harmoni/internal/usecase"
+	"harmoni/internal/usecase/comment"
 
 	"go.uber.org/zap"
 )
 
 type CommentService struct {
-	cc     *usecase.CommentUseCase
+	cc     *comment.CommentUseCase
 	logger *zap.SugaredLogger
 }
 
 func NewCommentService(
-	cc *usecase.CommentUseCase,
+	cc *comment.CommentUseCase,
 	logger *zap.SugaredLogger,
 ) *CommentService {
 	return &CommentService{

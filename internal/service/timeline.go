@@ -4,19 +4,18 @@ import (
 	"context"
 	postentity "harmoni/internal/entity/post"
 	timelineentity "harmoni/internal/entity/timeline"
-	"harmoni/internal/usecase"
+	"harmoni/internal/usecase/timeline"
 
 	"go.uber.org/zap"
 )
 
 type TimeLineService struct {
-	tc     *usecase.TimeLinePullUsecase
-	tagc   *usecase.TagUseCase
+	tc     *timeline.TimeLinePullUsecase
 	logger *zap.SugaredLogger
 }
 
 func NewTimeLineService(
-	tc *usecase.TimeLinePullUsecase,
+	tc *timeline.TimeLinePullUsecase,
 	logger *zap.SugaredLogger,
 ) *TimeLineService {
 	return &TimeLineService{

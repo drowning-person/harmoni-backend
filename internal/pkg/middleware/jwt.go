@@ -6,7 +6,7 @@ import (
 	authentity "harmoni/internal/entity/auth"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
-	"harmoni/internal/usecase"
+	"harmoni/internal/usecase/user"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,7 +23,7 @@ type Config struct {
 
 type JwtAuthMiddleware struct {
 	conf        *Config
-	authUsecase *usecase.AuthUseCase
+	authUsecase *user.AuthUseCase
 }
 
 var (
@@ -36,7 +36,7 @@ var (
 
 type Option func(conf *Config)
 
-func NewJwtAuthMiddleware(authUsecase *usecase.AuthUseCase) *JwtAuthMiddleware {
+func NewJwtAuthMiddleware(authUsecase *user.AuthUseCase) *JwtAuthMiddleware {
 	mw := &JwtAuthMiddleware{
 		conf:        defaultConf,
 		authUsecase: authUsecase,

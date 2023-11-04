@@ -16,6 +16,7 @@ type Comment struct {
 	AuthorID  int64
 	ParentID  int64
 	RootID    int64
+	DialogID  int64
 	Content   string `gorm:"type:varchar(2048)"`
 	ToUserIDs string `gorm:"type:varchar(2048)"`
 	LikeCount int64  `gorm:"not null"`

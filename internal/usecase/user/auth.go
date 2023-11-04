@@ -1,11 +1,11 @@
-package usecase
+package user
 
 import (
 	"context"
-	"harmoni/internal/conf"
 	"harmoni/internal/entity"
 	authentity "harmoni/internal/entity/auth"
 	userentity "harmoni/internal/entity/user"
+	"harmoni/internal/infrastructure/config"
 	"harmoni/internal/pkg/common"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
@@ -33,10 +33,10 @@ func resetClaims(claims *entity.JwtCustomClaims) {
 type AuthUseCase struct {
 	authRepo authentity.AuthRepository
 	logger   *zap.SugaredLogger
-	conf     *conf.Auth
+	conf     *config.Auth
 }
 
-func NewAuthUseCase(conf *conf.Auth, authRepo authentity.AuthRepository, logger *zap.SugaredLogger) *AuthUseCase {
+func NewAuthUseCase(conf *config.Auth, authRepo authentity.AuthRepository, logger *zap.SugaredLogger) *AuthUseCase {
 	logger.Debugf("auth config: %#v", conf)
 	return &AuthUseCase{
 		authRepo: authRepo,

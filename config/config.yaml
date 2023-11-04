@@ -1,7 +1,10 @@
 app:
   addr: 0.0.0.0:8080
   debug: false
-
+  base_url: http://localhost
+  start_time: 2022-08-01
+  app_id: 1
+  locale: zh
 auth:
   token_expire: 5m
   refresh_token_expire: 72h

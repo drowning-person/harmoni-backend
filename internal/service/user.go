@@ -8,22 +8,22 @@ import (
 	userentity "harmoni/internal/entity/user"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
-	"harmoni/internal/usecase"
+	"harmoni/internal/usecase/user"
 
 	"go.uber.org/zap"
 )
 
 type UserService struct {
-	uc     *usecase.UserUseCase
-	ac     *usecase.AuthUseCase
-	auc    *usecase.AccountUsecase
+	uc     *user.UserUseCase
+	ac     *user.AuthUseCase
+	auc    *user.AccountUsecase
 	logger *zap.SugaredLogger
 }
 
 func NewUserService(
-	uc *usecase.UserUseCase,
-	ac *usecase.AuthUseCase,
-	auc *usecase.AccountUsecase,
+	uc *user.UserUseCase,
+	ac *user.AuthUseCase,
+	auc *user.AccountUsecase,
 	logger *zap.SugaredLogger,
 ) *UserService {
 	return &UserService{

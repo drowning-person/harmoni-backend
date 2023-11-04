@@ -6,8 +6,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"harmoni/internal/conf"
 	fileentity "harmoni/internal/entity/file"
+	"harmoni/internal/infrastructure/config"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/filesystem"
 	"harmoni/internal/pkg/filesystem/driver"
@@ -28,19 +28,19 @@ import (
 )
 
 type FileUseCase struct {
-	appConf        *conf.App
+	appConf        *config.App
 	rdb            redis.UniversalClient
 	fs             *filesystem.FileSystem
-	fileConf       *conf.FileStorage
+	fileConf       *config.FileStorage
 	fileRepository fileentity.FileRepository
 	logger         *zap.SugaredLogger
 }
 
 // store file in local for now
 func NewFileUseCase(
-	appConf *conf.App,
+	appConf *config.App,
 	rdb redis.UniversalClient,
-	fileConf *conf.FileStorage,
+	fileConf *config.FileStorage,
 	filesystem *filesystem.FileSystem,
 	fileRepository fileentity.FileRepository,
 	logger *zap.SugaredLogger,

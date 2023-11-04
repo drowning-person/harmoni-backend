@@ -9,9 +9,9 @@ import (
 type CreateCommentRequest struct {
 	UserID int64 `json:"-"`
 	// object id
-	ObjectID  string  `json:"oid" validate:"required" label:"对象ID"`
-	ParentID  int64   `json:"pid"`
-	RootID    int64   `json:"rid"`
+	ObjectID  int64   `json:"oid,string" validate:"required" label:"对象ID"`
+	ParentID  int64   `json:"pid,string"`
+	RootID    int64   `json:"rid,string"`
 	Content   string  `json:"content" validate:"required,gte=10,lte=512" label:"评论内容"`
 	ToMembers []int64 `json:"to_members"`
 }
@@ -22,6 +22,7 @@ func (r *CreateCommentRequest) ToDomain() *Comment {
 		ParentID:  r.ParentID,
 		RootID:    r.RootID,
 		Content:   r.Content,
+		ObjectID:  r.ObjectID,
 		ToMembers: make([]*user.UserBasicInfo, 0, len(r.ToMembers)),
 	}
 	toMemberMap := map[int64]bool{}

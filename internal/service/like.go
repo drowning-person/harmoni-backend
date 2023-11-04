@@ -4,18 +4,18 @@ import (
 	"context"
 	likeentity "harmoni/internal/entity/like"
 	"harmoni/internal/entity/paginator"
-	"harmoni/internal/usecase"
+	"harmoni/internal/usecase/like"
 
 	"go.uber.org/zap"
 )
 
 type LikeService struct {
-	lc     *usecase.LikeUsecase
+	lc     *like.LikeUsecase
 	logger *zap.SugaredLogger
 }
 
 func NewLikeUsecase(
-	lc *usecase.LikeUsecase,
+	lc *like.LikeUsecase,
 	logger *zap.SugaredLogger) *LikeService {
 	return &LikeService{
 		lc:     lc,

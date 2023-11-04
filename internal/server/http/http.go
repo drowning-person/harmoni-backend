@@ -1,28 +1,45 @@
-package server
+package http
 
 import (
-	"harmoni/internal/conf"
+	"harmoni/internal/infrastructure/config"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/httpx/fiberx"
 	"harmoni/internal/pkg/middleware"
 	"harmoni/internal/pkg/reason"
-	"harmoni/internal/router"
+	"harmoni/internal/types/iface"
 
 	"github.com/gofiber/contrib/fiberzap"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/google/wire"
 	"go.uber.org/zap"
 )
 
+var ProviderSetHTTP = wire.NewSet(
+	NewHTTPServer,
+	NewHarmoniAPIRouter,
+)
+
+var _ iface.Executor = (*FiberExecutor)(nil)
+
+type FiberExecutor struct {
+	conf *config.App
+	*fiber.App
+}
+
+func (r *FiberExecutor) Start() error {
+	return r.Listen(r.conf.Addr)
+}
+
 // NewHTTPServer new http server.
 func NewHTTPServer(
-	conf *conf.App,
+	conf *config.App,
 	zapLogger *zap.Logger,
-	harmoniRouter *router.HarmoniAPIRouter,
+	harmoniRouter *HarmoniAPIRouter,
 	authMiddleware *middleware.JwtAuthMiddleware,
-) *fiber.App {
+) *FiberExecutor {
 	r := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			switch e := err.(type) {
@@ -56,5 +73,8 @@ func NewHTTPServer(
 	authV1.Use(authMiddleware.MustAuth())
 	harmoniRouter.RegisterHarmoniAPIRouter(authV1)
 
-	return r
+	return &FiberExecutor{
+		conf: conf,
+		App:  r,
+	}
 }

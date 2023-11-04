@@ -9,16 +9,16 @@ import (
 )
 
 type Comment struct {
-	CommentID int64                 `json:"cid,string,omitempty"`
-	ObjectID  int64                 `json:"oid,string,omitempty"`
-	Author    *user.UserBasicInfo   `json:"author,omitempty"`
+	CommentID int64                 `json:"cid,string"`
+	ObjectID  int64                 `json:"oid,string"`
+	Author    *user.UserBasicInfo   `json:"author"`
 	ToMembers []*user.UserBasicInfo `json:"toMembers"`
-	ParentID  int64                 `json:"pid,string,omitempty"`
-	RootID    int64                 `json:"rid,string,omitempty"`
-	Content   string                `json:"content,omitempty"`
-	LikeCount int64                 `json:"like_count,omitempty"`
-	CreatedAt time.Time             `json:"created_at,omitempty"`
-	UpdatedAt time.Time             `json:"updated_at,omitempty"`
+	ParentID  int64                 `json:"pid,string"`
+	RootID    int64                 `json:"rid,string"`
+	Content   string                `json:"content"`
+	LikeCount int64                 `json:"like_count"`
+	CreatedAt time.Time             `json:"created_at"`
+	UpdatedAt time.Time             `json:"updated_at"`
 	Children  []*Comment            `json:"replies"`
 }
 

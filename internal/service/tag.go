@@ -6,18 +6,18 @@ import (
 	tagentity "harmoni/internal/entity/tag"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
-	"harmoni/internal/usecase"
+	"harmoni/internal/usecase/tag"
 
 	"go.uber.org/zap"
 )
 
 type TagService struct {
-	tc     *usecase.TagUseCase
+	tc     *tag.TagUseCase
 	logger *zap.SugaredLogger
 }
 
 func NewTagService(
-	tc *usecase.TagUseCase,
+	tc *tag.TagUseCase,
 	logger *zap.SugaredLogger,
 ) *TagService {
 	return &TagService{

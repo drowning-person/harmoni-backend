@@ -1,23 +1,24 @@
-package usecase
+package timeline
 
 import (
 	"context"
 	followentity "harmoni/internal/entity/follow"
 	"harmoni/internal/entity/paginator"
 	postentity "harmoni/internal/entity/post"
+	"harmoni/internal/usecase/post"
 
 	"go.uber.org/zap"
 )
 
 type TimeLinePullUsecase struct {
 	followRepo  followentity.FollowRepository
-	postUseCase *PostUseCase
+	postUseCase *post.PostUseCase
 	logger      *zap.SugaredLogger
 }
 
 func NewTimeLineUsecase(
 	followRepo followentity.FollowRepository,
-	postUseCase *PostUseCase,
+	postUseCase *post.PostUseCase,
 	loggger *zap.SugaredLogger,
 ) *TimeLinePullUsecase {
 	return &TimeLinePullUsecase{

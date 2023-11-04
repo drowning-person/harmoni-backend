@@ -2,74 +2,40 @@ package cron
 
 import (
 	"context"
-	"encoding/json"
-	"harmoni/internal/conf"
-	"harmoni/internal/entity"
 	"harmoni/internal/entity/like"
-	"harmoni/internal/pkg/queue/rabbitmq"
-	"harmoni/internal/usecase"
+	eventlike "harmoni/internal/types/events/like"
+	"harmoni/internal/types/iface"
+	likeusecase "harmoni/internal/usecase/like"
 	"time"
 
 	"github.com/go-co-op/gocron"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 )
 
+var _ iface.Executor = (*ScheduledTaskManager)(nil)
+
 type ScheduledTaskManager struct {
-	producers   *rabbitmq.RabbitMqSender
+	publisher   iface.Publisher
 	scheduler   *gocron.Scheduler
-	likeUsecase *usecase.LikeUsecase
+	likeUsecase *likeusecase.LikeUsecase
 	logger      *zap.SugaredLogger
 }
 
 // NewScheduledTaskManager new scheduled task manager
 func NewScheduledTaskManager(
-	conf *conf.MessageQueue,
-	likeUsecase *usecase.LikeUsecase,
+	publisher iface.Publisher,
+	likeUsecase *likeusecase.LikeUsecase,
 	logger *zap.SugaredLogger,
 ) (*ScheduledTaskManager, func(), error) {
 	s := gocron.NewScheduler(time.Local)
 	manager := &ScheduledTaskManager{
 		scheduler:   s,
+		publisher:   publisher,
 		likeUsecase: likeUsecase,
 		logger:      logger,
 	}
 
-	rabbitConf := rabbitmq.RabbitConf{
-		Username: conf.RabbitMQ.Username,
-		Password: conf.RabbitMQ.Password,
-		Host:     conf.RabbitMQ.Host,
-		Port:     conf.RabbitMQ.Port,
-		VHost:    conf.RabbitMQ.VHost,
-	}
-
-	admin := rabbitmq.MustNewAdmin(rabbitConf)
-	err := admin.DeclareExchange(rabbitmq.ExchangeConf{
-		ExchangeName: entity.LikeExchange,
-		Type:         amqp.ExchangeDirect,
-		Durable:      true,
-	}, nil)
-	if err != nil {
-		return nil, func() {}, err
-	}
-	err = admin.DeclareQueue(rabbitmq.QueueConf{
-		Name:    entity.LikeQueue,
-		Durable: true,
-	}, nil)
-	if err != nil {
-		return nil, func() {}, err
-	}
-	err = admin.Bind(entity.LikeQueue, entity.LikeBindKey, entity.LikeExchange, false, nil)
-	if err != nil {
-		return nil, func() {}, err
-	}
-
-	manager.producers = rabbitmq.MustNewSender(rabbitmq.RabbitSenderConf{
-		RabbitConf:  rabbitConf,
-		ContentType: "application/json",
-	})
-
-	return manager, func() { manager.Stop() }, nil
+	return manager, func() { manager.Shutdown() }, nil
 }
 
 func (s *ScheduledTaskManager) likeCountTask() {
@@ -85,30 +51,27 @@ func (s *ScheduledTaskManager) likeCountTask() {
 			continue
 		}
 
-		likeMsg := &like.LikeMessage{
-			Type:     like.LikeCountMessage,
-			LikeType: likeType,
-			CountMessage: &like.CountMessage{
-				Counts: counts,
-			},
+		likeMsg := &eventlike.LikeStoreMessage{
+			Counts: counts,
 		}
-		data, _ := json.Marshal(likeMsg)
-		err = s.producers.Send(ctx, entity.LikeExchange, entity.LikeBindKey, data)
+		err = s.publisher.Publish(ctx, eventlike.TopicLikeStore, likeMsg)
 		if err != nil {
 			s.logger.Errorf("send like count msg to mq failed: %s", err)
 		}
 	}
 }
 
-func (s *ScheduledTaskManager) Start() {
-	s.scheduler.Every("5m").Do(s.likeCountTask)
+func (s *ScheduledTaskManager) Start() error {
+	s.scheduler.Every("1h").Do(s.likeCountTask)
 	s.scheduler.StartAsync()
+	return nil
 }
 
-func (s *ScheduledTaskManager) Stop() {
+func (s *ScheduledTaskManager) Shutdown() error {
 	s.scheduler.Stop()
-	err := s.producers.Close()
+	err := s.publisher.Close()
 	if err != nil {
 		s.logger.Errorf("stop cron failed: %s", err)
 	}
+	return err
 }

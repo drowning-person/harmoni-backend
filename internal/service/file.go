@@ -3,21 +3,21 @@ package service
 import (
 	"context"
 	fileentity "harmoni/internal/entity/file"
-	"harmoni/internal/usecase"
 	fileusecase "harmoni/internal/usecase/file"
+	"harmoni/internal/usecase/user"
 
 	"go.uber.org/zap"
 )
 
 type FileService struct {
 	fc     *fileusecase.FileUseCase
-	uc     *usecase.UserUseCase
+	uc     *user.UserUseCase
 	logger *zap.SugaredLogger
 }
 
 func NewFileService(
 	fc *fileusecase.FileUseCase,
-	uc *usecase.UserUseCase,
+	uc *user.UserUseCase,
 	logger *zap.SugaredLogger,
 ) *FileService {
 	return &FileService{

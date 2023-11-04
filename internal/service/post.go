@@ -5,20 +5,21 @@ import (
 	postentity "harmoni/internal/entity/post"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
-	"harmoni/internal/usecase"
+	"harmoni/internal/usecase/post"
+	"harmoni/internal/usecase/tag"
 
 	"go.uber.org/zap"
 )
 
 type PostService struct {
-	pc     *usecase.PostUseCase
-	tc     *usecase.TagUseCase
+	pc     *post.PostUseCase
+	tc     *tag.TagUseCase
 	logger *zap.SugaredLogger
 }
 
 func NewPostService(
-	pc *usecase.PostUseCase,
-	tc *usecase.TagUseCase,
+	pc *post.PostUseCase,
+	tc *tag.TagUseCase,
 	logger *zap.SugaredLogger,
 ) *PostService {
 	return &PostService{

@@ -1,11 +1,11 @@
-package usecase
+package email
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"harmoni/internal/conf"
 	emailentity "harmoni/internal/entity/email"
+	"harmoni/internal/infrastructure/config"
 	"harmoni/internal/pkg/common"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
@@ -136,11 +136,11 @@ func emailcodeKey(email string, emailtype emailentity.EmailType) string {
 type EmailUsecase struct {
 	emailRepo emailentity.EmailRepo
 	logger    *zap.SugaredLogger
-	conf      *conf.Email
+	conf      *config.Email
 	emailPool *email.Pool
 }
 
-func NewEmailUsecase(conf *conf.Email, emailRepo emailentity.EmailRepo, logger *zap.SugaredLogger) (*EmailUsecase, error) {
+func NewEmailUsecase(conf *config.Email, emailRepo emailentity.EmailRepo, logger *zap.SugaredLogger) (*EmailUsecase, error) {
 	pool, err := email.NewPool(fmt.Sprintf("%s:%s", conf.Host, conf.Port), runtime.NumCPU()*2,
 		smtp.PlainAuth("", conf.UserName, conf.Password, conf.Host))
 	if err != nil {

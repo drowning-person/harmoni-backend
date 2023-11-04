@@ -1,23 +1,29 @@
 package main
 
 import (
-	"harmoni/internal/conf"
+	"context"
 	"harmoni/internal/cron"
+	"harmoni/internal/infrastructure/config"
+	"harmoni/internal/pkg/app"
+	"harmoni/internal/pkg/validator"
+	"harmoni/internal/server/http"
+	"harmoni/internal/server/mq"
 
-	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 )
 
-type Application struct {
-	*fiber.App
-}
-
-func NewApplication(fiberApp *fiber.App, cronApp *cron.ScheduledTaskManager) *Application {
-	cronApp.Start()
-	return &Application{App: fiberApp}
+func newApplication(
+	fiberExecutor *http.FiberExecutor,
+	cronApp *cron.ScheduledTaskManager,
+	messageExecutor *mq.MQExecutor,
+	logger *zap.SugaredLogger,
+) *app.Application {
+	return app.NewApp(logger,
+		app.WithServer(fiberExecutor, cronApp, messageExecutor))
 }
 
 func main() {
-	cfg, err := conf.ReadConfig("./configs/config.yaml")
+	cfg, err := config.ReadConfig("./configs/config.yaml")
 	if err != nil {
 		panic(err)
 	}
@@ -27,8 +33,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = validator.InitTrans(cfg.App)
+	if err != nil {
+		panic(err)
+	}
 
-	err = app.Listen(cfg.App.Addr)
+	err = app.Run(context.Background())
 	if err != nil {
 		panic(err)
 	}

@@ -5,18 +5,19 @@ import (
 	followentity "harmoni/internal/entity/follow"
 	"harmoni/internal/entity/paginator"
 	userentity "harmoni/internal/entity/user"
-	"harmoni/internal/usecase"
+	"harmoni/internal/usecase/follow"
+	"harmoni/internal/usecase/user"
 
 	"go.uber.org/zap"
 )
 
 type FollowService struct {
-	fc     *usecase.FollowUseCase
-	uc     *usecase.UserUseCase
+	fc     *follow.FollowUseCase
+	uc     *user.UserUseCase
 	logger *zap.SugaredLogger
 }
 
-func NewFollowService(fc *usecase.FollowUseCase, uc *usecase.UserUseCase, logger *zap.SugaredLogger) *FollowService {
+func NewFollowService(fc *follow.FollowUseCase, uc *user.UserUseCase, logger *zap.SugaredLogger) *FollowService {
 	return &FollowService{
 		fc:     fc,
 		uc:     uc,

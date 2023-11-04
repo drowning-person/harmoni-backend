@@ -1,7 +1,6 @@
 package data
 
 import (
-	"harmoni/internal/conf"
 	fileentity "harmoni/internal/entity/file"
 	followentity "harmoni/internal/entity/follow"
 	likeentity "harmoni/internal/entity/like"
@@ -9,6 +8,7 @@ import (
 	postreltag "harmoni/internal/entity/post_rel_tag"
 	tagentity "harmoni/internal/entity/tag"
 	userentity "harmoni/internal/entity/user"
+	"harmoni/internal/infrastructure/config"
 	"harmoni/internal/infrastructure/po/comment"
 
 	"go.uber.org/zap"
@@ -17,7 +17,7 @@ import (
 	"moul.io/zapgorm2"
 )
 
-func NewDB(conf *conf.DB, logger *zap.Logger) (*gorm.DB, func(), error) {
+func NewDB(conf *config.DB, logger *zap.Logger) (*gorm.DB, func(), error) {
 	l := zapgorm2.New(logger)
 	l.SetAsDefault()
 	db, err := gorm.Open(mysql.Open(conf.Source), &gorm.Config{Logger: l})

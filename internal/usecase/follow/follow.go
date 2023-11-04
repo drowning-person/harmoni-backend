@@ -1,4 +1,4 @@
-package usecase
+package follow
 
 import (
 	"context"
@@ -6,20 +6,22 @@ import (
 	"harmoni/internal/entity/paginator"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
+	taguse "harmoni/internal/usecase/tag"
+	useruse "harmoni/internal/usecase/user"
 
 	"go.uber.org/zap"
 )
 
 type FollowUseCase struct {
 	followRepo  followentity.FollowRepository
-	userUseCase *UserUseCase
-	tagUseCase  *TagUseCase
+	userUseCase *useruse.UserUseCase
+	tagUseCase  *taguse.TagUseCase
 	logger      *zap.SugaredLogger
 }
 
 func NewFollowUseCase(followRepo followentity.FollowRepository,
-	userUseCase *UserUseCase,
-	tagUseCase *TagUseCase,
+	userUseCase *useruse.UserUseCase,
+	tagUseCase *taguse.TagUseCase,
 	logger *zap.SugaredLogger) *FollowUseCase {
 	return &FollowUseCase{
 		followRepo:  followRepo,

@@ -6,16 +6,18 @@
 package main
 
 import (
-	"harmoni/internal/conf"
 	"harmoni/internal/cron"
 	"harmoni/internal/handler"
+	"harmoni/internal/infrastructure/config"
 	"harmoni/internal/infrastructure/data"
+	"harmoni/internal/infrastructure/mq/publisher"
+	"harmoni/internal/pkg/app"
 	"harmoni/internal/pkg/logger"
 	"harmoni/internal/pkg/middleware"
 	"harmoni/internal/pkg/snowflakex"
 	"harmoni/internal/repository"
-	"harmoni/internal/router"
-	"harmoni/internal/server"
+	"harmoni/internal/server/http"
+	"harmoni/internal/server/mq"
 	"harmoni/internal/service"
 	"harmoni/internal/usecase"
 
@@ -28,29 +30,30 @@ func sugar(l *zap.Logger) *zap.SugaredLogger {
 }
 
 func initApplication(
-	appConf *conf.App,
-	dbconf *conf.DB,
-	rdbconf *conf.Redis,
-	authConf *conf.Auth,
-	emailConf *conf.Email,
-	messageConf *conf.MessageQueue,
-	fileConf *conf.FileStorage,
-	logConf *conf.Log) (*Application, func(), error) {
+	appConf *config.App,
+	dbconf *config.DB,
+	rdbconf *config.Redis,
+	authConf *config.Auth,
+	emailConf *config.Email,
+	messageConf *config.MessageQueue,
+	fileConf *config.FileStorage,
+	logConf *config.Log) (*app.Application, func(), error) {
 	panic(wire.Build(
 		// validator.InitTrans("zh"),
 		sugar,
 		middleware.NewJwtAuthMiddleware,
-		router.NewHarmoniAPIRouter,
+		http.ProviderSetHTTP,
 		snowflakex.NewSnowflakeNode,
 		logger.NewZapLogger,
 		repository.ProviderSetRepo,
 		handler.ProviderSetHandler,
 		service.ProviderSetService,
 		usecase.ProviderSetUsecase,
-		server.NewHTTPServer,
 		cron.NewScheduledTaskManager,
-		NewApplication,
+		newApplication,
 		data.NewDB,
 		data.CacheProvider,
+		mq.ProviderSetMQ,
+		publisher.ProviderSetPublisher,
 	))
 }

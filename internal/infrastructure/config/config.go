@@ -1,6 +1,7 @@
-package conf
+package config
 
 import (
+	"fmt"
 	"harmoni/internal/pkg/filesystem/policy"
 	"path"
 	"runtime"
@@ -27,6 +28,7 @@ type App struct {
 	BaseURL   string `mapstructure:"base_url"`
 	StartTime string `mapstructure:"start_time"`
 	AppID     int64  `mapstructure:"app_id"`
+	Locale    string `mapstructure:"locale"`
 }
 
 func SetAppDefault(v *viper.Viper) {
@@ -36,6 +38,7 @@ func SetAppDefault(v *viper.Viper) {
 		"base_url":   "localhost",
 		"start_time": time.Now().Format("2006-01-02"),
 		"app_id":     1,
+		"locale":     "zh",
 	})
 }
 
@@ -111,12 +114,14 @@ func SetDBEnv(v *viper.Viper) error {
 type Log struct {
 	Level string `default:"info"`
 	Path  string `default:"./log/harmoni.log"`
+	Color bool
 }
 
 func SetLogDefault(v *viper.Viper) {
 	v.SetDefault("log", map[string]interface{}{
 		"level": "info",
 		"path":  "./log/harmoni.log",
+		"color": true,
 	})
 }
 
@@ -210,6 +215,10 @@ type RabbitMQConf struct {
 	Host     string `mapstructure:"host,omitempty"`
 	Port     int    `mapstructure:"port,omitempty"`
 	VHost    string `mapstructure:"vhost,omitempty"`
+}
+
+func (c *RabbitMQConf) BuildURL() string {
+	return fmt.Sprintf("amqp://%s:%s@%s:%d/%s", c.Username, c.Password, c.Host, c.Port, c.VHost)
 }
 
 type FilePolicyOption struct {

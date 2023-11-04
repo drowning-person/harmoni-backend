@@ -3,6 +3,7 @@ package validator
 import (
 	"errors"
 	"fmt"
+	"harmoni/internal/infrastructure/config"
 	"reflect"
 
 	"github.com/go-playground/locales/en"
@@ -20,7 +21,7 @@ var (
 )
 
 // InitTrans locale 指定你想要的翻译 环境
-func InitTrans(locale string) (err error) {
+func InitTrans(conf *config.App) (err error) {
 	//中文
 	zhT := zh.New()
 	//英文
@@ -30,12 +31,12 @@ func InitTrans(locale string) (err error) {
 
 	//local 一般会在前端的请求头中 定义Accept-Language
 	var ok bool
-	trans, ok = uni.GetTranslator(locale)
+	trans, ok = uni.GetTranslator(conf.Locale)
 	if !ok {
-		return fmt.Errorf("uni.GetTranslator failed:%s ", locale)
+		return fmt.Errorf("uni.GetTranslator failed:%s ", conf.Locale)
 	}
 
-	switch locale {
+	switch conf.Locale {
 	case "en":
 		err = enTrans.RegisterDefaultTranslations(v, trans)
 	case "zh":

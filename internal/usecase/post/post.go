@@ -1,4 +1,4 @@
-package usecase
+package post
 
 import (
 	"context"
@@ -9,23 +9,32 @@ import (
 	userentity "harmoni/internal/entity/user"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
+	"harmoni/internal/usecase/post/events"
+	taguse "harmoni/internal/usecase/tag"
+	useruse "harmoni/internal/usecase/user"
 
+	"github.com/google/wire"
 	"go.uber.org/zap"
+)
+
+var ProviderSetPost = wire.NewSet(
+	NewPostUseCase,
+	events.NewPostEventsHandler,
 )
 
 type PostUseCase struct {
 	postRepo    postentity.PostRepository
 	likeRepo    likeentity.LikeRepository
-	userUsecase *UserUseCase
-	tagUsecase  *TagUseCase
+	userUsecase *useruse.UserUseCase
+	tagUsecase  *taguse.TagUseCase
 	logger      *zap.SugaredLogger
 }
 
 func NewPostUseCase(
 	postRepo postentity.PostRepository,
 	likeRepo likeentity.LikeRepository,
-	userUsecase *UserUseCase,
-	tagUsecase *TagUseCase,
+	userUsecase *useruse.UserUseCase,
+	tagUsecase *taguse.TagUseCase,
 	logger *zap.SugaredLogger,
 ) *PostUseCase {
 	return &PostUseCase{

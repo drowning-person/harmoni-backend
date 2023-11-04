@@ -6,10 +6,11 @@ import (
 )
 
 type LikeRequest struct {
-	Type     LikeType `json:"type,omitempty" validate:"required"`
-	UserID   int64    `json:"user_id,omitempty"`
-	ObjectID int64    `json:"oid,omitempty,string" validate:"required"`
-	IsCancel bool     `json:"is_cancel,omitempty"`
+	Type                LikeType `json:"type,omitempty" validate:"required"`
+	UserID              int64    `json:"user_id,omitempty"`
+	ObjectID            int64    `json:"oid,omitempty,string" validate:"required"`
+	ObjectCreatorUserID int64    `json:"-"`
+	IsCancel            bool     `json:"is_cancel,omitempty"`
 }
 
 type LikeReply struct {

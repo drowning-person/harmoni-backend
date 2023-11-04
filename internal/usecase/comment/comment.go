@@ -1,35 +1,42 @@
-package usecase
+package comment
 
 import (
 	"context"
 	commententity "harmoni/internal/entity/comment"
-	"harmoni/internal/entity/like"
+	likeentity "harmoni/internal/entity/like"
 	"harmoni/internal/entity/paginator"
 	"harmoni/internal/entity/user"
+	"harmoni/internal/usecase/comment/events"
 	"harmoni/internal/usecase/file"
 
+	"github.com/google/wire"
 	"go.uber.org/zap"
+)
+
+var ProviderSetComment = wire.NewSet(
+	NewCommentUseCase,
+	events.NewCommentEventsHandler,
 )
 
 type CommentUseCase struct {
 	commentRepo commententity.CommentRepository
+	likeRepo    likeentity.LikeRepository
 	userRepo    user.UserRepository
 	fileUsecase *file.FileUseCase
-	likeUsecase *LikeUsecase
 	logger      *zap.SugaredLogger
 }
 
 func NewCommentUseCase(
 	commentRepo commententity.CommentRepository,
+	likeRepo likeentity.LikeRepository,
 	userRepo user.UserRepository,
 	fileUsecase *file.FileUseCase,
-	likeUsecase *LikeUsecase,
 	logger *zap.SugaredLogger) *CommentUseCase {
 	return &CommentUseCase{
 		commentRepo: commentRepo,
+		likeRepo:    likeRepo,
 		userRepo:    userRepo,
 		fileUsecase: fileUsecase,
-		likeUsecase: likeUsecase,
 		logger:      logger,
 	}
 }
@@ -99,7 +106,7 @@ func (u *CommentUseCase) GetPage(ctx context.Context, commentQuery *commententit
 		userMap[userID] = userTmp.ToBasicInfo(files[userTmp.Avatar])
 	}
 
-	likes, err := u.likeUsecase.BatchLikeCountByIDs(ctx, commentIDs, like.LikeComment)
+	likes, err := u.likeRepo.BatchLikeCountByIDs(ctx, commentIDs, likeentity.LikeComment)
 	if err != nil {
 		return nil, err
 	}
