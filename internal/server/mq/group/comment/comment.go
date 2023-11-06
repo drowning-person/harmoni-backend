@@ -9,6 +9,7 @@ import (
 	"harmoni/internal/usecase/comment/events"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"go.uber.org/zap"
 )
 
 const (
@@ -19,9 +20,10 @@ func NewCommentGroup(
 	conf *config.MessageQueue,
 	r *message.Router,
 	commentEventsHandler *events.CommentEventsHandler,
+	logger *zap.Logger,
 	m ...message.HandlerMiddleware,
 ) error {
-	sub, err := subscriber.NewSubscriber(conf, groupName)
+	sub, err := subscriber.NewSubscriber(conf, groupName, logger)
 	if err != nil {
 		return err
 	}

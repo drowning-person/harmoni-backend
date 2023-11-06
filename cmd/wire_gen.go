@@ -115,7 +115,7 @@ func initApplication(appConf *config.App, dbconf *config.DB, rdbconf *config.Red
 	commentUseCase := comment2.NewCommentUseCase(commentRepo, likeRepo, userRepo, fileUseCase, sugaredLogger)
 	commentService := service.NewCommentService(commentUseCase, sugaredLogger)
 	commentHandler := handler.NewCommentHandler(commentService)
-	messagePublisher, err := publisher.NewPublisher(messageConf)
+	messagePublisher, err := publisher.NewPublisher(messageConf, zapLogger)
 	if err != nil {
 		cleanup2()
 		cleanup()
@@ -146,7 +146,7 @@ func initApplication(appConf *config.App, dbconf *config.DB, rdbconf *config.Red
 	likeEventsHandler := events2.NewLikeEventsHandler(likeRepo)
 	postEventsHandler := events3.NewPostEventsHandler(postRepo)
 	userEventsHandler := events4.NewUserEventsHandler(userRepo)
-	router, err := mq.NewMQRouter(messageConf, commentEventsHandler, likeEventsHandler, postEventsHandler, userEventsHandler)
+	router, err := mq.NewMQRouter(messageConf, commentEventsHandler, likeEventsHandler, postEventsHandler, userEventsHandler, zapLogger)
 	if err != nil {
 		cleanup4()
 		cleanup3()

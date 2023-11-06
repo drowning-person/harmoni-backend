@@ -9,6 +9,7 @@ import (
 	"harmoni/internal/usecase/user/events"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"go.uber.org/zap"
 )
 
 var (
@@ -19,9 +20,10 @@ func NewUserGroup(
 	conf *config.MessageQueue,
 	r *message.Router,
 	userEventsHandler *events.UserEventsHandler,
+	logger *zap.Logger,
 	m ...message.HandlerMiddleware,
 ) error {
-	sub, err := subscriber.NewSubscriber(conf, groupName)
+	sub, err := subscriber.NewSubscriber(conf, groupName, logger)
 	if err != nil {
 		return err
 	}

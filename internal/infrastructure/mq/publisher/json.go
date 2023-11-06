@@ -10,7 +10,9 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-amqp/v2/pkg/amqp"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/garsue/watermillzap"
 	"github.com/google/wire"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -20,7 +22,7 @@ var ProviderSetPublisher = wire.NewSet(
 	wire.Bind(new(iface.Publisher), new(*JSONPublisher)),
 )
 
-func NewPublisher(conf *config.MessageQueue) (message.Publisher, error) {
+func NewPublisher(conf *config.MessageQueue, logger *zap.Logger) (message.Publisher, error) {
 	var (
 		pub message.Publisher
 		err error
@@ -28,7 +30,7 @@ func NewPublisher(conf *config.MessageQueue) (message.Publisher, error) {
 	switch {
 	case conf.RabbitMQ != nil:
 		amqpConfig := amqp.NewDurablePubSubConfig(conf.RabbitMQ.BuildURL(), nil)
-		pub, err = amqp.NewPublisher(amqpConfig, watermill.NewStdLogger(false, false))
+		pub, err = amqp.NewPublisher(amqpConfig, watermillzap.NewLogger(logger))
 		if err != nil {
 			return nil, err
 		}

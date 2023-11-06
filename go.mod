@@ -6,6 +6,7 @@ require (
 	github.com/ThreeDotsLabs/watermill v1.3.5
 	github.com/ThreeDotsLabs/watermill-amqp/v2 v2.1.0
 	github.com/bwmarrin/snowflake v0.3.0
+	github.com/garsue/watermillzap v1.2.0
 	github.com/go-co-op/gocron v1.28.1
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
@@ -19,7 +20,7 @@ require (
 	github.com/rabbitmq/amqp091-go v1.8.1
 	github.com/redis/go-redis/v9 v9.0.3
 	github.com/spf13/viper v1.15.0
-	go.uber.org/zap v1.24.0
+	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.7.0
 	google.golang.org/protobuf v1.31.0
 	gorm.io/driver/mysql v1.4.7
@@ -55,6 +56,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/savsgio/dictpool v0.0.0-20221023140959-7bf2e61cea94 // indirect
 	github.com/savsgio/gotils v0.0.0-20230208104028-c358bd845dee // indirect
+	github.com/sony/gobreaker v0.5.0 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -65,7 +67,7 @@ require (
 	github.com/valyala/fasthttp v1.45.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
