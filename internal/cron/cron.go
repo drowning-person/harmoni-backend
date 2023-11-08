@@ -3,6 +3,7 @@ package cron
 import (
 	"context"
 	"harmoni/internal/entity/like"
+	"harmoni/internal/infrastructure/config"
 	eventlike "harmoni/internal/types/events/like"
 	"harmoni/internal/types/iface"
 	likeusecase "harmoni/internal/usecase/like"
@@ -15,6 +16,7 @@ import (
 var _ iface.Executor = (*ScheduledTaskManager)(nil)
 
 type ScheduledTaskManager struct {
+	conf        *config.Like
 	publisher   iface.Publisher
 	scheduler   *gocron.Scheduler
 	likeUsecase *likeusecase.LikeUsecase
@@ -23,12 +25,14 @@ type ScheduledTaskManager struct {
 
 // NewScheduledTaskManager new scheduled task manager
 func NewScheduledTaskManager(
+	conf *config.Like,
 	publisher iface.Publisher,
 	likeUsecase *likeusecase.LikeUsecase,
 	logger *zap.SugaredLogger,
 ) (*ScheduledTaskManager, func(), error) {
 	s := gocron.NewScheduler(time.Local)
 	manager := &ScheduledTaskManager{
+		conf:        conf,
 		scheduler:   s,
 		publisher:   publisher,
 		likeUsecase: likeUsecase,
@@ -65,7 +69,10 @@ func (s *ScheduledTaskManager) likeCountTask() {
 }
 
 func (s *ScheduledTaskManager) Start() error {
-	s.scheduler.Every("1h").Do(s.likeCountTask)
+	_, err := s.scheduler.Every(s.conf.DatabaseSyncInterval).Do(s.likeCountTask)
+	if err != nil {
+		return err
+	}
 	s.scheduler.StartAsync()
 	return nil
 }

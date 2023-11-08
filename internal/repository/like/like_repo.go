@@ -8,6 +8,7 @@ import (
 	likeentity "harmoni/internal/entity/like"
 	"harmoni/internal/entity/paginator"
 	userentity "harmoni/internal/entity/user"
+	"harmoni/internal/infrastructure/config"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
 	"hash/crc32"
@@ -24,8 +25,6 @@ var _ likeentity.LikeRepository = (*LikeRepo)(nil)
 
 const (
 	shardCounts = 5
-	userSetTTL  = time.Hour * 24 * 3
-	countTTL    = time.Hour
 )
 
 const (
@@ -74,6 +73,7 @@ func getCountCacheKey(like *likeentity.Like) string {
 }
 
 type LikeRepo struct {
+	conf     *config.Like
 	db       *gorm.DB
 	rdb      redis.UniversalClient
 	userRepo userentity.UserRepository
@@ -81,12 +81,14 @@ type LikeRepo struct {
 }
 
 func NewLikeRepo(
+	conf *config.Like,
 	db *gorm.DB,
 	rdb redis.UniversalClient,
 	userRepo userentity.UserRepository,
 	logger *zap.SugaredLogger,
 ) *LikeRepo {
 	return &LikeRepo{
+		conf:     conf,
 		db:       db,
 		rdb:      rdb,
 		userRepo: userRepo,
@@ -125,7 +127,7 @@ func (r *LikeRepo) cacheHSetLikeCount(ctx context.Context, key string, id int64,
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 	// expire cache
-	err = r.rdb.ExpireNX(ctx, key, countTTL).Err()
+	err = r.rdb.ExpireNX(ctx, key, r.conf.CacheDuration).Err()
 	if err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
@@ -246,7 +248,7 @@ func (r *LikeRepo) transLikingsFromDBToCache(ctx context.Context, key string, li
 		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 
-	expired, err := r.rdb.ExpireNX(ctx, key, userSetTTL).Result()
+	expired, err := r.rdb.ExpireNX(ctx, key, r.conf.CacheDuration).Result()
 	if err != nil {
 		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	} else if !expired {
@@ -434,7 +436,7 @@ func (r *LikeRepo) BatchLikeCountByIDs(ctx context.Context, likingIDs []int64, l
 		if err != nil {
 			return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 		}
-		err = r.rdb.Expire(ctx, key, countTTL).Err()
+		err = r.rdb.Expire(ctx, key, r.conf.CacheDuration).Err()
 		if err != nil {
 			return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 		}

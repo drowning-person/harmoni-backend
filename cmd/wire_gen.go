@@ -48,7 +48,7 @@ import (
 
 // Injectors from wire.go:
 
-func initApplication(conf *config.Config, appConf *config.App, dbconf *config.DB, rdbconf *config.Redis, authConf *config.Auth, emailConf *config.Email, messageConf *config.MessageQueue, fileConf *config.FileStorage, logConf *config.Log) (*app.Application, func(), error) {
+func initApplication(conf *config.Config, appConf *config.App, dbconf *config.DB, rdbconf *config.Redis, authConf *config.Auth, emailConf *config.Email, likeConf *config.Like, messageConf *config.MessageQueue, fileConf *config.FileStorage, logConf *config.Log) (*app.Application, func(), error) {
 	zapLogger, err := logger.NewZapLogger(logConf)
 	if err != nil {
 		return nil, nil, err
@@ -80,7 +80,7 @@ func initApplication(conf *config.Config, appConf *config.App, dbconf *config.DB
 		cleanup()
 		return nil, nil, err
 	}
-	likeRepo := like.NewLikeRepo(db, client, userRepo, sugaredLogger)
+	likeRepo := like.NewLikeRepo(likeConf, db, client, userRepo, sugaredLogger)
 	policy := file.NewPolicy(fileConf)
 	fileSystem, err := filesystem.NewFileSystem(policy, client)
 	if err != nil {
@@ -135,7 +135,7 @@ func initApplication(conf *config.Config, appConf *config.App, dbconf *config.DB
 	timeLineHandler := handler.NewTimeLineHandler(timeLineService)
 	harmoniAPIRouter := http.NewHarmoniAPIRouter(accountHandler, followHandler, fileHandler, userHandler, postHandler, tagHandler, commentHandler, likeHandler, timeLineHandler)
 	fiberExecutor := http.NewHTTPServer(appConf, zapLogger, harmoniAPIRouter, jwtAuthMiddleware)
-	scheduledTaskManager, cleanup4, err := cron.NewScheduledTaskManager(jsonPublisher, likeUsecase, sugaredLogger)
+	scheduledTaskManager, cleanup4, err := cron.NewScheduledTaskManager(likeConf, jsonPublisher, likeUsecase, sugaredLogger)
 	if err != nil {
 		cleanup3()
 		cleanup2()

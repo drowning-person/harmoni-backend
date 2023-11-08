@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"harmoni/internal/pkg/errorx"
+	"harmoni/internal/pkg/reason"
 	"harmoni/internal/types/iface"
 	"os"
 	"os/signal"
@@ -84,7 +86,7 @@ func WithSignals(signals []os.Signal) func(application *Application) {
 
 func (app *Application) recover() {
 	if err := recover(); err != nil {
-		app.logger.Error(err)
+		app.logger.Error(errorx.InternalServer(reason.UnknownError).WithStack())
 	}
 }
 

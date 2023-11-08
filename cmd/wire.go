@@ -36,6 +36,7 @@ func initApplication(
 	rdbconf *config.Redis,
 	authConf *config.Auth,
 	emailConf *config.Email,
+	likeConf *config.Like,
 	messageConf *config.MessageQueue,
 	fileConf *config.FileStorage,
 	logConf *config.Log) (*app.Application, func(), error) {

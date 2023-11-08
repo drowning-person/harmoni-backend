@@ -20,6 +20,7 @@ type Config struct {
 	Email        *Email        `mapstructure:"email"`
 	MessageQueue *MessageQueue `mapstructure:"messageQueue"`
 	FileStorage  *FileStorage  `mapstructure:"fileStorage"`
+	Like         *Like         `mapstructure:"like"`
 }
 
 type App struct {
@@ -257,6 +258,18 @@ func SetFileStorageDefault(v *viper.Viper) {
 	})
 }
 
+type Like struct {
+	CacheDuration        time.Duration `mapstructure:"cacheDuration"`
+	DatabaseSyncInterval time.Duration `mapstructure:"databaseSyncInterval"`
+}
+
+func SetLikeDefault(v *viper.Viper) {
+	v.SetDefault("like", map[string]interface{}{
+		"cacheDuration":        "24h",
+		"databaseSyncInterval": "4h",
+	})
+}
+
 func ReadConfig(filePath string) (*Config, error) {
 	v := viper.New()
 
@@ -267,6 +280,7 @@ func ReadConfig(filePath string) (*Config, error) {
 	SetRedisDefault(v)
 	SetEmailDefault(v)
 	SetFileStorageDefault(v)
+	SetLikeDefault(v)
 
 	filename := path.Base(filePath)
 	fileext := path.Ext(filePath)
