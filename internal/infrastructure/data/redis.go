@@ -15,8 +15,6 @@ var CacheProvider = wire.NewSet(
 )
 
 func NewRedis(conf *config.Redis) (*redis.Client, func(), error) {
-	fmt.Printf("redis conf:%#v\n", conf)
-
 	rdb := redis.NewClient(&redis.Options{
 		Addr:         fmt.Sprintf("%s:%d", conf.IP, conf.Port),
 		Password:     conf.Password,

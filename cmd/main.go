@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"harmoni/internal/cron"
 	"harmoni/internal/infrastructure/config"
 	"harmoni/internal/pkg/app"
@@ -13,11 +14,18 @@ import (
 )
 
 func newApplication(
+	conf *config.Config,
 	fiberExecutor *http.FiberExecutor,
 	cronApp *cron.ScheduledTaskManager,
 	messageExecutor *mq.MQExecutor,
 	logger *zap.SugaredLogger,
 ) *app.Application {
+	data, err := json.Marshal(conf)
+	if err != nil {
+		logger.Warnf("print config failed: %s", data)
+	} else {
+		logger.Infof("config json: %+v", string(data))
+	}
 	return app.NewApp(logger,
 		app.WithServer(fiberExecutor, cronApp, messageExecutor))
 }
@@ -28,7 +36,7 @@ func main() {
 		panic(err)
 	}
 
-	app, clean, err := initApplication(cfg.App, cfg.DB, cfg.Redis, cfg.Auth, cfg.Email, cfg.MessageQueue, cfg.FileStorage, cfg.Log)
+	app, clean, err := initApplication(cfg, cfg.App, cfg.DB, cfg.Redis, cfg.Auth, cfg.Email, cfg.MessageQueue, cfg.FileStorage, cfg.Log)
 	defer clean()
 	if err != nil {
 		panic(err)

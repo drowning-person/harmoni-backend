@@ -30,6 +30,7 @@ func sugar(l *zap.Logger) *zap.SugaredLogger {
 }
 
 func initApplication(
+	conf *config.Config,
 	appConf *config.App,
 	dbconf *config.DB,
 	rdbconf *config.Redis,
@@ -39,7 +40,6 @@ func initApplication(
 	fileConf *config.FileStorage,
 	logConf *config.Log) (*app.Application, func(), error) {
 	panic(wire.Build(
-		// validator.InitTrans("zh"),
 		sugar,
 		middleware.NewJwtAuthMiddleware,
 		http.ProviderSetHTTP,

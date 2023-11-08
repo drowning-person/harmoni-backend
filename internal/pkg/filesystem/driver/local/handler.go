@@ -390,7 +390,7 @@ func (ls LocalStorage) Token(ctx context.Context, ttl int64, uploadSession *uplo
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(dst)
+
 	if common.Exists(dst) {
 		return nil, errors.New("placeholder file already exist")
 	}

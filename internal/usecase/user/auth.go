@@ -37,7 +37,6 @@ type AuthUseCase struct {
 }
 
 func NewAuthUseCase(conf *config.Auth, authRepo authentity.AuthRepository, logger *zap.SugaredLogger) *AuthUseCase {
-	logger.Debugf("auth config: %#v", conf)
 	return &AuthUseCase{
 		authRepo: authRepo,
 		logger:   logger,

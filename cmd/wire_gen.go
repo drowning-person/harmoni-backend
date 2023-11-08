@@ -48,7 +48,7 @@ import (
 
 // Injectors from wire.go:
 
-func initApplication(appConf *config.App, dbconf *config.DB, rdbconf *config.Redis, authConf *config.Auth, emailConf *config.Email, messageConf *config.MessageQueue, fileConf *config.FileStorage, logConf *config.Log) (*app.Application, func(), error) {
+func initApplication(conf *config.Config, appConf *config.App, dbconf *config.DB, rdbconf *config.Redis, authConf *config.Auth, emailConf *config.Email, messageConf *config.MessageQueue, fileConf *config.FileStorage, logConf *config.Log) (*app.Application, func(), error) {
 	zapLogger, err := logger.NewZapLogger(logConf)
 	if err != nil {
 		return nil, nil, err
@@ -155,7 +155,7 @@ func initApplication(appConf *config.App, dbconf *config.DB, rdbconf *config.Red
 		return nil, nil, err
 	}
 	mqExecutor := mq.NewExecutor(router)
-	application := newApplication(fiberExecutor, scheduledTaskManager, mqExecutor, sugaredLogger)
+	application := newApplication(conf, fiberExecutor, scheduledTaskManager, mqExecutor, sugaredLogger)
 	return application, func() {
 		cleanup4()
 		cleanup3()
