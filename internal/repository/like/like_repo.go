@@ -17,6 +17,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var _ likeentity.LikeRepository = (*LikeRepo)(nil)
@@ -93,48 +94,16 @@ func NewLikeRepo(
 	}
 }
 
-func (r *LikeRepo) Save(ctx context.Context, like *likeentity.Like, isCancel bool) error {
-	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var canceled bool
-		err := tx.Model(like).
-			Select("canceled").
-			Where("user_id = ? AND liking_id = ? AND like_type = ?", like.UserID, like.LikingID, like.LikeType).
-			First(&canceled).Error
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-		}
-
-		if isCancel {
-			if canceled || (err != nil && err == gorm.ErrRecordNotFound) {
-				return errorx.BadRequest(reason.LikeCancelFailToNotLiked)
-			}
-			err = tx.Model(like).
-				Where("user_id = ? AND liking_id = ? AND like_type = ?", like.UserID, like.LikingID, like.LikeType).
-				UpdateColumn("canceled", true).Error
-			if err != nil {
-				return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-			}
-		} else {
-			if err != nil && err == gorm.ErrRecordNotFound {
-				err = tx.Create(like).Error
-				if err != nil {
-					return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-				}
-			} else if !canceled {
-				return errorx.BadRequest(reason.LikeAlreadyExist)
-			} else {
-				err = tx.Model(like).
-					Where("user_id = ? AND liking_id = ? AND like_type = ?", like.UserID, like.LikingID, like.LikeType).
-					UpdateColumn("canceled", false).Error
-				if err != nil {
-					return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-				}
-			}
-		}
-
-		return nil
-	})
-
+func (r *LikeRepo) Save(ctx context.Context, like *likeentity.Like) error {
+	err := r.db.WithContext(ctx).Clauses(
+		clause.OnConflict{
+			Columns:   []clause.Column{{Name: "liking_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"canceled"}),
+		},
+	).Create(like).Error
+	if err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
 	return err
 }
 

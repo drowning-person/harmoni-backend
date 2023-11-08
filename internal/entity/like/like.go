@@ -34,7 +34,7 @@ type Like struct {
 	entity.TimeMixin
 	UserID       int64    `gorm:"not null"`
 	TargetUserID int64    `gorm:"not null"`
-	LikingID     int64    `gorm:"not null"`
+	LikingID     int64    `gorm:"not null;uniqueIndex"`
 	LikeType     LikeType `gorm:"not null;type:TINYINT UNSIGNED"`
 	Canceled     bool     `gorm:"not null;default:0;"`
 }
@@ -63,7 +63,7 @@ var (
 
 type LikeRepository interface {
 	Like(ctx context.Context, like *Like, targetUserID int64, isCancel bool) error
-	Save(ctx context.Context, like *Like, isCancel bool) error
+	Save(ctx context.Context, like *Like) error
 	LikeCount(ctx context.Context, like *Like) (int64, bool, error)
 	BatchLikeCount(ctx context.Context, likeType LikeType) (map[int64]int64, error)
 	BatchLikeCountByIDs(ctx context.Context, likingIDs []int64, likeType LikeType) (map[int64]int64, error)

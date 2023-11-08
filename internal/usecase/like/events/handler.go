@@ -34,5 +34,6 @@ func (h *LikeEventsHandler) HandleLikeCreated(ctx context.Context, msg *event.Li
 		TargetUserID: msg.TargetUserID,
 		LikingID:     msg.LikingID,
 		LikeType:     FromEventLikeType(msg.LikeType),
-	}, msg.IsCancel)
+		Canceled:     msg.IsCancel,
+	})
 }
