@@ -1,0 +1,26 @@
+syntax = "proto3";
+package mq.v1.like;
+
+option go_package = "harmoni/app/harmoni/api/mq/v1/like;v1";
+
+import "google/protobuf/timestamp.proto";
+
+enum LikeType {
+    LikeNo = 0;
+    LikePost = 1;
+    LikeComment = 2;
+    LikeUser = 3;
+}
+
+message BaseMessage {
+    LikeType likeType = 1;
+}
+
+message LikeCreatedMessage {
+    BaseMessage baseMessage = 1;
+    int64 userID = 2;
+    int64 targetUserID = 3;
+    int64 likingID = 4;
+    bool isCancel = 5;
+    google.protobuf.Timestamp CreatedAt = 6;
+}

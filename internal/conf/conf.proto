@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package = "harmoni/internal/conf;conf";
+
+import "google/protobuf/duration.proto";
+
+
+message Database {
+    string driver = 1;
+    string source = 2;
+    google.protobuf.Duration conn_max_life_time= 3;
+    int32 max_open_conn = 4;
+    int32 max_idle_conn = 5;
+}
+
+message MessageQueue {
+    RabbitMQConf rabbit_mq = 1;
+}
+
+message RabbitMQConf {
+    string username = 1;
+    string password = 2;
+    string host = 3;
+    int32 port = 4;
+    string vhost = 5;
+}
