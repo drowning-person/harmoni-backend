@@ -1,6 +1,6 @@
 package httpx
 
-import "harmoni/app/harmoni/internal/pkg/errorx"
+import "harmoni/internal/pkg/errorx"
 
 // RespBody response body.
 type RespBody struct {
@@ -25,7 +25,7 @@ func NewRespBody(code int, reason string) *RespBody {
 // NewRespBodyFromError new response body from error
 func NewRespBodyFromError(e *errorx.Error) *RespBody {
 	return &RespBody{
-		Code:    e.Code,
+		Code:    int(e.Code),
 		Reason:  e.Reason,
 		Message: e.Message,
 	}

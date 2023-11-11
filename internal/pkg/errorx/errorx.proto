@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package errorx;
+
+option go_package = "harmoni/internal/pkg/errorx";
+
+import "google/protobuf/descriptor.proto";
+
+message Status {
+  int32 code = 1;
+  string reason = 2;
+  string message = 3;
+  map<string, string> metadata = 4;
+};

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	authentity "harmoni/app/harmoni/internal/entity/auth"
-	"harmoni/app/harmoni/internal/pkg/errorx"
 	"harmoni/app/harmoni/internal/pkg/reason"
+	"harmoni/internal/pkg/errorx"
 	"time"
 
 	"github.com/redis/go-redis/v9"

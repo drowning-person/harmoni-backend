@@ -4,9 +4,9 @@ import (
 	"context"
 	"harmoni/app/harmoni/internal/entity"
 	authentity "harmoni/app/harmoni/internal/entity/auth"
-	"harmoni/app/harmoni/internal/pkg/errorx"
 	"harmoni/app/harmoni/internal/pkg/reason"
 	"harmoni/app/harmoni/internal/usecase/user"
+	"harmoni/internal/pkg/errorx"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"

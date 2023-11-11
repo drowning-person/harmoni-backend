@@ -1,6 +1,10 @@
 package service
 
-import "github.com/google/wire"
+import (
+	"harmoni/app/harmoni/internal/service/user"
+
+	"github.com/google/wire"
+)
 
 // ProviderSetService is providers.
 var ProviderSetService = wire.NewSet(
@@ -9,8 +13,8 @@ var ProviderSetService = wire.NewSet(
 	NewFollowService,
 	NewPostService,
 	NewTagService,
-	NewUserService,
 	NewLikeUsecase,
 	NewTimeLineService,
 	NewFileService,
+	user.ProviderSetUserService,
 )

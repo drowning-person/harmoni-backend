@@ -1,4 +1,4 @@
-package service
+package user
 
 import (
 	"context"
@@ -6,11 +6,17 @@ import (
 	authentity "harmoni/app/harmoni/internal/entity/auth"
 	"harmoni/app/harmoni/internal/entity/paginator"
 	userentity "harmoni/app/harmoni/internal/entity/user"
-	"harmoni/app/harmoni/internal/pkg/errorx"
 	"harmoni/app/harmoni/internal/pkg/reason"
 	"harmoni/app/harmoni/internal/usecase/user"
+	"harmoni/internal/pkg/errorx"
 
+	"github.com/google/wire"
 	"go.uber.org/zap"
+)
+
+var ProviderSetUserService = wire.NewSet(
+	NewUserService,
+	NewUserGRPCService,
 )
 
 type UserService struct {

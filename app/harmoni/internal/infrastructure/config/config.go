@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"harmoni/app/harmoni/internal/pkg/filesystem/policy"
+	"harmoni/internal/conf"
 	"path"
 	"runtime"
 	"strings"
@@ -12,34 +13,37 @@ import (
 )
 
 type Config struct {
-	App          *App          `mapstructure:"app"`
-	Auth         *Auth         `mapstructure:"auth"`
-	DB           *DB           `mapstructure:"db"`
-	Log          *Log          `mapstructure:"log"`
-	Redis        *Redis        `mapstructure:"redis"`
-	Email        *Email        `mapstructure:"email"`
-	MessageQueue *MessageQueue `mapstructure:"messageQueue"`
-	FileStorage  *FileStorage  `mapstructure:"fileStorage"`
-	Like         *Like         `mapstructure:"like"`
+	App          *App           `mapstructure:"app"`
+	Server       *conf.Server   `mapstructure:"server"`
+	Auth         *Auth          `mapstructure:"auth"`
+	DB           *conf.Database `mapstructure:"db"`
+	Log          *conf.Log      `mapstructure:"log"`
+	Redis        *Redis         `mapstructure:"redis"`
+	ETCD         *conf.ETCD     `mapstructure:"etcd"`
+	Email        *Email         `mapstructure:"email"`
+	MessageQueue *MessageQueue  `mapstructure:"messageQueue"`
+	FileStorage  *FileStorage   `mapstructure:"fileStorage"`
+	Like         *Like          `mapstructure:"like"`
 }
 
 type App struct {
-	Debug     bool   `default:"false" mapstructure:"debug"`
-	Addr      string `default:"127.0.0.1:80" mapstructure:"addr"`
-	BaseURL   string `mapstructure:"base_url"`
-	StartTime string `mapstructure:"start_time"`
-	AppID     int64  `mapstructure:"app_id"`
-	Locale    string `mapstructure:"locale"`
+	Debug       bool   `default:"false" mapstructure:"debug"`
+	BaseURL     string `mapstructure:"baseUrl"`
+	StartTime   string `mapstructure:"startTime"`
+	AppID       int64  `mapstructure:"appID"`
+	Locale      string `mapstructure:"locale"`
+	ServiceName string `mapstructure:"serviceName"`
 }
 
 func SetAppDefault(v *viper.Viper) {
 	v.SetDefault("app", map[string]interface{}{
-		"debug":      false,
-		"addr":       "127.0.0.1:80",
-		"base_url":   "localhost",
-		"start_time": time.Now().Format("2006-01-02"),
-		"app_id":     1,
-		"locale":     "zh",
+		"debug":       false,
+		"addr":        "127.0.0.1:80",
+		"baseUrl":     "http://localhost",
+		"startTime":   time.Now().Format("2006-01-02"),
+		"appID":       1,
+		"locale":      "zh",
+		"serviceName": "harmoni",
 	})
 }
 
@@ -90,11 +94,11 @@ type DB struct {
 
 func SetDBDefault(v *viper.Viper) {
 	v.SetDefault("db", map[string]interface{}{
-		"driver":             "mysql",
-		"source":             "root:123456@tcp(127.0.0.1:3306)/harmoni?parseTime=True",
-		"conn_max_life_time": "1h",
-		"max_open_conn":      runtime.NumCPU() * 2,
-		"max_idle_conn":      runtime.NumCPU() * 2,
+		"driver":          "mysql",
+		"source":          "root:123456@tcp(127.0.0.1:3306)/harmoni?parseTime=True",
+		"connMaxLifeTime": "1h",
+		"maxOpenConn":     runtime.NumCPU() * 2,
+		"maxIdleConn":     runtime.NumCPU() * 2,
 	})
 }
 

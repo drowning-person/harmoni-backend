@@ -30,6 +30,15 @@ func (l UserList) ToUserIDMap() map[int64]User {
 	return m
 }
 
+func (l UserList) ToUserBasics(avatarlinkMap map[int64]string) []*UserBasicInfo {
+	m := make([]*UserBasicInfo, len(l))
+	for i, user := range l {
+		userBasic := user.ToBasicInfo(avatarlinkMap[user.Avatar])
+		m[i] = &userBasic
+	}
+	return m
+}
+
 type UserBasicInfo struct {
 	UserID int64  `json:"user_id,string"`
 	Name   string `json:"name"`

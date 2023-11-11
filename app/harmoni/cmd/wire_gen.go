@@ -7,15 +7,14 @@
 package main
 
 import (
+	"github.com/go-kratos/kratos/v2"
 	"go.uber.org/zap"
 	"harmoni/app/harmoni/internal/cron"
 	"harmoni/app/harmoni/internal/handler"
 	"harmoni/app/harmoni/internal/infrastructure/config"
 	"harmoni/app/harmoni/internal/infrastructure/data"
 	"harmoni/app/harmoni/internal/infrastructure/mq/publisher"
-	"harmoni/app/harmoni/internal/pkg/app"
 	"harmoni/app/harmoni/internal/pkg/filesystem"
-	"harmoni/app/harmoni/internal/pkg/logger"
 	"harmoni/app/harmoni/internal/pkg/middleware"
 	"harmoni/app/harmoni/internal/pkg/snowflakex"
 	"harmoni/app/harmoni/internal/repository/auth"
@@ -28,9 +27,11 @@ import (
 	"harmoni/app/harmoni/internal/repository/tag"
 	"harmoni/app/harmoni/internal/repository/unique"
 	user2 "harmoni/app/harmoni/internal/repository/user"
+	"harmoni/app/harmoni/internal/server/grpc"
 	"harmoni/app/harmoni/internal/server/http"
 	"harmoni/app/harmoni/internal/server/mq"
 	"harmoni/app/harmoni/internal/service"
+	user3 "harmoni/app/harmoni/internal/service/user"
 	comment2 "harmoni/app/harmoni/internal/usecase/comment"
 	"harmoni/app/harmoni/internal/usecase/comment/events"
 	email2 "harmoni/app/harmoni/internal/usecase/email"
@@ -44,21 +45,28 @@ import (
 	"harmoni/app/harmoni/internal/usecase/timeline"
 	"harmoni/app/harmoni/internal/usecase/user"
 	events4 "harmoni/app/harmoni/internal/usecase/user/events"
+	"harmoni/internal/conf"
+	"harmoni/internal/pkg/etcdx"
+	"harmoni/internal/pkg/logger"
 )
 
 // Injectors from wire.go:
 
-func initApplication(conf *config.Config, appConf *config.App, dbconf *config.DB, rdbconf *config.Redis, authConf *config.Auth, emailConf *config.Email, likeConf *config.Like, messageConf *config.MessageQueue, fileConf *config.FileStorage, logConf *config.Log) (*app.Application, func(), error) {
+func initApplication(conf2 *config.Config, appConf *config.App, dbconf *conf.Database, rdbconf *config.Redis, authConf *config.Auth, emailConf *config.Email, likeConf *config.Like, messageConf *config.MessageQueue, fileConf *config.FileStorage, etcdConf *conf.ETCD, serverConf *conf.Server, logConf *conf.Log) (*kratos.App, func(), error) {
 	zapLogger, err := logger.NewZapLogger(logConf)
 	if err != nil {
 		return nil, nil, err
 	}
-	client, cleanup, err := data.NewRedis(rdbconf)
+	client, err := etcdx.NewETCDClient(etcdConf, zapLogger)
+	if err != nil {
+		return nil, nil, err
+	}
+	redisClient, cleanup, err := data.NewRedis(rdbconf)
 	if err != nil {
 		return nil, nil, err
 	}
 	sugaredLogger := sugar(zapLogger)
-	authRepo := auth.NewAuthRepo(client, sugaredLogger)
+	authRepo := auth.NewAuthRepo(redisClient, sugaredLogger)
 	authUseCase := user.NewAuthUseCase(authConf, authRepo, sugaredLogger)
 	db, cleanup2, err := data.NewDB(dbconf, zapLogger)
 	if err != nil {
@@ -72,30 +80,30 @@ func initApplication(conf *config.Config, appConf *config.App, dbconf *config.DB
 		return nil, nil, err
 	}
 	uniqueIDRepo := unique.NewUniqueIDRepo(node)
-	userRepo := user2.NewUserRepo(db, client, uniqueIDRepo, sugaredLogger)
-	emailRepo := email.NewEmailRepo(client)
+	userRepo := user2.NewUserRepo(db, redisClient, uniqueIDRepo, sugaredLogger)
+	emailRepo := email.NewEmailRepo(redisClient)
 	emailUsecase, err := email2.NewEmailUsecase(emailConf, emailRepo, sugaredLogger)
 	if err != nil {
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	likeRepo := like.NewLikeRepo(likeConf, db, client, userRepo, sugaredLogger)
+	likeRepo := like.NewLikeRepo(likeConf, db, redisClient, userRepo, sugaredLogger)
 	policy := file.NewPolicy(fileConf)
-	fileSystem, err := filesystem.NewFileSystem(policy, client)
+	fileSystem, err := filesystem.NewFileSystem(policy, redisClient)
 	if err != nil {
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	fileRepo := file2.NewFileRepository(db, client, uniqueIDRepo, sugaredLogger)
-	fileUseCase := file.NewFileUseCase(appConf, client, fileConf, fileSystem, fileRepo, sugaredLogger)
+	fileRepo := file2.NewFileRepository(db, redisClient, uniqueIDRepo, sugaredLogger)
+	fileUseCase := file.NewFileUseCase(appConf, redisClient, fileConf, fileSystem, fileRepo, sugaredLogger)
 	userUseCase := user.NewUserUseCase(likeRepo, userRepo, authUseCase, fileUseCase, sugaredLogger)
 	accountUsecase := user.NewAccountUsecase(emailConf, authUseCase, userRepo, emailUsecase, userUseCase, zapLogger)
 	accountService := service.NewAccountService(accountUsecase, sugaredLogger)
 	jwtAuthMiddleware := middleware.NewJwtAuthMiddleware(authUseCase)
 	accountHandler := handler.NewAccountHandler(accountService, jwtAuthMiddleware, sugaredLogger)
-	tagRepo := tag.NewTagRepo(db, client, uniqueIDRepo, sugaredLogger)
+	tagRepo := tag.NewTagRepo(db, redisClient, uniqueIDRepo, sugaredLogger)
 	followRepo := follow.NewFollowRepo(db, userRepo, tagRepo, uniqueIDRepo, sugaredLogger)
 	tagUseCase := tag2.NewTagUseCase(tagRepo, sugaredLogger)
 	followUseCase := follow2.NewFollowUseCase(followRepo, userUseCase, tagUseCase, sugaredLogger)
@@ -103,15 +111,15 @@ func initApplication(conf *config.Config, appConf *config.App, dbconf *config.DB
 	followHandler := handler.NewFollowHandler(followService, sugaredLogger)
 	fileService := service.NewFileService(fileUseCase, userUseCase, sugaredLogger)
 	fileHandler := handler.NewFileHandler(fileService, sugaredLogger)
-	userService := service.NewUserService(userUseCase, authUseCase, accountUsecase, sugaredLogger)
+	userService := user3.NewUserService(userUseCase, authUseCase, accountUsecase, sugaredLogger)
 	userHandler := handler.NewUserHandler(userService)
-	postRepo := post.NewPostRepo(db, client, tagRepo, uniqueIDRepo, sugaredLogger)
+	postRepo := post.NewPostRepo(db, redisClient, tagRepo, uniqueIDRepo, sugaredLogger)
 	postUseCase := post2.NewPostUseCase(postRepo, likeRepo, userUseCase, tagUseCase, sugaredLogger)
 	postService := service.NewPostService(postUseCase, tagUseCase, sugaredLogger)
 	postHandler := handler.NewPostHandler(postService)
 	tagService := service.NewTagService(tagUseCase, sugaredLogger)
 	tagHandler := handler.NewTagHandler(tagService)
-	commentRepo := comment.NewCommentRepo(db, client, uniqueIDRepo, sugaredLogger)
+	commentRepo := comment.NewCommentRepo(db, redisClient, uniqueIDRepo, sugaredLogger)
 	commentUseCase := comment2.NewCommentUseCase(commentRepo, likeRepo, userRepo, fileUseCase, sugaredLogger)
 	commentService := service.NewCommentService(commentUseCase, sugaredLogger)
 	commentHandler := handler.NewCommentHandler(commentService)
@@ -134,7 +142,10 @@ func initApplication(conf *config.Config, appConf *config.App, dbconf *config.DB
 	timeLineService := service.NewTimeLineService(timeLinePullUsecase, sugaredLogger)
 	timeLineHandler := handler.NewTimeLineHandler(timeLineService)
 	harmoniAPIRouter := http.NewHarmoniAPIRouter(accountHandler, followHandler, fileHandler, userHandler, postHandler, tagHandler, commentHandler, likeHandler, timeLineHandler)
-	fiberExecutor := http.NewHTTPServer(appConf, zapLogger, harmoniAPIRouter, jwtAuthMiddleware)
+	fiberServer := http.NewHTTPServer(serverConf, zapLogger, harmoniAPIRouter, jwtAuthMiddleware)
+	loggerLogger := logger.NewLogger(zapLogger)
+	userGRPCService := user3.NewUserGRPCService(authUseCase, fileUseCase, userUseCase)
+	server := grpc.NewGrpcServer(serverConf, loggerLogger, userGRPCService)
 	scheduledTaskManager, cleanup4, err := cron.NewScheduledTaskManager(likeConf, jsonPublisher, likeUsecase, sugaredLogger)
 	if err != nil {
 		cleanup3()
@@ -154,9 +165,9 @@ func initApplication(conf *config.Config, appConf *config.App, dbconf *config.DB
 		cleanup()
 		return nil, nil, err
 	}
-	mqExecutor := mq.NewExecutor(router)
-	application := newApplication(conf, fiberExecutor, scheduledTaskManager, mqExecutor, sugaredLogger)
-	return application, func() {
+	mqServer := mq.NewExecutor(router)
+	app := newApplication(conf2, client, fiberServer, server, scheduledTaskManager, mqServer, sugaredLogger, loggerLogger)
+	return app, func() {
 		cleanup4()
 		cleanup3()
 		cleanup2()

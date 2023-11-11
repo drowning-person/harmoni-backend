@@ -5,10 +5,10 @@ import (
 	likeentity "harmoni/app/harmoni/internal/entity/like"
 	"harmoni/app/harmoni/internal/entity/paginator"
 	userentity "harmoni/app/harmoni/internal/entity/user"
-	"harmoni/app/harmoni/internal/pkg/errorx"
 	"harmoni/app/harmoni/internal/pkg/reason"
 	fileusecase "harmoni/app/harmoni/internal/usecase/file"
 	"harmoni/app/harmoni/internal/usecase/user/events"
+	"harmoni/internal/pkg/errorx"
 	"regexp"
 	"unicode/utf8"
 
@@ -118,7 +118,7 @@ func (u *UserUseCase) GetByUserID(ctx context.Context, userID int64) (*userentit
 	return user, exist, nil
 }
 
-func (u *UserUseCase) GetByUserIDs(ctx context.Context, userIDs []int64) ([]userentity.User, error) {
+func (u *UserUseCase) GetByUserIDs(ctx context.Context, userIDs []int64) (userentity.UserList, error) {
 	return u.userRepo.GetByUserIDs(ctx, userIDs)
 }
 

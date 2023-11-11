@@ -2,20 +2,20 @@ package handler
 
 import (
 	userentity "harmoni/app/harmoni/internal/entity/user"
-	"harmoni/app/harmoni/internal/pkg/errorx"
 	"harmoni/app/harmoni/internal/pkg/httpx/fiberx"
 	"harmoni/app/harmoni/internal/pkg/middleware"
 	"harmoni/app/harmoni/internal/pkg/reason"
-	"harmoni/app/harmoni/internal/service"
+	"harmoni/app/harmoni/internal/service/user"
+	"harmoni/internal/pkg/errorx"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type UserHandler struct {
-	us *service.UserService
+	us *user.UserService
 }
 
-func NewUserHandler(us *service.UserService) *UserHandler {
+func NewUserHandler(us *user.UserService) *UserHandler {
 	return &UserHandler{
 		us: us,
 	}

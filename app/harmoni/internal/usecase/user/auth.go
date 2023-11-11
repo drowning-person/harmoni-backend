@@ -7,8 +7,8 @@ import (
 	userentity "harmoni/app/harmoni/internal/entity/user"
 	"harmoni/app/harmoni/internal/infrastructure/config"
 	"harmoni/app/harmoni/internal/pkg/common"
-	"harmoni/app/harmoni/internal/pkg/errorx"
 	"harmoni/app/harmoni/internal/pkg/reason"
+	"harmoni/internal/pkg/errorx"
 	"sync"
 	"time"
 

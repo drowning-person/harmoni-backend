@@ -1,13 +1,14 @@
 package http
 
 import (
-	"harmoni/app/harmoni/internal/infrastructure/config"
-	"harmoni/app/harmoni/internal/pkg/errorx"
+	"context"
 	"harmoni/app/harmoni/internal/pkg/httpx/fiberx"
 	"harmoni/app/harmoni/internal/pkg/middleware"
 	"harmoni/app/harmoni/internal/pkg/reason"
-	"harmoni/app/harmoni/internal/types/iface"
+	"harmoni/internal/conf"
+	"harmoni/internal/pkg/errorx"
 
+	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/gofiber/contrib/fiberzap"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
@@ -22,24 +23,28 @@ var ProviderSetHTTP = wire.NewSet(
 	NewHarmoniAPIRouter,
 )
 
-var _ iface.Executor = (*FiberExecutor)(nil)
+var _ transport.Server = (*FiberServer)(nil)
 
-type FiberExecutor struct {
-	conf *config.App
+type FiberServer struct {
+	conf *conf.Server
 	*fiber.App
 }
 
-func (r *FiberExecutor) Start() error {
-	return r.Listen(r.conf.Addr)
+func (s *FiberServer) Start(context.Context) error {
+	return s.Listen(s.conf.Http.Addr)
+}
+
+func (s *FiberServer) Stop(context.Context) error {
+	return s.Shutdown()
 }
 
 // NewHTTPServer new http server.
 func NewHTTPServer(
-	conf *config.App,
+	conf *conf.Server,
 	zapLogger *zap.Logger,
 	harmoniRouter *HarmoniAPIRouter,
 	authMiddleware *middleware.JwtAuthMiddleware,
-) *FiberExecutor {
+) *FiberServer {
 	r := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			switch e := err.(type) {
@@ -73,7 +78,7 @@ func NewHTTPServer(
 	authV1.Use(authMiddleware.MustAuth())
 	harmoniRouter.RegisterHarmoniAPIRouter(authV1)
 
-	return &FiberExecutor{
+	return &FiberServer{
 		conf: conf,
 		App:  r,
 	}

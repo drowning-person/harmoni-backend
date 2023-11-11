@@ -7,9 +7,9 @@ import (
 	emailentity "harmoni/app/harmoni/internal/entity/email"
 	userentity "harmoni/app/harmoni/internal/entity/user"
 	"harmoni/app/harmoni/internal/infrastructure/config"
-	"harmoni/app/harmoni/internal/pkg/errorx"
 	"harmoni/app/harmoni/internal/pkg/reason"
 	"harmoni/app/harmoni/internal/usecase/email"
+	"harmoni/internal/pkg/errorx"
 	"time"
 
 	"go.uber.org/zap"

@@ -2,10 +2,10 @@ package fiberx
 
 import (
 	"errors"
-	"harmoni/app/harmoni/internal/pkg/errorx"
 	"harmoni/app/harmoni/internal/pkg/httpx"
 	"harmoni/app/harmoni/internal/pkg/reason"
-	"harmoni/app/harmoni/internal/pkg/validator"
+	"harmoni/internal/pkg/errorx"
+	"harmoni/internal/pkg/validator"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -16,16 +16,18 @@ import (
 func HandleResponse(c *fiber.Ctx, err error, data interface{}) error {
 	// no error
 	if err == nil {
-		c.Status(http.StatusOK).JSON(httpx.NewRespBodyData(http.StatusOK, reason.Success, data))
-		return nil
+		return c.Status(http.StatusOK).JSON(httpx.NewRespBodyData(http.StatusOK, reason.Success, data))
 	}
 
 	var myErr *errorx.Error
 	// unknown error
 	if !errors.As(err, &myErr) {
 		zap.L().Sugar().Error(err, "\n", errorx.LogStack(2, 5))
-		c.Status(http.StatusInternalServerError).JSON(httpx.NewRespBody(
+		err = c.Status(http.StatusInternalServerError).JSON(httpx.NewRespBody(
 			http.StatusInternalServerError, reason.UnknownError))
+		if err != nil {
+			return err
+		}
 		return err
 	}
 
@@ -34,8 +36,7 @@ func HandleResponse(c *fiber.Ctx, err error, data interface{}) error {
 		respBody.Data = data
 	}
 
-	c.Status(myErr.Code).JSON(respBody)
-	return nil
+	return c.Status(int(myErr.Code)).JSON(respBody)
 }
 
 func Parser(c *fiber.Ctx, out interface{}) error {

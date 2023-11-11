@@ -2,11 +2,11 @@ package handler
 
 import (
 	commententity "harmoni/app/harmoni/internal/entity/comment"
-	"harmoni/app/harmoni/internal/pkg/errorx"
 	"harmoni/app/harmoni/internal/pkg/httpx/fiberx"
 	"harmoni/app/harmoni/internal/pkg/middleware"
 	"harmoni/app/harmoni/internal/pkg/reason"
 	"harmoni/app/harmoni/internal/service"
+	"harmoni/internal/pkg/errorx"
 
 	"github.com/gofiber/fiber/v2"
 )

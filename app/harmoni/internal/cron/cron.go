@@ -10,10 +10,11 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron"
+	"github.com/go-kratos/kratos/v2/transport"
 	"go.uber.org/zap"
 )
 
-var _ iface.Executor = (*ScheduledTaskManager)(nil)
+var _ transport.Server = (*ScheduledTaskManager)(nil)
 
 type ScheduledTaskManager struct {
 	conf        *config.Like
@@ -39,7 +40,7 @@ func NewScheduledTaskManager(
 		logger:      logger,
 	}
 
-	return manager, func() { manager.Shutdown() }, nil
+	return manager, func() { manager.Stop(context.Background()) }, nil
 }
 
 func (s *ScheduledTaskManager) likeCountTask() {
@@ -68,7 +69,7 @@ func (s *ScheduledTaskManager) likeCountTask() {
 	}
 }
 
-func (s *ScheduledTaskManager) Start() error {
+func (s *ScheduledTaskManager) Start(context.Context) error {
 	_, err := s.scheduler.Every(s.conf.DatabaseSyncInterval).Do(s.likeCountTask)
 	if err != nil {
 		return err
@@ -77,7 +78,7 @@ func (s *ScheduledTaskManager) Start() error {
 	return nil
 }
 
-func (s *ScheduledTaskManager) Shutdown() error {
+func (s *ScheduledTaskManager) Stop(context.Context) error {
 	s.scheduler.Stop()
 	err := s.publisher.Close()
 	if err != nil {

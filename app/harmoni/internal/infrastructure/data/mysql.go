@@ -8,8 +8,8 @@ import (
 	postreltag "harmoni/app/harmoni/internal/entity/post_rel_tag"
 	tagentity "harmoni/app/harmoni/internal/entity/tag"
 	userentity "harmoni/app/harmoni/internal/entity/user"
-	"harmoni/app/harmoni/internal/infrastructure/config"
 	"harmoni/app/harmoni/internal/infrastructure/po/comment"
+	"harmoni/internal/conf"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -32,7 +32,7 @@ func zapLevelToGORMLevel(zapLevel zapcore.Level) logger.LogLevel {
 	}
 }
 
-func NewDB(conf *config.DB, logger *zap.Logger) (*gorm.DB, func(), error) {
+func NewDB(conf *conf.Database, logger *zap.Logger) (*gorm.DB, func(), error) {
 	l := zapgorm2.New(logger)
 	l.LogLevel = zapLevelToGORMLevel(logger.Level())
 	l.SetAsDefault()
@@ -50,9 +50,9 @@ func NewDB(conf *config.DB, logger *zap.Logger) (*gorm.DB, func(), error) {
 	}
 
 	// SetMaxIdleConns 设置空闲连接池中连接的最大数量
-	sqlDB.SetMaxIdleConns(conf.MaxIdleConn)
+	sqlDB.SetMaxIdleConns(int(conf.MaxIdleConn))
 	// SetMaxOpenConns 设置打开数据库连接的最大数量。
-	sqlDB.SetMaxOpenConns(conf.MaxOpenConn)
+	sqlDB.SetMaxOpenConns(int(conf.MaxOpenConn))
 	// SetConnMaxLifetime 设置了连接可复用的最大时间。
 	sqlDB.SetConnMaxLifetime(conf.ConnMaxLifeTime)
 

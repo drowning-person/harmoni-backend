@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"harmoni/app/harmoni/internal/infrastructure/config"
+	"harmoni/internal/conf"
 	"os"
 	"path"
 	"strings"
@@ -22,7 +22,7 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func NewZapLogger(conf *config.Log) (*zap.Logger, error) {
+func NewZapLogger(conf *conf.Log) (*zap.Logger, error) {
 	dirname, filename := path.Split(conf.Path)
 	exist, err := PathExists(dirname)
 	if err != nil {

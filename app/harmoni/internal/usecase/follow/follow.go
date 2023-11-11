@@ -4,10 +4,10 @@ import (
 	"context"
 	followentity "harmoni/app/harmoni/internal/entity/follow"
 	"harmoni/app/harmoni/internal/entity/paginator"
-	"harmoni/app/harmoni/internal/pkg/errorx"
 	"harmoni/app/harmoni/internal/pkg/reason"
 	taguse "harmoni/app/harmoni/internal/usecase/tag"
 	useruse "harmoni/app/harmoni/internal/usecase/user"
+	"harmoni/internal/pkg/errorx"
 
 	"go.uber.org/zap"
 )

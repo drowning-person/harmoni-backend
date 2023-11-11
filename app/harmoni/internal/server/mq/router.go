@@ -7,7 +7,6 @@ import (
 	"harmoni/app/harmoni/internal/server/mq/group/like"
 	"harmoni/app/harmoni/internal/server/mq/group/post"
 	"harmoni/app/harmoni/internal/server/mq/group/user"
-	"harmoni/app/harmoni/internal/types/iface"
 	commentevent "harmoni/app/harmoni/internal/usecase/comment/events"
 	likeevent "harmoni/app/harmoni/internal/usecase/like/events"
 	postevent "harmoni/app/harmoni/internal/usecase/post/events"
@@ -16,13 +15,14 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"github.com/garsue/watermillzap"
+	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/google/wire"
 	"go.uber.org/zap"
 )
 
-var _ iface.Executor = (*MQExecutor)(nil)
+var _ transport.Server = (*MQServer)(nil)
 
-type MQExecutor struct {
+type MQServer struct {
 	*message.Router
 }
 
@@ -31,16 +31,16 @@ var ProviderSetMQ = wire.NewSet(
 	NewExecutor,
 )
 
-func (r *MQExecutor) Start() error {
-	return r.Run(context.Background())
+func (r *MQServer) Start(ctx context.Context) error {
+	return r.Run(ctx)
 }
 
-func (r *MQExecutor) Shutdown() error {
+func (r *MQServer) Stop(context.Context) error {
 	return r.Close()
 }
 
-func NewExecutor(r *message.Router) *MQExecutor {
-	return &MQExecutor{
+func NewExecutor(r *message.Router) *MQServer {
+	return &MQServer{
 		Router: r,
 	}
 }

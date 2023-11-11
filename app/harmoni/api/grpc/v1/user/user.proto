@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "app/harmoni/api/grpc/v1/user;v1";
+
+message UserBasic {
+    int64 id = 1;
+    string name = 2;
+    string avatar = 3;
+}
+
+message UserBasics {
+    repeated UserBasic users = 1;
+}
+
+message GetBasicRequest {
+    int64 id = 1;
+}
+
+message ListBasicsRequest {
+    repeated int64 ids = 1;
+}
+
+message ListBasicsResponse {
+    repeated UserBasic users = 1;
+}
+
+message TokenRequest {
+    string token = 1;
+}
+
+message TokenResponse {
+    optional UserBasic user = 1;
+}
+
+service User {
+    rpc GetBasic(GetBasicRequest) returns (UserBasic) {}
+    rpc List(ListBasicsRequest) returns (ListBasicsResponse) {}
+    rpc VerifyToken(TokenRequest) returns (TokenResponse) {}
+}

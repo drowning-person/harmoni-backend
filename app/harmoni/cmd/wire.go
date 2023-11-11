@@ -11,16 +11,19 @@ import (
 	"harmoni/app/harmoni/internal/infrastructure/config"
 	"harmoni/app/harmoni/internal/infrastructure/data"
 	"harmoni/app/harmoni/internal/infrastructure/mq/publisher"
-	"harmoni/app/harmoni/internal/pkg/app"
-	"harmoni/app/harmoni/internal/pkg/logger"
 	"harmoni/app/harmoni/internal/pkg/middleware"
 	"harmoni/app/harmoni/internal/pkg/snowflakex"
 	"harmoni/app/harmoni/internal/repository"
+	"harmoni/app/harmoni/internal/server/grpc"
 	"harmoni/app/harmoni/internal/server/http"
 	"harmoni/app/harmoni/internal/server/mq"
 	"harmoni/app/harmoni/internal/service"
 	"harmoni/app/harmoni/internal/usecase"
+	"harmoni/internal/conf"
+	"harmoni/internal/pkg/etcdx"
+	"harmoni/internal/pkg/logger"
 
+	"github.com/go-kratos/kratos/v2"
 	"github.com/google/wire"
 	"go.uber.org/zap"
 )
@@ -32,29 +35,33 @@ func sugar(l *zap.Logger) *zap.SugaredLogger {
 func initApplication(
 	conf *config.Config,
 	appConf *config.App,
-	dbconf *config.DB,
+	dbconf *conf.Database,
 	rdbconf *config.Redis,
 	authConf *config.Auth,
 	emailConf *config.Email,
 	likeConf *config.Like,
 	messageConf *config.MessageQueue,
 	fileConf *config.FileStorage,
-	logConf *config.Log) (*app.Application, func(), error) {
+	etcdConf *conf.ETCD,
+	serverConf *conf.Server,
+	logConf *conf.Log) (*kratos.App, func(), error) {
 	panic(wire.Build(
 		sugar,
+		logger.ProviderSetLogger,
+		snowflakex.NewSnowflakeNode,
+		data.NewDB,
+		data.CacheProvider,
+		etcdx.NewETCDClient,
 		middleware.NewJwtAuthMiddleware,
 		http.ProviderSetHTTP,
-		snowflakex.NewSnowflakeNode,
-		logger.NewZapLogger,
+		grpc.NewGrpcServer,
+		mq.ProviderSetMQ,
 		repository.ProviderSetRepo,
 		handler.ProviderSetHandler,
 		service.ProviderSetService,
 		usecase.ProviderSetUsecase,
 		cron.NewScheduledTaskManager,
-		newApplication,
-		data.NewDB,
-		data.CacheProvider,
-		mq.ProviderSetMQ,
 		publisher.ProviderSetPublisher,
+		newApplication,
 	))
 }

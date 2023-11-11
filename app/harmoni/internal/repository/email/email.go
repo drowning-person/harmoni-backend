@@ -3,8 +3,8 @@ package email
 import (
 	"context"
 	emailentity "harmoni/app/harmoni/internal/entity/email"
-	"harmoni/app/harmoni/internal/pkg/errorx"
 	"harmoni/app/harmoni/internal/pkg/reason"
+	"harmoni/internal/pkg/errorx"
 	"time"
 
 	"github.com/redis/go-redis/v9"
