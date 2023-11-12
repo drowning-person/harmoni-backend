@@ -2,9 +2,14 @@ app:
   addr: 0.0.0.0:8080
   debug: false
   base_url: http://localhost
-  start_time: 2022-08-01
+  start_time: 2023-08-01
   app_id: 1
   locale: zh
+server:
+  http:
+    addr: 0.0.0.0:8080
+  grpc:
+    addr: 0.0.0.0:8082
 auth:
   token_expire: 5m
   refresh_token_expire: 72h
@@ -12,7 +17,7 @@ auth:
 
 db:
   driver: mysql
-  source: "user:password@tcp(localhost:3306)/database?parseTime=True&timeout=10s"
+  source: "root:123456@tcp(db:3306)/harmoni?parseTime=True&timeout=10s"
   conn_max_life_time: 1h
   max_open_conn: 4
   max_idle_conn: 4
@@ -22,13 +27,17 @@ log:
   path: ./log/harmoni.log
 
 redis:
-  ip: localhost
+  ip: rdb
   port: 6379
-  password: password
+  # password: password
   database: 0
   pool_size: 2
   read_timeout: 5s
   write_timeout: 5s
+etcd:
+  addr: etcd:2379
+  # username:
+  # password:
 
 email:
   host: google.com
@@ -38,15 +47,16 @@ email:
   from_name: noreply
   code_ttl: 5m
 
-message_queue:
+messageQueue:
   rabbitmq:
-    username:
-    password:
-    host:
-    port:
+    username: guest
+    password: guest
+    host: rabbitmq
+    port: 5672
     vhost:
 
 fileStorage:
+  defaultAvatar: default.png
   uploadSessionTimeout: 1h # unit is s,m,h
   policy:
     type: local # storage type, only local for now
