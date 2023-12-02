@@ -2,7 +2,7 @@ package handler
 
 import (
 	postentity "harmoni/app/harmoni/internal/entity/post"
-	"harmoni/app/harmoni/internal/pkg/httpx/fiberx"
+	"harmoni/app/harmoni/internal/pkg/fiberx"
 	"harmoni/app/harmoni/internal/pkg/middleware"
 	"harmoni/app/harmoni/internal/pkg/reason"
 	"harmoni/app/harmoni/internal/service"

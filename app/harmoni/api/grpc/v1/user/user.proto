@@ -10,10 +10,6 @@ message UserBasic {
     string avatar = 3;
 }
 
-message UserBasics {
-    repeated UserBasic users = 1;
-}
-
 message GetBasicRequest {
     int64 id = 1;
 }

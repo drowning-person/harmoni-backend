@@ -16,3 +16,13 @@ func ListFromDomain(users []*user.UserBasicInfo) []*UserBasic {
 	}
 	return list
 }
+
+type UserBasicList []*UserBasic
+
+func (l UserBasicList) ToMap() map[int64]*UserBasic {
+	m := map[int64]*UserBasic{}
+	for i := range l {
+		m[l[i].GetId()] = l[i]
+	}
+	return m
+}

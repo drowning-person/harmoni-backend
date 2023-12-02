@@ -2,8 +2,9 @@ package events
 
 import (
 	"context"
+	v1 "harmoni/app/harmoni/api/mq/v1/like"
+	"harmoni/app/harmoni/internal/entity"
 	likeentity "harmoni/app/harmoni/internal/entity/like"
-	event "harmoni/app/harmoni/internal/types/events/like"
 )
 
 type LikeEventsHandler struct {
@@ -16,24 +17,27 @@ func NewLikeEventsHandler(likeRepo likeentity.LikeRepository) *LikeEventsHandler
 	}
 }
 
-func FromEventLikeType(likeType event.LikeType) likeentity.LikeType {
+func FromEventLikeType(likeType v1.LikeType) likeentity.LikeType {
 	switch likeType {
-	case event.LikePost:
+	case v1.LikeType_LikePost:
 		return likeentity.LikePost
-	case event.LikeComment:
+	case v1.LikeType_LikeComment:
 		return likeentity.LikeComment
-	case event.LikeUser:
+	case v1.LikeType_LikeUser:
 		return likeentity.LikeUser
 	}
 	return likeentity.LikePost
 }
 
-func (h *LikeEventsHandler) HandleLikeCreated(ctx context.Context, msg *event.LikeCreatedMessage) error {
+func (h *LikeEventsHandler) HandleLikeCreated(ctx context.Context, msg *v1.LikeCreatedMessage) error {
 	return h.likeRepo.Save(ctx, &likeentity.Like{
 		UserID:       msg.UserID,
 		TargetUserID: msg.TargetUserID,
 		LikingID:     msg.LikingID,
-		LikeType:     FromEventLikeType(msg.LikeType),
+		LikeType:     FromEventLikeType(msg.BaseMessage.LikeType),
 		Canceled:     msg.IsCancel,
+		TimeMixin: entity.TimeMixin{
+			CreatedAt: msg.CreatedAt.AsTime(),
+		},
 	})
 }

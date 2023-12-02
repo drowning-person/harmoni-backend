@@ -12,16 +12,16 @@ type Database struct {
 	MaxIdleConn     int32         `protobuf:"varint,5,opt,name=max_idle_conn,json=maxIdleConn,proto3" json:"max_idle_conn,omitempty"`
 }
 
-type Server struct {
-	Http *HTTP `protobuf:"bytes,1,opt,name=http,proto3" json:"http,omitempty"`
-	Grpc *GRPC `protobuf:"bytes,2,opt,name=grpc,proto3" json:"grpc,omitempty"`
+type ServerCommon struct {
+	Http *HTTPCommon `protobuf:"bytes,1,opt,name=http,proto3" json:"http,omitempty"`
+	Grpc *GRPCCommon `protobuf:"bytes,2,opt,name=grpc,proto3" json:"grpc,omitempty"`
 }
 
-type HTTP struct {
+type HTTPCommon struct {
 	Addr string `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`
 }
 
-type GRPC struct {
+type GRPCCommon struct {
 	Addr    string        `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`
 	Timeout time.Duration `protobuf:"bytes,3,opt,name=timeout,proto3" json:"timeout,omitempty"`
 }

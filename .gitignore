@@ -26,3 +26,4 @@ start.sh
 
 static/
 configs/
+.vscode/

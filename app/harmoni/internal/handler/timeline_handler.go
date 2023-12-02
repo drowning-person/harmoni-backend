@@ -2,7 +2,7 @@ package handler
 
 import (
 	timelineentity "harmoni/app/harmoni/internal/entity/timeline"
-	"harmoni/app/harmoni/internal/pkg/httpx/fiberx"
+	"harmoni/app/harmoni/internal/pkg/fiberx"
 	"harmoni/app/harmoni/internal/pkg/middleware"
 	"harmoni/app/harmoni/internal/pkg/reason"
 	"harmoni/app/harmoni/internal/service"

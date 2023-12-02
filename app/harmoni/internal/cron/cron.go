@@ -58,7 +58,7 @@ func (s *ScheduledTaskManager) likeCountTask() {
 
 		likeMsg := &eventlike.LikeStoreMessage{
 			BaseMessage: eventlike.BaseMessage{
-				LikeType: likeType.ToEventLikeType(),
+				LikeType: likeType.ToInterEventLikeType(),
 			},
 			Counts: counts,
 		}

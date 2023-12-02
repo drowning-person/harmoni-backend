@@ -13,7 +13,7 @@ import (
 )
 
 func NewGrpcServer(
-	conf *conf.Server,
+	conf *conf.ServerCommon,
 	logger log.Logger,
 	userservice *userservice.UserGRPCService,
 ) *grpc.Server {

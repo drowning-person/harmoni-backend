@@ -43,7 +43,7 @@ func initApplication(
 	messageConf *config.MessageQueue,
 	fileConf *config.FileStorage,
 	etcdConf *conf.ETCD,
-	serverConf *conf.Server,
+	serverConf *conf.ServerCommon,
 	logConf *conf.Log) (*kratos.App, func(), error) {
 	panic(wire.Build(
 		sugar,

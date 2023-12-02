@@ -2,6 +2,7 @@ package like
 
 import (
 	"encoding/json"
+	v1 "harmoni/app/harmoni/api/mq/v1/like"
 	"harmoni/app/harmoni/internal/infrastructure/config"
 	"harmoni/app/harmoni/internal/infrastructure/mq"
 	"harmoni/app/harmoni/internal/infrastructure/mq/subscriber"
@@ -33,7 +34,7 @@ func NewLikeGroup(
 		Sub:    sub,
 	}
 	g.Handle(eventlike.TopicLikeCreated, func(msg *message.Message) error {
-		var m eventlike.LikeCreatedMessage
+		var m v1.LikeCreatedMessage
 		if err := json.Unmarshal(msg.Payload, &m); err != nil {
 			return err
 		}

@@ -1,24 +1,39 @@
-FROM golang:1.18 AS builder
+# 第一阶段：构建Go程序
+FROM golang:alpine AS build
 
-COPY . /src
-WORKDIR /src
+ARG VERSION="v1.0.0"
+ENV RootDir=/src
+ENV AppDir=app/notification
+ENV ServerDir=${RootDir}/${AppDir}
 
-RUN GOPROXY=https://goproxy.cn make build
+# 将当前目录下的所有文件复制到工作目录
+COPY ./app ${RootDir}/app
+COPY ./internal ${RootDir}/internal
 
-FROM debian:stable-slim
+WORKDIR ${RootDir}
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-		ca-certificates  \
-        netbase \
-        && rm -rf /var/lib/apt/lists/ \
-        && apt-get autoremove -y && apt-get autoclean -y
+# 安装依赖
+RUN go env -w GOPROXY=https://goproxy.cn,direct && \
+    go mod init harmoni
+RUN go mod tidy
 
-COPY --from=builder /src/bin /app
+# 构建Go程序
+RUN go build -ldflags "-X main.Version=$VERSION" -o ${ServerDir}/server ${ServerDir}/cmd/.
 
+# 第二阶段：运行Go程序
+FROM alpine:latest
+
+# 设置工作目录
 WORKDIR /app
 
-EXPOSE 8000
-EXPOSE 9000
-VOLUME /data/conf
+# 从第一阶段中复制构建好的Go程序
+COPY --from=build /src/app/notification/server .
+COPY ./app/notification/config /data/conf/
+# 设置环境变量
+ENV PORT=8181
 
+# 暴露端口
+EXPOSE $PORT
+
+# 运行Go程序
 CMD ["./server", "-conf", "/data/conf"]

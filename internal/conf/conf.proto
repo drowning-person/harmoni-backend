@@ -5,7 +5,7 @@ import "google/protobuf/duration.proto";
 option go_package = "harmoni/internal/conf;conf";
 
 message MessageQueue {
-    RabbitMQConf rabbit_mq = 1;
+    RabbitMQConf rabbit_mq = 1 [json_name = "rabbitMQ"];
 }
 
 message RabbitMQConf {
@@ -26,4 +26,33 @@ message Log {
     string level = 1;
 	string path = 2;
 	bool color = 3;
+}
+
+message App {
+	string start_time = 1;
+	int64 app_id = 2;
+	string locale = 3;
+	string server_name = 4; 
+}
+
+message DB {
+    string driver = 1;
+    string source = 2;
+    google.protobuf.Duration conn_max_life_time = 3;
+    int32 max_open_conn = 4;
+    int32 max_idle_conn = 5;
+}
+
+message HTTP {
+    string addr = 1;
+}
+
+message GRPC {
+    string addr = 1;
+    google.protobuf.Duration timeout = 2;
+}
+
+message Server {
+    HTTP http = 1;
+    GRPC grpc = 2;
 }

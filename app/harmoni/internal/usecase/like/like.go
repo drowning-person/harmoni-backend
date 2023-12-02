@@ -2,6 +2,7 @@ package like
 
 import (
 	"context"
+	v1 "harmoni/app/harmoni/api/mq/v1/like"
 	commententity "harmoni/app/harmoni/internal/entity/comment"
 	likeentity "harmoni/app/harmoni/internal/entity/like"
 	"harmoni/app/harmoni/internal/entity/paginator"
@@ -15,10 +16,9 @@ import (
 	postuse "harmoni/app/harmoni/internal/usecase/post"
 	"harmoni/internal/pkg/errorx"
 
-	"time"
-
 	"github.com/google/wire"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var ProviderSetLikeUsecase = wire.NewSet(
@@ -90,16 +90,15 @@ func (u *LikeUsecase) Like(ctx context.Context, like *likeentity.Like, isCancel 
 		return err
 	}
 
-	now := time.Now()
-	msg := event.LikeCreatedMessage{
-		BaseMessage: event.BaseMessage{
+	msg := v1.LikeCreatedMessage{
+		BaseMessage: &v1.BaseMessage{
 			LikeType: like.LikeType.ToEventLikeType(),
 		},
 		TargetUserID: like.TargetUserID,
 		UserID:       like.UserID,
 		IsCancel:     isCancel,
 		LikingID:     like.LikingID,
-		CreatedAt:    &now,
+		CreatedAt:    timestamppb.Now(),
 	}
 
 	err = u.publisher.Publish(ctx, event.TopicLikeCreated, &msg)

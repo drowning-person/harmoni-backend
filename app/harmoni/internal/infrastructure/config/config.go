@@ -13,17 +13,17 @@ import (
 )
 
 type Config struct {
-	App          *App           `mapstructure:"app"`
-	Server       *conf.Server   `mapstructure:"server"`
-	Auth         *Auth          `mapstructure:"auth"`
-	DB           *conf.Database `mapstructure:"db"`
-	Log          *conf.Log      `mapstructure:"log"`
-	Redis        *Redis         `mapstructure:"redis"`
-	ETCD         *conf.ETCD     `mapstructure:"etcd"`
-	Email        *Email         `mapstructure:"email"`
-	MessageQueue *MessageQueue  `mapstructure:"messageQueue"`
-	FileStorage  *FileStorage   `mapstructure:"fileStorage"`
-	Like         *Like          `mapstructure:"like"`
+	App          *App               `mapstructure:"app"`
+	Server       *conf.ServerCommon `mapstructure:"server"`
+	Auth         *Auth              `mapstructure:"auth"`
+	DB           *conf.Database     `mapstructure:"db"`
+	Log          *conf.Log          `mapstructure:"log"`
+	Redis        *Redis             `mapstructure:"redis"`
+	ETCD         *conf.ETCD         `mapstructure:"etcd"`
+	Email        *Email             `mapstructure:"email"`
+	MessageQueue *MessageQueue      `mapstructure:"messageQueue"`
+	FileStorage  *FileStorage       `mapstructure:"fileStorage"`
+	Like         *Like              `mapstructure:"like"`
 }
 
 type App struct {

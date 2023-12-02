@@ -1,7 +1,6 @@
 package mq
 
 import (
-	"context"
 	"harmoni/app/harmoni/internal/infrastructure/config"
 	"harmoni/app/harmoni/internal/server/mq/group/comment"
 	"harmoni/app/harmoni/internal/server/mq/group/like"
@@ -11,39 +10,19 @@ import (
 	likeevent "harmoni/app/harmoni/internal/usecase/like/events"
 	postevent "harmoni/app/harmoni/internal/usecase/post/events"
 	userevent "harmoni/app/harmoni/internal/usecase/user/events"
+	"harmoni/internal/pkg/server"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"github.com/garsue/watermillzap"
-	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/google/wire"
 	"go.uber.org/zap"
 )
 
-var _ transport.Server = (*MQServer)(nil)
-
-type MQServer struct {
-	*message.Router
-}
-
 var ProviderSetMQ = wire.NewSet(
 	NewMQRouter,
-	NewExecutor,
+	server.NewMQServer,
 )
-
-func (r *MQServer) Start(ctx context.Context) error {
-	return r.Run(ctx)
-}
-
-func (r *MQServer) Stop(context.Context) error {
-	return r.Close()
-}
-
-func NewExecutor(r *message.Router) *MQServer {
-	return &MQServer{
-		Router: r,
-	}
-}
 
 func NewMQRouter(
 	conf *config.MessageQueue,

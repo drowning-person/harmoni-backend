@@ -3,6 +3,7 @@ package like
 import (
 	"context"
 	"encoding/json"
+	v1 "harmoni/app/harmoni/api/mq/v1/like"
 	"harmoni/app/harmoni/internal/entity"
 	"harmoni/app/harmoni/internal/entity/paginator"
 	"harmoni/app/harmoni/internal/pkg/common"
@@ -17,7 +18,19 @@ const (
 	LikeUser
 )
 
-func (t *LikeType) ToEventLikeType() like.LikeType {
+func (t *LikeType) ToEventLikeType() v1.LikeType {
+	switch *t {
+	case LikePost:
+		return v1.LikeType_LikePost
+	case LikeComment:
+		return v1.LikeType_LikeComment
+	case LikeUser:
+		return v1.LikeType_LikeUser
+	}
+	return v1.LikeType_LikeNo
+}
+
+func (t *LikeType) ToInterEventLikeType() like.LikeType {
 	switch *t {
 	case LikePost:
 		return like.LikePost

@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	"harmoni/app/harmoni/internal/pkg/httpx/fiberx"
+	"harmoni/app/harmoni/internal/pkg/fiberx"
 	"harmoni/app/harmoni/internal/pkg/middleware"
 	"harmoni/app/harmoni/internal/pkg/reason"
 	"harmoni/internal/conf"
@@ -26,7 +26,7 @@ var ProviderSetHTTP = wire.NewSet(
 var _ transport.Server = (*FiberServer)(nil)
 
 type FiberServer struct {
-	conf *conf.Server
+	conf *conf.ServerCommon
 	*fiber.App
 }
 
@@ -40,7 +40,7 @@ func (s *FiberServer) Stop(context.Context) error {
 
 // NewHTTPServer new http server.
 func NewHTTPServer(
-	conf *conf.Server,
+	conf *conf.ServerCommon,
 	zapLogger *zap.Logger,
 	harmoniRouter *HarmoniAPIRouter,
 	authMiddleware *middleware.JwtAuthMiddleware,

@@ -52,7 +52,7 @@ import (
 
 // Injectors from wire.go:
 
-func initApplication(conf2 *config.Config, appConf *config.App, dbconf *conf.Database, rdbconf *config.Redis, authConf *config.Auth, emailConf *config.Email, likeConf *config.Like, messageConf *config.MessageQueue, fileConf *config.FileStorage, etcdConf *conf.ETCD, serverConf *conf.Server, logConf *conf.Log) (*kratos.App, func(), error) {
+func initApplication(conf2 *config.Config, appConf *config.App, dbconf *conf.Database, rdbconf *config.Redis, authConf *config.Auth, emailConf *config.Email, likeConf *config.Like, messageConf *config.MessageQueue, fileConf *config.FileStorage, etcdConf *conf.ETCD, serverConf *conf.ServerCommon, logConf *conf.Log) (*kratos.App, func(), error) {
 	zapLogger, err := logger.NewZapLogger(logConf)
 	if err != nil {
 		return nil, nil, err

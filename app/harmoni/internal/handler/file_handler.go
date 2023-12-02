@@ -3,7 +3,7 @@ package handler
 import (
 	fileentity "harmoni/app/harmoni/internal/entity/file"
 	"harmoni/app/harmoni/internal/pkg/common"
-	"harmoni/app/harmoni/internal/pkg/httpx/fiberx"
+	"harmoni/app/harmoni/internal/pkg/fiberx"
 	"harmoni/app/harmoni/internal/pkg/middleware"
 	"harmoni/app/harmoni/internal/pkg/reason"
 	"harmoni/app/harmoni/internal/service"

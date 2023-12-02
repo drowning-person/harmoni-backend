@@ -1,18 +1,19 @@
 package snowflakex
 
 import (
+	"harmoni/internal/conf"
 	"time"
 
 	sf "github.com/bwmarrin/snowflake"
 )
 
-func NewSnowflakeNode(appID int64, startTime string) (*sf.Node, error) {
+func NewSnowflakeNode(conf *conf.App) (*sf.Node, error) {
 	var st time.Time
-	st, err := time.Parse("2006-01-02", startTime)
+	st, err := time.Parse("2006-01-02", conf.GetStartTime())
 	if err != nil {
 		return nil, err
 	}
 	sf.Epoch = st.UnixNano() / 1000000
 
-	return sf.NewNode(appID)
+	return sf.NewNode(conf.GetAppId())
 }

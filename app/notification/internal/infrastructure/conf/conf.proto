@@ -4,6 +4,10 @@ option go_package = "/app/notification/internal/infrastructure/conf;conf";
 import "internal/conf/conf.proto";
 
 message Conf {
-    conf.Database database = 1;
+    conf.App app = 1;
     conf.MessageQueue message_queue = 2;
+    conf.Log log = 3;
+    conf.ETCD etcd = 4;
+    conf.DB db = 5;
+    conf.Server server = 6;
 }

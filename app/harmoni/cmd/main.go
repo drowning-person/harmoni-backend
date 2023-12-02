@@ -6,7 +6,7 @@ import (
 	"harmoni/app/harmoni/internal/infrastructure/config"
 
 	"harmoni/app/harmoni/internal/server/http"
-	"harmoni/app/harmoni/internal/server/mq"
+	"harmoni/internal/pkg/server"
 	"harmoni/internal/pkg/validator"
 
 	"github.com/go-kratos/kratos/contrib/registry/etcd/v2"
@@ -28,7 +28,7 @@ func newApplication(
 	fiberServer *http.FiberServer,
 	grpcServer *grpc.Server,
 	cronApp *cron.ScheduledTaskManager,
-	mqServer *mq.MQServer,
+	mqServer *server.MQServer,
 	logger *zap.SugaredLogger,
 	kratosLogger log.Logger,
 ) *kratos.App {
