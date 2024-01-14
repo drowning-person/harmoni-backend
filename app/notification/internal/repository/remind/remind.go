@@ -92,7 +92,7 @@ func WithAction(act action.Action) func(db *gorm.DB) *gorm.DB {
 func (r *RemindRepo) Create(ctx context.Context, req *remind.CreateReq) error {
 	participants := make([]*notification.RemindParticipant, len(req.SenderIDs))
 	remind := notification.NotifyRemind{}
-	err := r.data.DB(ctx).WithContext(ctx).
+	err := r.data.DB(ctx).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
 		Scopes(WithRecipientID(req.RecipientID),
 			WithAction(req.Action),
@@ -105,7 +105,7 @@ func (r *RemindRepo) Create(ctx context.Context, req *remind.CreateReq) error {
 			if err != nil {
 				return err
 			}
-			err = r.data.DB(ctx).WithContext(ctx).Create(&remind).Error
+			err = r.data.DB(ctx).Create(&remind).Error
 			if err != nil {
 				return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 			}
@@ -117,8 +117,7 @@ func (r *RemindRepo) Create(ctx context.Context, req *remind.CreateReq) error {
 	// if sender not stored, add to remind_participant
 	// otherwise, update time
 	storedSenders := make([]int64, 0)
-	err = r.data.DB(ctx).WithContext(ctx).
-		Select("sender_id").
+	err = r.data.DB(ctx).Select("sender_id").
 		Table("remind_participant").
 		Where("remind_id = ?", remind.RemindID).
 		Find(&storedSenders).Error
@@ -146,8 +145,7 @@ func (r *RemindRepo) Create(ctx context.Context, req *remind.CreateReq) error {
 		if req.LastReadTime != nil {
 			updatedTime = *req.LastReadTime
 		}
-		err = r.data.DB(ctx).WithContext(ctx).
-			Model(&notification.RemindParticipant{}).
+		err = r.data.DB(ctx).Model(&notification.RemindParticipant{}).
 			Where("sender_id IN (?)", needUpdateSenders).
 			UpdateColumn("updated_at", updatedTime).Error
 		if err != nil {
@@ -167,7 +165,7 @@ func (r *RemindRepo) Create(ctx context.Context, req *remind.CreateReq) error {
 				RpID:     uniqueID,
 			}
 		}
-		err = r.data.DB(ctx).WithContext(ctx).Create(participants).Error
+		err = r.data.DB(ctx).Create(participants).Error
 		if err != nil {
 			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 		}
@@ -182,8 +180,7 @@ func (r *RemindRepo) ListNRemindParticipant(ctx context.Context, remindIDs []int
 		Table("remind_participant").
 		Where("remind_id = rp.remind_id").
 		Where("rp_id <= rp.rp_id")
-	err := r.data.DB(ctx).WithContext(ctx).
-		Table("remind_participant AS rp").
+	err := r.data.DB(ctx).Table("remind_participant AS rp").
 		Where("(?) <= ?", subQuery, n).
 		Where("rp.remind_id in ?", remindIDs).Order("rp.rp_id").
 		Find(&participants).Error
@@ -195,7 +192,7 @@ func (r *RemindRepo) ListNRemindParticipant(ctx context.Context, remindIDs []int
 
 func (r *RemindRepo) List(ctx context.Context, req *remind.ListReq) (*paginator.Page[*remind.Remind], error) {
 	page := paginator.NewPage[*notification.NotifyRemind](req.Page, req.Size)
-	err := page.SelectPages(r.data.DB(ctx).WithContext(ctx).Scopes(
+	err := page.SelectPages(r.data.DB(ctx).Scopes(
 		WithRecipientID(req.UserID),
 		WithAction(req.Action)).
 		Order("updated_at"))
@@ -238,7 +235,7 @@ func (r *RemindRepo) List(ctx context.Context, req *remind.ListReq) (*paginator.
 }
 
 func (r *RemindRepo) UpdateLastReadTime(ctx context.Context, req *remind.UpdateLastReadTimeReq) error {
-	err := r.data.DB(ctx).WithContext(ctx).Model(&notification.NotifyRemind{}).
+	err := r.data.DB(ctx).Model(&notification.NotifyRemind{}).
 		Scopes(
 			WithRecipientID(req.UserID),
 			WithAction(req.Action),
@@ -252,7 +249,7 @@ func (r *RemindRepo) UpdateLastReadTime(ctx context.Context, req *remind.UpdateL
 
 func (r *RemindRepo) Count(ctx context.Context, req *remind.CountReq) (int64, error) {
 	var count int64
-	db := r.data.DB(ctx).WithContext(ctx)
+	db := r.data.DB(ctx)
 	if req.UnRead {
 		db = db.Joins("JOIN remind_participant AS rp ON notify_remind.remind_id = rp.remind_id AND rp.created_at > notify_remind.last_read_time")
 	}
@@ -274,7 +271,7 @@ type remindSenderResult struct {
 
 func (r *RemindRepo) ListRemindSenders(ctx context.Context, req *remind.ListRemindSendersReq) (*paginator.Page[*remind.RemindSender], error) {
 	result := paginator.NewPageFromReq[*remindSenderResult](req.PageRequest)
-	db := r.data.DB(ctx).WithContext(ctx).Table("remind_participant AS rp").
+	db := r.data.DB(ctx).Table("remind_participant AS rp").
 		Select("rp.sender_id", "rp.created_at").
 		Where("rp.remind_id = ?", req.RemindID).
 		Where("rp.action = ?", req.Action).
