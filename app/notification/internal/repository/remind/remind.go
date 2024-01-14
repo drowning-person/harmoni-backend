@@ -8,6 +8,7 @@ import (
 	"harmoni/app/notification/internal/infrastructure/po/notification"
 	"harmoni/internal/pkg/data"
 	"harmoni/internal/pkg/errorx"
+	"harmoni/internal/pkg/paginator"
 	"harmoni/internal/pkg/reason"
 	"harmoni/internal/pkg/set"
 	"harmoni/internal/types/action"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/samber/lo"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -173,27 +175,42 @@ func (r *RemindRepo) Create(ctx context.Context, req *remind.CreateReq) error {
 	return nil
 }
 
-func (r *RemindRepo) List(ctx context.Context, req *remind.ListReq) ([]*remind.Remind, error) {
-	notifyReminds := []*notification.NotifyRemind{}
-	err := r.data.DB(ctx).WithContext(ctx).Scopes(
+func (r *RemindRepo) ListNRemindParticipant(ctx context.Context, remindIDs []int64, n int) ([]*notification.RemindParticipant, error) {
+	participants := []*notification.RemindParticipant{}
+	var subQuery = r.data.DB(ctx).
+		Select("COUNT(*)").
+		Table("remind_participant").
+		Where("remind_id = rp.remind_id").
+		Where("rp_id <= rp.rp_id")
+	err := r.data.DB(ctx).WithContext(ctx).
+		Table("remind_participant AS rp").
+		Where("(?) <= ?", subQuery, n).
+		Where("rp.remind_id in ?", remindIDs).Order("rp.rp_id").
+		Find(&participants).Error
+	if err != nil {
+		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	return participants, nil
+}
+
+func (r *RemindRepo) List(ctx context.Context, req *remind.ListReq) (*paginator.Page[*remind.Remind], error) {
+	page := paginator.NewPage[*notification.NotifyRemind](req.Page, req.Size)
+	err := page.SelectPages(r.data.DB(ctx).WithContext(ctx).Scopes(
 		WithRecipientID(req.UserID),
 		WithAction(req.Action)).
-		Order("updated_at").
-		Find(&notifyReminds).Error
+		Order("updated_at"))
 	if err != nil {
 		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
-	remindIDs := make([]int64, len(notifyReminds))
-	for i := range notifyReminds {
-		remindIDs[i] = notifyReminds[i].RemindID
+	remindIDs := make([]int64, page.Total)
+	for i := range page.Data {
+		remindIDs[i] = page.Data[i].RemindID
 	}
-	senders := []*notification.RemindParticipant{}
-	err = r.data.DB(ctx).WithContext(ctx).Where("remind_id IN (?)", remindIDs).
-		Find(&senders).Error
+	senders, err := r.ListNRemindParticipant(ctx, remindIDs, req.SenderCount)
 	if err != nil {
-		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		return nil, err
 	}
-	reminds := buildDomain(notifyReminds)
+	reminds := buildDomain(page.Data)
 	userIDSet := set.New[int64]()
 	for i := range senders {
 		userIDSet.Add(senders[i].SenderID)
@@ -212,7 +229,12 @@ func (r *RemindRepo) List(ctx context.Context, req *remind.ListReq) ([]*remind.R
 		reminds[i].Recipient = userMap[reminds[i].Recipient.GetId()]
 		reminds[i].Senders = sendersMap[reminds[i].RemindID]
 	}
-	return reminds, nil
+	return &paginator.Page[*remind.Remind]{
+		CurrentPage: page.CurrentPage,
+		PageSize:    page.PageSize,
+		Total:       page.Total,
+		Data:        reminds,
+	}, nil
 }
 
 func (r *RemindRepo) UpdateLastReadTime(ctx context.Context, req *remind.UpdateLastReadTimeReq) error {
@@ -243,4 +265,38 @@ func (r *RemindRepo) Count(ctx context.Context, req *remind.CountReq) (int64, er
 		return 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 	return count, nil
+}
+
+type remindSenderResult struct {
+	SenderID  int64     `gorm:"column:sender_id"`
+	CreatedAt time.Time `gorm:"column:created_at"`
+}
+
+func (r *RemindRepo) ListRemindSenders(ctx context.Context, req *remind.ListRemindSendersReq) (*paginator.Page[*remind.RemindSender], error) {
+	result := paginator.NewPageFromReq[*remindSenderResult](req.PageRequest)
+	db := r.data.DB(ctx).WithContext(ctx).Table("remind_participant AS rp").
+		Select("rp.sender_id", "rp.created_at").
+		Where("rp.remind_id = ?", req.RemindID).
+		Where("rp.action = ?", req.Action).
+		Order("rp.rp_id").
+		Scan(result)
+	err := result.SelectPages(db)
+	if err != nil {
+		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	resp, err := r.uc.List(ctx, &v1.ListBasicsRequest{Ids: lo.Map(result.Data,
+		func(r *remindSenderResult, _ int) int64 {
+			return r.SenderID
+		})})
+	if err != nil {
+		return nil, errorx.InternalServer(reason.ServerError).WithError(err).WithStack()
+	}
+	senders := v1.UserBasicList(resp.GetUsers()).ToMap()
+	items := paginator.NewPageFromReq[*remind.RemindSender](req.PageRequest)
+	datas := make([]*remind.RemindSender, len(result.Data))
+	for i := range datas {
+		datas[i].Sender = senders[result.Data[i].SenderID]
+		datas[i].CreatedAt = &result.Data[i].CreatedAt
+	}
+	return items, nil
 }

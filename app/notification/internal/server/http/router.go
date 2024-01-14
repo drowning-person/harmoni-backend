@@ -26,6 +26,12 @@ func (r *NotificationAPIRouter) RegisterNotificationAPIRouter(g *gin.RouterGroup
 	mg := g.Group("/message")
 	{
 		mg.GET("/unread", r.rh.UnReadCount)
+
+		mg.GET("/like", r.rh.ListLikeRemind)
+		mg.GET("/like/detail", r.rh.ListLikeRemindDetail)
+
+		mg.GET("/reply", r.rh.ListReplyRemind)
+		mg.GET("/at", r.rh.ListAtRemind)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	v1 "harmoni/app/harmoni/api/grpc/v1/user"
 	"harmoni/app/notification/internal/entity/notifyconfig"
+	"harmoni/internal/pkg/paginator"
 	"harmoni/internal/types/action"
 	"harmoni/internal/types/object"
 	"time"
@@ -29,8 +30,10 @@ func (r *Remind) BuildContent(config *notifyconfig.NotifyConfig) {
 }
 
 type ListReq struct {
-	UserID int64
-	Action action.Action
+	*paginator.PageRequest
+	UserID      int64
+	Action      action.Action
+	SenderCount int
 }
 
 type CreateReq struct {
@@ -55,9 +58,21 @@ type CountReq struct {
 	UnRead bool
 }
 
+type ListRemindSendersReq struct {
+	*paginator.PageRequest
+	RemindID int64
+	Action   action.Action
+}
+
+type RemindSender struct {
+	Sender    *v1.UserBasic // 发送人
+	CreatedAt *time.Time    // 创建时间
+}
+
 type RemindRepository interface {
 	Create(ctx context.Context, req *CreateReq) error
-	List(ctx context.Context, req *ListReq) ([]*Remind, error)
+	List(ctx context.Context, req *ListReq) (*paginator.Page[*Remind], error)
 	Count(ctx context.Context, req *CountReq) (int64, error)
 	UpdateLastReadTime(ctx context.Context, req *UpdateLastReadTimeReq) error
+	ListRemindSenders(ctx context.Context, req *ListRemindSendersReq) (*paginator.Page[*RemindSender], error)
 }

@@ -4,9 +4,14 @@ import (
 	"context"
 	"harmoni/app/notification/internal/entity/notifyconfig"
 	"harmoni/app/notification/internal/entity/remind"
+	"harmoni/internal/pkg/paginator"
 	"harmoni/internal/types/iface"
 
 	"github.com/go-kratos/kratos/v2/log"
+)
+
+const (
+	showSenderCount = 4
 )
 
 type RemindUsecase struct {
@@ -43,10 +48,15 @@ func (u *RemindUsecase) Create(ctx context.Context, req *remind.CreateReq) error
 	})
 }
 
-func (u *RemindUsecase) List(ctx context.Context, req *remind.ListReq) ([]*remind.Remind, error) {
+func (u *RemindUsecase) List(ctx context.Context, req *remind.ListReq) (*paginator.Page[*remind.Remind], error) {
+	req.SenderCount = showSenderCount
 	return u.nr.List(ctx, req)
 }
 
 func (u *RemindUsecase) Count(ctx context.Context, req *remind.CountReq) (int64, error) {
 	return u.nr.Count(ctx, req)
+}
+
+func (u *RemindUsecase) ListRemindSenders(ctx context.Context, req *remind.ListRemindSendersReq) (*paginator.Page[*remind.RemindSender], error) {
+	return u.nr.ListRemindSenders(ctx, req)
 }

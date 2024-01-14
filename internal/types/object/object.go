@@ -7,3 +7,15 @@ const (
 	ObjectTypeComment                       // 评论
 	ObjectTypeTag                           // 话题
 )
+
+func (o ObjectType) String() string {
+	switch o {
+	case ObjectTypePost:
+		return "帖子"
+	case ObjectTypeComment:
+		return "评论"
+	case ObjectTypeTag:
+		return "话题"
+	}
+	return "unknown"
+}
