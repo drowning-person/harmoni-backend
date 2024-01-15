@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
 )
 
 type BaseModel struct {
@@ -14,6 +15,11 @@ type BaseModel struct {
 type BaseModelWithSoftDelete struct {
 	BaseModel
 	SoftDelete
+}
+
+type BaseModelWithSoftDeleteUnix struct {
+	BaseModel
+	soft_delete.DeletedAt
 }
 
 type TimeMixin struct {

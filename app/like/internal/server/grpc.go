@@ -1,7 +1,9 @@
 package server
 
 import (
-	"harmoni/app/like/internal/conf"
+	v1 "harmoni/api/like/grpc/v1"
+	"harmoni/app/like/internal/service/like"
+	"harmoni/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
@@ -9,7 +11,10 @@ import (
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, logger log.Logger) *grpc.Server {
+func NewGRPCServer(
+	c *conf.Server,
+	ls *like.LikeService,
+	logger log.Logger) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
@@ -25,5 +30,6 @@ func NewGRPCServer(c *conf.Server, logger log.Logger) *grpc.Server {
 		opts = append(opts, grpc.Timeout(c.Grpc.Timeout.AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
+	v1.RegisterLikeServer(srv, ls)
 	return srv
 }

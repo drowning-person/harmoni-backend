@@ -7,6 +7,7 @@ require (
 	github.com/ThreeDotsLabs/watermill-amqp/v2 v2.1.0
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/garsue/watermillzap v1.2.0
+	github.com/gin-gonic/gin v1.9.1
 	github.com/go-co-op/gocron v1.28.1
 	github.com/go-kratos/kratos/contrib/registry/etcd/v2 v2.0.0-20231109033548-702f96c13e7f
 	github.com/go-kratos/kratos/v2 v2.7.1
@@ -20,7 +21,9 @@ require (
 	github.com/google/wire v0.5.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/redis/go-redis/v9 v9.0.3
+	github.com/samber/lo v1.39.0
 	github.com/spf13/viper v1.15.0
+	github.com/tx7do/kratos-transport/transport/gin v1.2.1
 	go.etcd.io/etcd/client/v3 v3.5.8
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.14.0
@@ -29,6 +32,7 @@ require (
 	google.golang.org/protobuf v1.31.0
 	gorm.io/driver/mysql v1.4.7
 	gorm.io/gorm v1.24.6
+	gorm.io/plugin/soft_delete v1.2.1
 	moul.io/zapgorm2 v1.3.0
 )
 
@@ -45,7 +49,6 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.9.1 // indirect
 	github.com/go-kratos/aegis v0.2.0 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -80,7 +83,6 @@ require (
 	github.com/rabbitmq/amqp091-go v1.8.1 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
-	github.com/samber/lo v1.39.0 // indirect
 	github.com/savsgio/dictpool v0.0.0-20221023140959-7bf2e61cea94 // indirect
 	github.com/savsgio/gotils v0.0.0-20230208104028-c358bd845dee // indirect
 	github.com/sony/gobreaker v0.5.0 // indirect
@@ -91,7 +93,6 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/tinylib/msgp v1.1.8 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
-	github.com/tx7do/kratos-transport/transport/gin v1.2.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.45.0 // indirect

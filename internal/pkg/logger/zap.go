@@ -45,7 +45,7 @@ func NewZapLogger(conf *conf.Log) (*zap.Logger, error) {
 		LevelKey:       "level",
 		NameKey:        "name",
 		CallerKey:      "line",
-		MessageKey:     "msg",
+		MessageKey:     "",
 		FunctionKey:    "func",
 		StacktraceKey:  "stacktrace",
 		LineEnding:     zapcore.DefaultLineEnding,

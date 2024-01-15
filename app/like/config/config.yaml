@@ -1,0 +1,24 @@
+server:
+  http:
+    addr: 0.0.0.0:8000
+    timeout: 1s
+  grpc:
+    addr: 0.0.0.0:9000
+    timeout: 1s
+db:
+  driver: mysql
+  source: root:123456@tcp(127.0.0.1:3306)/harmoni_like
+log:
+  path: ./log/log.log
+app:
+  startTime: "2024-01-01"
+  appID: 2
+  locale: zh
+  serverName: like
+messageQueue:
+  rabbitMQ:
+    username: guest
+    password: guest
+    host: 127.0.0.1
+    port: 5672
+    vhost:

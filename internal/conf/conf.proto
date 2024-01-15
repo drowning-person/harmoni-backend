@@ -50,6 +50,7 @@ message HTTP {
 message GRPC {
     string addr = 1;
     google.protobuf.Duration timeout = 2;
+    string network = 3;
 }
 
 message Server {

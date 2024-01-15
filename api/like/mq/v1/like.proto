@@ -14,6 +14,7 @@ enum LikeType {
 
 message BaseMessage {
     LikeType likeType = 1;
+    google.protobuf.Timestamp createdAt = 2;
 }
 
 message LikeCreatedMessage {
@@ -21,6 +22,6 @@ message LikeCreatedMessage {
     int64 userID = 2;
     int64 targetUserID = 3;
     int64 likingID = 4;
-    bool isCancel = 5;
-    google.protobuf.Timestamp createdAt = 6;
+    int64 objectID = 5;
+    bool isCancel = 6;
 }

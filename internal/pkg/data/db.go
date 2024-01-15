@@ -9,6 +9,7 @@ import (
 )
 
 var ProviderSet = wire.NewSet(
+	NewGormDB,
 	NewDB,
 	wire.Bind(new(iface.Transaction), new(*DB)),
 )
@@ -27,6 +28,7 @@ func NewDB(db *gorm.DB) *DB {
 		db: db,
 	}
 }
+
 func (d *DB) ExecTx(ctx context.Context, fn func(ctx context.Context) error) error {
 	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		ctx = context.WithValue(ctx, contextTxKey{}, tx)

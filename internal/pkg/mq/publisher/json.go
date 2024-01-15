@@ -4,25 +4,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"harmoni/internal/pkg/mq"
+	"harmoni/internal/pkg/watermillkratos"
 	"harmoni/internal/types/iface"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-amqp/v2/pkg/amqp"
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/garsue/watermillzap"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
 var ProviderSetPublisher = wire.NewSet(
-	NewPublisher,
 	NewJSONPublisher,
 	wire.Bind(new(iface.Publisher), new(*JSONPublisher)),
 )
 
-func NewPublisher(conf *mq.MessageQueue, logger *zap.Logger) (message.Publisher, error) {
+func NewPublisher(conf *mq.MessageQueue, logger log.Logger) (message.Publisher, error) {
 	var (
 		pub message.Publisher
 		err error
@@ -30,7 +30,9 @@ func NewPublisher(conf *mq.MessageQueue, logger *zap.Logger) (message.Publisher,
 	switch {
 	case conf.RabbitMQ != nil:
 		amqpConfig := amqp.NewDurablePubSubConfig(conf.RabbitMQ.BuildURL(), nil)
-		pub, err = amqp.NewPublisher(amqpConfig, watermillzap.NewLogger(logger))
+		pub, err = amqp.NewPublisher(amqpConfig, watermillkratos.NewLogger(
+			log.NewHelper(log.With(logger, "module", "publisher/like", "service", "like")), "msg",
+		))
 		if err != nil {
 			return nil, err
 		}
