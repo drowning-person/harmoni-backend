@@ -11,6 +11,8 @@ import (
 	"moul.io/zapgorm2"
 )
 
+type ScopeFunc func(*gorm.DB) *gorm.DB
+
 func zapLevelToGORMLevel(zapLevel zapcore.Level) logger.LogLevel {
 	switch zapLevel {
 	case zap.InfoLevel:

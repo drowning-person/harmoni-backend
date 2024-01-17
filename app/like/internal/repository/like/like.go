@@ -24,12 +24,38 @@ type LikeRepo struct {
 
 var _ entitylike.LikeRepository = (*LikeRepo)(nil)
 
-func findLike(like *entitylike.Like) func(*gorm.DB) *gorm.DB {
+func withUserID(userID int64) data.ScopeFunc {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("user_id = ?", like.User.GetId()).
-			Where("target_user_id = ?", like.TargetUser.GetId()).
-			Where("like_type = ?", like.LikeType).
-			Where("object_id = ?", like.ObjectID)
+		return db.Where("user_id = ?", userID)
+	}
+}
+
+func withTargetUserID(targetUserID int64) data.ScopeFunc {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("target_user_id = ?", targetUserID)
+	}
+}
+
+func withLikeType(likeType entitylike.LikeType) data.ScopeFunc {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("like_type = ?", likeType)
+	}
+}
+
+func withObjectID(objectID int64) data.ScopeFunc {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("object_id = ?", objectID)
+	}
+}
+
+func findLike(like *entitylike.Like) data.ScopeFunc {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Scopes(
+			withUserID(like.User.GetId()),
+			withTargetUserID(like.TargetUser.GetId()),
+			withLikeType(like.LikeType),
+			withObjectID(like.ObjectID),
+		)
 	}
 }
 
@@ -59,11 +85,13 @@ func (r *LikeRepo) Save(ctx context.Context, like *entitylike.Like, isCancel boo
 
 		po := polike.FromDomain(like)
 		model := &polike.Like{}
-		err := tx.Model(model).Unscoped().Scopes(findLike(like)).First(model).Error
+		err := tx.Debug().Model(model).Unscoped().Scopes(findLike(like)).First(model).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = tx.Table(model.TableName()).
-				Update("deleted_at", 0).
-				Where("liking_id = ?", po.LikingID).Error
+			po.LikingID, err = r.uniqueRepo.GenUniqueID(ctx)
+			if err != nil {
+				return err
+			}
+			err = tx.Table("like").Create(po).Error
 			if err != nil {
 				return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 			}
@@ -71,15 +99,13 @@ func (r *LikeRepo) Save(ctx context.Context, like *entitylike.Like, isCancel boo
 		} else if err != nil {
 			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 		}
-
-		po.LikingID, err = r.uniqueRepo.GenUniqueID(ctx)
-		if err != nil {
-			return err
-		}
-		err = tx.Table("like").Create(po).Error
+		err = tx.Table(model.TableName()).
+			Update("deleted_at", 0).
+			Where("liking_id = ?", model.LikingID).Error
 		if err != nil {
 			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 		}
+
 		return nil
 	})
 }
@@ -107,4 +133,27 @@ func (r *LikeRepo) Get(ctx context.Context, like *entitylike.Like) (*entitylike.
 		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 	return l, nil
+}
+
+func (r *LikeRepo) ListLikeObjectByUserID(ctx context.Context, query *entitylike.ListLikeObjectQuery) ([]*entitylike.Like, int64, error) {
+	likeList := make([]*polike.Like, 0, query.Size)
+	err := r.data.DB(ctx).Scopes(
+		withUserID(query.UserID),
+		withLikeType(query.LikeType),
+	).Find(&likeList).Error
+	if err != nil {
+		r.logger.Error(err)
+		return nil, 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	var count int64
+	err = r.data.DB(ctx).Scopes(
+		withUserID(query.UserID),
+		withLikeType(query.LikeType),
+	).Count(&count).Error
+	if err != nil {
+		return nil, 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return likeList, count, nil
 }

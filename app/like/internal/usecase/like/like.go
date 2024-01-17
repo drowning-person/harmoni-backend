@@ -53,3 +53,7 @@ func (u *LikeUsecase) Like(ctx context.Context, req *LikeRequest) error {
 
 	return u.publisher.Publish(ctx, events.TopicLikeCreated, like.ToLikeCreateMessage(req.IsCancel))
 }
+
+func (u *LikeUsecase) ListLikeObjectByUserID(ctx context.Context, query *entitylike.ListLikeObjectQuery) ([]*entitylike.Like, int64, error) {
+	return u.likeRepo.ListLikeObjectByUserID(ctx, query)
+}

@@ -5,6 +5,7 @@ import (
 
 	mqlike "harmoni/api/like/mq/v1"
 	v1 "harmoni/app/harmoni/api/grpc/v1/user"
+	"harmoni/internal/pkg/paginator"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -43,8 +44,15 @@ var (
 	LikeTypeList = []LikeType{LikeUser, LikePost, LikeComment}
 )
 
+type ListLikeObjectQuery struct {
+	paginator.PageRequest
+	UserID   int64
+	LikeType LikeType
+}
+
 type LikeRepository interface {
 	Save(ctx context.Context, like *Like, isCancel bool) error
 	Get(ctx context.Context, like *Like) (*Like, error)
 	IsExist(ctx context.Context, like *Like) (bool, error)
+	ListLikeObjectByUserID(ctx context.Context, query *ListLikeObjectQuery) ([]*Like, int64, error)
 }

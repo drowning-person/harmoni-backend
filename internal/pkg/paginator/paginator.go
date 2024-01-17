@@ -9,6 +9,22 @@ const (
 	minPageSize = 10
 )
 
+func NewPageReply(num int64, size int64, total int64) *PageRely {
+	reply := PageRely{
+		Size:  size,
+		Total: total,
+	}
+	pages := total / size
+	if total%size != 0 {
+		pages++
+	}
+	if num > pages {
+		num = pages
+	}
+	reply.Current = num
+	return &reply
+}
+
 // 标准分页结构体，接收最原始的DO
 // 建议在外部再建一个字段一样的结构体，用以将DO转换成DTO或VO
 type Page[T any] struct {

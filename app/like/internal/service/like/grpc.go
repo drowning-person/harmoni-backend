@@ -6,6 +6,7 @@ import (
 	pb "harmoni/api/like/grpc/v1"
 	entitylike "harmoni/app/like/internal/entity/like"
 	"harmoni/app/like/internal/usecase/like"
+	"harmoni/internal/pkg/paginator"
 
 	"github.com/go-kratos/kratos/v2/log"
 )
@@ -39,4 +40,30 @@ func (s *LikeService) Like(ctx context.Context, req *pb.LikeRequest) (*pb.LikeRe
 		return nil, err
 	}
 	return &pb.LikeReply{}, nil
+}
+
+func (s *LikeService) UserLikeList(ctx context.Context, req *pb.UserLikeListRequest) (*pb.UserLikeListReply, error) {
+	list, total, err := s.lu.ListLikeObjectByUserID(ctx, &entitylike.ListLikeObjectQuery{
+		PageRequest: paginator.PageRequest{
+			Num:  req.GetPageRequest().GetNum(),
+			Size: req.GetPageRequest().GetSize(),
+		},
+		UserID: req.GetUserID(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	size := int64(len(list))
+	reply := pb.UserLikeListReply{
+		PageRely: paginator.NewPageReply(
+			req.GetPageRequest().GetNum(),
+			size, total),
+		LikeList: make([]*pb.LikeEntity, size),
+	}
+	for i := range list {
+		reply.LikeList[i] = convertDomainToReply(list[i])
+	}
+
+	return &reply, nil
 }
