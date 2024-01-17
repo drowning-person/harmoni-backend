@@ -45,5 +45,6 @@ var (
 
 type LikeRepository interface {
 	Save(ctx context.Context, like *Like, isCancel bool) error
+	Get(ctx context.Context, like *Like) (*Like, error)
 	IsExist(ctx context.Context, like *Like) (bool, error)
 }
