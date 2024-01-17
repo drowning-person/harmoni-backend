@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Like_Like_FullMethodName = "/like.Like/Like"
+	Like_Like_FullMethodName         = "/like.Like/Like"
+	Like_UserLikeList_FullMethodName = "/like.Like/UserLikeList"
 )
 
 // LikeClient is the client API for Like service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LikeClient interface {
 	Like(ctx context.Context, in *LikeRequest, opts ...grpc.CallOption) (*LikeReply, error)
+	UserLikeList(ctx context.Context, in *UserLikeListRequest, opts ...grpc.CallOption) (*UserLikeListReply, error)
 }
 
 type likeClient struct {
@@ -46,11 +48,21 @@ func (c *likeClient) Like(ctx context.Context, in *LikeRequest, opts ...grpc.Cal
 	return out, nil
 }
 
+func (c *likeClient) UserLikeList(ctx context.Context, in *UserLikeListRequest, opts ...grpc.CallOption) (*UserLikeListReply, error) {
+	out := new(UserLikeListReply)
+	err := c.cc.Invoke(ctx, Like_UserLikeList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LikeServer is the server API for Like service.
 // All implementations must embed UnimplementedLikeServer
 // for forward compatibility
 type LikeServer interface {
 	Like(context.Context, *LikeRequest) (*LikeReply, error)
+	UserLikeList(context.Context, *UserLikeListRequest) (*UserLikeListReply, error)
 	mustEmbedUnimplementedLikeServer()
 }
 
@@ -60,6 +72,9 @@ type UnimplementedLikeServer struct {
 
 func (UnimplementedLikeServer) Like(context.Context, *LikeRequest) (*LikeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Like not implemented")
+}
+func (UnimplementedLikeServer) UserLikeList(context.Context, *UserLikeListRequest) (*UserLikeListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserLikeList not implemented")
 }
 func (UnimplementedLikeServer) mustEmbedUnimplementedLikeServer() {}
 
@@ -92,6 +107,24 @@ func _Like_Like_Handler(srv interface{}, ctx context.Context, dec func(interface
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Like_UserLikeList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserLikeListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LikeServer).UserLikeList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Like_UserLikeList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LikeServer).UserLikeList(ctx, req.(*UserLikeListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Like_ServiceDesc is the grpc.ServiceDesc for Like service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -102,6 +135,10 @@ var Like_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Like",
 			Handler:    _Like_Like_Handler,
+		},
+		{
+			MethodName: "UserLikeList",
+			Handler:    _Like_UserLikeList_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

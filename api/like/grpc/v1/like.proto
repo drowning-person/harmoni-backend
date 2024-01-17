@@ -3,6 +3,7 @@ syntax = "proto3";
 package like;
 
 import "api/like/mq/v1/like.proto";
+import "internal/pkg/paginator/page.proto";
 
 option go_package = "harmoni/api/like/grpc/v1;v1";
 
@@ -16,6 +17,24 @@ message LikeRequest {
 
 message LikeReply {}
 
+message UserLikeListRequest {
+    paginator.PageRequest pageRequest = 1;
+    like.mq.v1.LikeType likeType = 2;
+    int64 userID = 3;
+}
+
+message LikeEntity {
+    like.mq.v1.LikeType likeType = 1;
+    int64 objectID = 2;
+    int64 targetUserID = 3;
+}
+
+message UserLikeListReply {
+    paginator.PageRely pageRely = 1;
+    repeated LikeEntity likeList = 2;
+}
+
 service Like {
     rpc Like (LikeRequest) returns (LikeReply);
+    rpc UserLikeList (UserLikeListRequest) returns (UserLikeListReply);
 }

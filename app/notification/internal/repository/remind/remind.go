@@ -191,7 +191,7 @@ func (r *RemindRepo) ListNRemindParticipant(ctx context.Context, remindIDs []int
 }
 
 func (r *RemindRepo) List(ctx context.Context, req *remind.ListReq) (*paginator.Page[*remind.Remind], error) {
-	page := paginator.NewPage[*notification.NotifyRemind](req.Page, req.Size)
+	page := paginator.NewPage[*notification.NotifyRemind](int(req.Num), int(req.Size))
 	err := page.SelectPages(r.data.DB(ctx).Scopes(
 		WithRecipientID(req.UserID),
 		WithAction(req.Action)).

@@ -9,11 +9,6 @@ const (
 	minPageSize = 10
 )
 
-type PageRequest struct {
-	Page int
-	Size int
-}
-
 // 标准分页结构体，接收最原始的DO
 // 建议在外部再建一个字段一样的结构体，用以将DO转换成DTO或VO
 type Page[T any] struct {
@@ -32,8 +27,8 @@ func NewPage[T any](currentPage, pageSize int) *Page[T] {
 
 func NewPageFromReq[T any](req *PageRequest) *Page[T] {
 	return &Page[T]{
-		CurrentPage: req.Page,
-		PageSize:    req.Size,
+		CurrentPage: int(req.Num),
+		PageSize:    int(req.Size),
 	}
 }
 

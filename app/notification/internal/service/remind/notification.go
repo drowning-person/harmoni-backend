@@ -65,8 +65,8 @@ func (s *RemindService) ListRemind(ctx context.Context, req *v1.ListRemindReques
 func (s *RemindService) LikeDetail(ctx context.Context, req *v1.LikeRemindDetailRequest) (*v1.LikeRemindDetailResponse, error) {
 	remindSenders, err := s.ru.ListRemindSenders(ctx, &remind.ListRemindSendersReq{
 		PageRequest: &paginator.PageRequest{
-			Page: req.PageNum,
-			Size: req.PageSize,
+			Num:  int64(req.PageNum),
+			Size: int64(req.PageSize),
 		},
 		RemindID: req.RemindID,
 		Action:   req.Action,

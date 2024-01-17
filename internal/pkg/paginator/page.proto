@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package paginator;
+
+option go_package = "harmoni/internal/pkg/paginator";
+
+message PageRequest {
+    int64 num = 1;
+    int64 size = 2;
+}
+
+message PageRely {
+    int64 current = 1;
+    int64 size = 2;
+    int64 total = 3;
+}
