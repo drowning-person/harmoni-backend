@@ -13,6 +13,7 @@ import (
 	"harmoni/internal/types/iface"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
 
@@ -155,5 +156,9 @@ func (r *LikeRepo) ListLikeObjectByUserID(ctx context.Context, query *entitylike
 		return nil, 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 
-	return likeList, count, nil
+	return lo.Map(
+		likeList,
+		func(like *polike.Like, _ int) *entitylike.Like {
+			return like.ToDomain()
+		}), count, nil
 }

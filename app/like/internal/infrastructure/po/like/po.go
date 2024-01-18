@@ -1,6 +1,7 @@
 package like
 
 import (
+	v1 "harmoni/app/harmoni/api/grpc/v1/user"
 	"harmoni/app/like/internal/entity/like"
 	"harmoni/internal/types/persistence"
 )
@@ -25,5 +26,15 @@ func FromDomain(like *like.Like) *Like {
 		LikingID:     like.LikingID,
 		LikeType:     like.LikeType,
 		ObjectID:     like.ObjectID,
+	}
+}
+
+func (l *Like) ToDomain() *like.Like {
+	return &like.Like{
+		LikingID:   l.LikingID,
+		LikeType:   l.LikeType,
+		ObjectID:   l.ObjectID,
+		User:       &v1.UserBasic{Id: l.UserID},
+		TargetUser: &v1.UserBasic{Id: l.TargetUserID},
 	}
 }
