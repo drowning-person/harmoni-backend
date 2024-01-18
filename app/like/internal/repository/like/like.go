@@ -101,8 +101,8 @@ func (r *LikeRepo) Save(ctx context.Context, like *entitylike.Like, isCancel boo
 			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 		}
 		err = tx.Table(model.TableName()).
-			Update("deleted_at", 0).
-			Where("liking_id = ?", model.LikingID).Error
+			Where("liking_id = ?", model.LikingID).
+			Update("deleted_at", 0).Error
 		if err != nil {
 			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 		}
@@ -148,11 +148,12 @@ func (r *LikeRepo) ListLikeObjectByUserID(ctx context.Context, query *entitylike
 	}
 
 	var count int64
-	err = r.data.DB(ctx).Scopes(
+	err = r.data.DB(ctx).Model(&polike.Like{}).Scopes(
 		withUserID(query.UserID),
 		withLikeType(query.LikeType),
 	).Count(&count).Error
 	if err != nil {
+		r.logger.Error(err)
 		return nil, 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}
 

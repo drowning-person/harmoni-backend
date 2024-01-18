@@ -55,7 +55,13 @@ func (u *LikeUsecase) Like(ctx context.Context, req *LikeRequest) error {
 }
 
 func (u *LikeUsecase) ListLikeObjectByUserID(ctx context.Context, query *entitylike.ListLikeObjectQuery) ([]*entitylike.Like, int64, error) {
-	return u.likeRepo.ListLikeObjectByUserID(ctx, query)
+	list, total, err := u.likeRepo.ListLikeObjectByUserID(ctx, query)
+	if err != nil {
+		return nil, 0, err
+	} else if total == 0 {
+		return nil, 0, errorx.NotFound(reason.LikeNotExist)
+	}
+	return list, total, nil
 }
 
 func (u *LikeUsecase) ListLikeUserByObjectID(ctx context.Context, query *entitylike.ListObjectLikedUserQuery) ([]*entitylike.Like, int64, error) {

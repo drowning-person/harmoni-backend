@@ -20,6 +20,8 @@ func NewPageReply(num int64, size int64, total int64) *PageRely {
 	}
 	if num > pages {
 		num = pages
+	} else if num < 0 {
+		num = 1
 	}
 	reply.Current = num
 	return &reply

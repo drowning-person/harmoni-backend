@@ -48,18 +48,18 @@ func (s *LikeService) UserLikeList(ctx context.Context, req *pb.UserLikeListRequ
 			Num:  req.GetPageRequest().GetNum(),
 			Size: req.GetPageRequest().GetSize(),
 		},
-		UserID: req.GetUserID(),
+		UserID:   req.GetUserID(),
+		LikeType: entitylike.LikeType(req.GetLikeType()),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	size := int64(len(list))
 	reply := pb.LikeListReply{
 		PageRely: paginator.NewPageReply(
 			req.GetPageRequest().GetNum(),
-			size, total),
-		LikeList: make([]*pb.LikeEntity, size),
+			req.GetPageRequest().GetSize(), total),
+		LikeList: make([]*pb.LikeEntity, len(list)),
 	}
 	for i := range list {
 		reply.LikeList[i] = convertDomainToReply(list[i])
