@@ -29,12 +29,19 @@ message LikeEntity {
     int64 targetUserID = 3;
 }
 
-message UserLikeListReply {
+message LikeListReply {
     paginator.PageRely pageRely = 1;
     repeated LikeEntity likeList = 2;
 }
 
+message ObjectLikeListRequest {
+    paginator.PageRequest pageRequest = 1;
+    like.mq.v1.LikeType likeType = 2;
+    int64 objectID = 3;
+}
+
 service Like {
     rpc Like (LikeRequest) returns (LikeReply);
-    rpc UserLikeList (UserLikeListRequest) returns (UserLikeListReply);
+    rpc UserLikeList (UserLikeListRequest) returns (LikeListReply);
+    rpc ObjectLikeList (ObjectLikeListRequest) returns (LikeListReply);
 }

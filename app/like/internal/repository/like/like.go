@@ -162,3 +162,33 @@ func (r *LikeRepo) ListLikeObjectByUserID(ctx context.Context, query *entitylike
 			return like.ToDomain()
 		}), count, nil
 }
+
+func (r *LikeRepo) ListObjectLikedUserByObjectID(
+	ctx context.Context,
+	query *entitylike.ListObjectLikedUserQuery,
+) ([]*entitylike.Like, int64, error) {
+	likeList := make([]*polike.Like, 0, query.Size)
+	err := r.data.DB(ctx).Scopes(
+		withObjectID(query.ObjectID),
+		withLikeType(query.LikeType),
+	).Find(&likeList).Error
+	if err != nil {
+		r.logger.Error(err)
+		return nil, 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	var count int64
+	err = r.data.DB(ctx).Scopes(
+		withObjectID(query.ObjectID),
+		withLikeType(query.LikeType),
+	).Count(&count).Error
+	if err != nil {
+		return nil, 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+
+	return lo.Map(
+		likeList,
+		func(like *polike.Like, _ int) *entitylike.Like {
+			return like.ToDomain()
+		}), count, nil
+}

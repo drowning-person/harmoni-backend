@@ -42,7 +42,7 @@ func (s *LikeService) Like(ctx context.Context, req *pb.LikeRequest) (*pb.LikeRe
 	return &pb.LikeReply{}, nil
 }
 
-func (s *LikeService) UserLikeList(ctx context.Context, req *pb.UserLikeListRequest) (*pb.UserLikeListReply, error) {
+func (s *LikeService) UserLikeList(ctx context.Context, req *pb.UserLikeListRequest) (*pb.LikeListReply, error) {
 	list, total, err := s.lu.ListLikeObjectByUserID(ctx, &entitylike.ListLikeObjectQuery{
 		PageRequest: paginator.PageRequest{
 			Num:  req.GetPageRequest().GetNum(),
@@ -55,7 +55,7 @@ func (s *LikeService) UserLikeList(ctx context.Context, req *pb.UserLikeListRequ
 	}
 
 	size := int64(len(list))
-	reply := pb.UserLikeListReply{
+	reply := pb.LikeListReply{
 		PageRely: paginator.NewPageReply(
 			req.GetPageRequest().GetNum(),
 			size, total),
@@ -65,5 +65,31 @@ func (s *LikeService) UserLikeList(ctx context.Context, req *pb.UserLikeListRequ
 		reply.LikeList[i] = convertDomainToReply(list[i])
 	}
 
+	return &reply, nil
+}
+
+func (s *LikeService) ObjectLikeList(ctx context.Context, req *pb.ObjectLikeListRequest) (*pb.LikeListReply, error) {
+	list, total, err := s.lu.ListLikeUserByObjectID(ctx,
+		&entitylike.ListObjectLikedUserQuery{
+			PageRequest: paginator.PageRequest{
+				Num:  req.GetPageRequest().GetNum(),
+				Size: req.GetPageRequest().GetSize(),
+			},
+			ObjectID: req.GetObjectID(),
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	size := int64(len(list))
+	reply := pb.LikeListReply{
+		PageRely: paginator.NewPageReply(
+			req.GetPageRequest().GetNum(),
+			size, total),
+		LikeList: make([]*pb.LikeEntity, size),
+	}
+	for i := range list {
+		reply.LikeList[i] = convertDomainToReply(list[i])
+	}
 	return &reply, nil
 }

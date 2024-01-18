@@ -44,9 +44,22 @@ var (
 	LikeTypeList = []LikeType{LikeUser, LikePost, LikeComment}
 )
 
+type QueryType int8
+
+const (
+	QueryTypeUser QueryType = iota + 1
+	QueryTypeObject
+)
+
 type ListLikeObjectQuery struct {
 	paginator.PageRequest
 	UserID   int64
+	LikeType LikeType
+}
+
+type ListObjectLikedUserQuery struct {
+	paginator.PageRequest
+	ObjectID int64
 	LikeType LikeType
 }
 
@@ -55,4 +68,5 @@ type LikeRepository interface {
 	Get(ctx context.Context, like *Like) (*Like, error)
 	IsExist(ctx context.Context, like *Like) (bool, error)
 	ListLikeObjectByUserID(ctx context.Context, query *ListLikeObjectQuery) ([]*Like, int64, error)
+	ListObjectLikedUserByObjectID(ctx context.Context, query *ListObjectLikedUserQuery) ([]*Like, int64, error)
 }
