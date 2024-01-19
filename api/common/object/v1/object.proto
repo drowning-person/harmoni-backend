@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package object;
+
+option go_package = "harmoni/api/common/object/v1;v1";
+
+enum ObjectType {
+    OBJECT_TYPE_UNSPECIFIED = 0;
+    OBJECT_TYPE_USER = 1;
+    OBJECT_TYPE_POST = 2;
+    OBJECT_TYPE_COMMENT = 3;
+    OBJECT_TYPE_TAG = 4;
+}
+
+message Object {
+    int64 id = 1;
+    object.ObjectType type = 2;
+}

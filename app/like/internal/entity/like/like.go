@@ -3,6 +3,7 @@ package like
 import (
 	"context"
 
+	objectv1 "harmoni/api/common/object/v1"
 	mqlike "harmoni/api/like/mq/v1"
 	v1 "harmoni/app/harmoni/api/grpc/v1/user"
 	"harmoni/internal/pkg/paginator"
@@ -69,4 +70,8 @@ type LikeRepository interface {
 	IsExist(ctx context.Context, like *Like) (bool, error)
 	ListLikeObjectByUserID(ctx context.Context, query *ListLikeObjectQuery) ([]*Like, int64, error)
 	ListObjectLikedUserByObjectID(ctx context.Context, query *ListObjectLikedUserQuery) ([]*Like, int64, error)
+
+	// count
+	ObjectLikeCount(ctx context.Context, object *objectv1.Object) (*LikeCount, error)
+	ListObjectLikeCount(ctx context.Context, objectIDs []int64, objectType objectv1.ObjectType) (LikeCountList, error)
 }

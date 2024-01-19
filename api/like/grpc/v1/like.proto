@@ -4,7 +4,7 @@ package like;
 
 import "api/like/mq/v1/like.proto";
 import "internal/pkg/paginator/page.proto";
-
+import "api/common/object/v1/object.proto";
 option go_package = "harmoni/api/like/grpc/v1;v1";
 
 message LikeRequest {
@@ -40,8 +40,23 @@ message ObjectLikeListRequest {
     int64 objectID = 3;
 }
 
+message LikeCountReply {
+    int64 count = 1;
+}
+
+message ListLikeCountRequest {
+    repeated int64 object_ids = 1;
+    object.ObjectType object_type = 2;
+}
+
+message ListLikeCountReply {
+    map<int64, int64> counts = 1;
+}
+
 service Like {
     rpc Like (LikeRequest) returns (LikeReply);
     rpc UserLikeList (UserLikeListRequest) returns (LikeListReply);
     rpc ObjectLikeList (ObjectLikeListRequest) returns (LikeListReply);
+    rpc LikeCount (object.Object) returns (LikeCountReply);
+    rpc ListLikeCount (ListLikeCountRequest) returns (ListLikeCountReply);
 }

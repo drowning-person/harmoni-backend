@@ -2,6 +2,7 @@ package like
 
 import (
 	"context"
+	objectv1 "harmoni/api/common/object/v1"
 	v1 "harmoni/app/harmoni/api/grpc/v1/user"
 	entitylike "harmoni/app/like/internal/entity/like"
 	"harmoni/app/like/internal/pkg/reason"
@@ -66,4 +67,12 @@ func (u *LikeUsecase) ListLikeObjectByUserID(ctx context.Context, query *entityl
 
 func (u *LikeUsecase) ListLikeUserByObjectID(ctx context.Context, query *entitylike.ListObjectLikedUserQuery) ([]*entitylike.Like, int64, error) {
 	return u.likeRepo.ListObjectLikedUserByObjectID(ctx, query)
+}
+
+func (u *LikeUsecase) LikeCount(ctx context.Context, object *objectv1.Object) (*entitylike.LikeCount, error) {
+	return u.likeRepo.ObjectLikeCount(ctx, object)
+}
+
+func (u *LikeUsecase) ListLikeCount(ctx context.Context, objectIDs []int64, objectType objectv1.ObjectType) (entitylike.LikeCountList, error) {
+	return u.likeRepo.ListObjectLikeCount(ctx, objectIDs, objectType)
 }

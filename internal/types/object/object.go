@@ -3,19 +3,27 @@ package object
 type ObjectType int8
 
 const (
-	ObjectTypePost    ObjectType = iota + 1 // 帖子
-	ObjectTypeComment                       // 评论
-	ObjectTypeTag                           // 话题
+	ObjectTypeUser    ObjectType = iota + 1 // user
+	ObjectTypePost                          // post
+	ObjectTypeComment                       // comment
+	ObjectTypeTag                           // tag
 )
 
 func (o ObjectType) String() string {
 	switch o {
+	case ObjectTypeUser:
+		return "user"
 	case ObjectTypePost:
-		return "帖子"
+		return "post"
 	case ObjectTypeComment:
-		return "评论"
+		return "comment"
 	case ObjectTypeTag:
-		return "话题"
+		return "tag"
 	}
 	return "unknown"
+}
+
+type Object struct {
+	ID   int64
+	Type ObjectType
 }

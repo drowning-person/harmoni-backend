@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	v1 "harmoni/api/common/object/v1"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -22,6 +23,8 @@ const (
 	Like_Like_FullMethodName           = "/like.Like/Like"
 	Like_UserLikeList_FullMethodName   = "/like.Like/UserLikeList"
 	Like_ObjectLikeList_FullMethodName = "/like.Like/ObjectLikeList"
+	Like_LikeCount_FullMethodName      = "/like.Like/LikeCount"
+	Like_ListLikeCount_FullMethodName  = "/like.Like/ListLikeCount"
 )
 
 // LikeClient is the client API for Like service.
@@ -31,6 +34,8 @@ type LikeClient interface {
 	Like(ctx context.Context, in *LikeRequest, opts ...grpc.CallOption) (*LikeReply, error)
 	UserLikeList(ctx context.Context, in *UserLikeListRequest, opts ...grpc.CallOption) (*LikeListReply, error)
 	ObjectLikeList(ctx context.Context, in *ObjectLikeListRequest, opts ...grpc.CallOption) (*LikeListReply, error)
+	LikeCount(ctx context.Context, in *v1.Object, opts ...grpc.CallOption) (*LikeCountReply, error)
+	ListLikeCount(ctx context.Context, in *ListLikeCountRequest, opts ...grpc.CallOption) (*ListLikeCountReply, error)
 }
 
 type likeClient struct {
@@ -68,6 +73,24 @@ func (c *likeClient) ObjectLikeList(ctx context.Context, in *ObjectLikeListReque
 	return out, nil
 }
 
+func (c *likeClient) LikeCount(ctx context.Context, in *v1.Object, opts ...grpc.CallOption) (*LikeCountReply, error) {
+	out := new(LikeCountReply)
+	err := c.cc.Invoke(ctx, Like_LikeCount_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *likeClient) ListLikeCount(ctx context.Context, in *ListLikeCountRequest, opts ...grpc.CallOption) (*ListLikeCountReply, error) {
+	out := new(ListLikeCountReply)
+	err := c.cc.Invoke(ctx, Like_ListLikeCount_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LikeServer is the server API for Like service.
 // All implementations must embed UnimplementedLikeServer
 // for forward compatibility
@@ -75,6 +98,8 @@ type LikeServer interface {
 	Like(context.Context, *LikeRequest) (*LikeReply, error)
 	UserLikeList(context.Context, *UserLikeListRequest) (*LikeListReply, error)
 	ObjectLikeList(context.Context, *ObjectLikeListRequest) (*LikeListReply, error)
+	LikeCount(context.Context, *v1.Object) (*LikeCountReply, error)
+	ListLikeCount(context.Context, *ListLikeCountRequest) (*ListLikeCountReply, error)
 	mustEmbedUnimplementedLikeServer()
 }
 
@@ -90,6 +115,12 @@ func (UnimplementedLikeServer) UserLikeList(context.Context, *UserLikeListReques
 }
 func (UnimplementedLikeServer) ObjectLikeList(context.Context, *ObjectLikeListRequest) (*LikeListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ObjectLikeList not implemented")
+}
+func (UnimplementedLikeServer) LikeCount(context.Context, *v1.Object) (*LikeCountReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LikeCount not implemented")
+}
+func (UnimplementedLikeServer) ListLikeCount(context.Context, *ListLikeCountRequest) (*ListLikeCountReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListLikeCount not implemented")
 }
 func (UnimplementedLikeServer) mustEmbedUnimplementedLikeServer() {}
 
@@ -158,6 +189,42 @@ func _Like_ObjectLikeList_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Like_LikeCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.Object)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LikeServer).LikeCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Like_LikeCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LikeServer).LikeCount(ctx, req.(*v1.Object))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Like_ListLikeCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListLikeCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LikeServer).ListLikeCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Like_ListLikeCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LikeServer).ListLikeCount(ctx, req.(*ListLikeCountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Like_ServiceDesc is the grpc.ServiceDesc for Like service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -176,6 +243,14 @@ var Like_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ObjectLikeList",
 			Handler:    _Like_ObjectLikeList_Handler,
+		},
+		{
+			MethodName: "LikeCount",
+			Handler:    _Like_LikeCount_Handler,
+		},
+		{
+			MethodName: "ListLikeCount",
+			Handler:    _Like_ListLikeCount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -3,6 +3,7 @@ package like
 import (
 	"context"
 
+	objectv1 "harmoni/api/common/object/v1"
 	pb "harmoni/api/like/grpc/v1"
 	entitylike "harmoni/app/like/internal/entity/like"
 	"harmoni/app/like/internal/usecase/like"
@@ -37,6 +38,7 @@ func (s *LikeService) Like(ctx context.Context, req *pb.LikeRequest) (*pb.LikeRe
 		IsCancel:       req.IsCancel,
 	})
 	if err != nil {
+		s.logger.Error(err)
 		return nil, err
 	}
 	return &pb.LikeReply{}, nil
@@ -52,6 +54,7 @@ func (s *LikeService) UserLikeList(ctx context.Context, req *pb.UserLikeListRequ
 		LikeType: entitylike.LikeType(req.GetLikeType()),
 	})
 	if err != nil {
+		s.logger.Error(err)
 		return nil, err
 	}
 
@@ -78,6 +81,7 @@ func (s *LikeService) ObjectLikeList(ctx context.Context, req *pb.ObjectLikeList
 			ObjectID: req.GetObjectID(),
 		})
 	if err != nil {
+		s.logger.Error(err)
 		return nil, err
 	}
 
@@ -92,4 +96,24 @@ func (s *LikeService) ObjectLikeList(ctx context.Context, req *pb.ObjectLikeList
 		reply.LikeList[i] = convertDomainToReply(list[i])
 	}
 	return &reply, nil
+}
+
+func (s *LikeService) LikeCount(ctx context.Context, req *objectv1.Object) (*pb.LikeCountReply, error) {
+	count, err := s.lu.LikeCount(ctx, req)
+	if err != nil {
+		s.logger.Error(err)
+		return nil, err
+	}
+	return &pb.LikeCountReply{
+		Count: count.Count,
+	}, nil
+}
+
+func (s *LikeService) ListLikeCount(ctx context.Context, req *pb.ListLikeCountRequest) (*pb.ListLikeCountReply, error) {
+	counts, err := s.lu.ListLikeCount(ctx, req.GetObjectIds(), req.GetObjectType())
+	if err != nil {
+		s.logger.Error(err)
+		return nil, err
+	}
+	return &pb.ListLikeCountReply{Counts: counts.ToMap()}, nil
 }
