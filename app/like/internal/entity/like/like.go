@@ -74,4 +74,5 @@ type LikeRepository interface {
 	// count
 	ObjectLikeCount(ctx context.Context, object *objectv1.Object) (*LikeCount, error)
 	ListObjectLikeCount(ctx context.Context, objectIDs []int64, objectType objectv1.ObjectType) (LikeCountList, error)
+	AddLikeCount(ctx context.Context, object *objectv1.Object, count int64) error
 }

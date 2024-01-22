@@ -61,6 +61,8 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/huandu/go-sqlbuilder v1.25.0 // indirect
+	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	objectv1 "harmoni/api/common/object/v1"
 	entitylike "harmoni/app/like/internal/entity/like"
 	polike "harmoni/app/like/internal/infrastructure/po/like"
 	reasonlike "harmoni/app/like/internal/pkg/reason"
@@ -193,39 +192,4 @@ func (r *LikeRepo) ListObjectLikedUserByObjectID(
 		func(like *polike.Like, _ int) *entitylike.Like {
 			return like.ToDomain()
 		}), count, nil
-}
-
-func (r *LikeRepo) ObjectLikeCount(ctx context.Context, object *objectv1.Object) (*entitylike.LikeCount, error) {
-	lc := &polike.LikeCount{}
-	err := r.data.DB(ctx).Model(lc).
-		Scopes(withObjectID(object.GetId())).
-		Where("object_type = ?", object.GetType()).
-		First(lc).Error
-	if err != nil {
-		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-	}
-	return &entitylike.LikeCount{
-		Count:  lc.Counts,
-		Object: object,
-	}, nil
-}
-
-func (r *LikeRepo) ListObjectLikeCount(ctx context.Context, objectIDs []int64, objectType objectv1.ObjectType) (entitylike.LikeCountList, error) {
-	lcList := make([]*polike.LikeCount, 0, 10)
-	err := r.data.DB(ctx).Model(lcList).
-		Where("object_id IN ?", objectIDs).
-		Where("object_type = ?", objectType).
-		Find(lcList).Error
-	if err != nil {
-		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
-	}
-	return lo.Map(lcList, func(lc *polike.LikeCount, _ int) *entitylike.LikeCount {
-		return &entitylike.LikeCount{
-			Count: lc.Counts,
-			Object: &objectv1.Object{
-				Id:   lc.ObjectID,
-				Type: lc.OjbectType,
-			},
-		}
-	}), nil
 }
