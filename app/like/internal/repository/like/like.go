@@ -13,6 +13,7 @@ import (
 	"harmoni/internal/types/iface"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
@@ -20,6 +21,7 @@ import (
 type LikeRepo struct {
 	uniqueRepo iface.UniqueIDRepository
 	data       *data.DB
+	rdb        redis.UniversalClient
 	logger     *log.Helper
 }
 
@@ -63,11 +65,13 @@ func findLike(like *entitylike.Like) data.ScopeFunc {
 func NewLikeRepo(
 	uniqueRepo iface.UniqueIDRepository,
 	data *data.DB,
+	rdb redis.UniversalClient,
 	logger log.Logger,
 ) *LikeRepo {
 	return &LikeRepo{
 		uniqueRepo: uniqueRepo,
 		data:       data,
+		rdb:        rdb,
 		logger: log.NewHelper(
 			log.With(logger, "module", "repository/like", "service", "like")),
 	}

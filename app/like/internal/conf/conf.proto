@@ -10,4 +10,5 @@ message Conf {
     conf.ETCD etcd = 4;
     conf.DB db = 5;
     conf.Server server = 6;
+    conf.Redis redis = 7;
 }

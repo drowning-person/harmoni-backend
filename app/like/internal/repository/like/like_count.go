@@ -2,6 +2,7 @@ package like
 
 import (
 	"context"
+	"fmt"
 
 	objectv1 "harmoni/api/common/object/v1"
 	entitylike "harmoni/app/like/internal/entity/like"
@@ -19,6 +20,10 @@ func byObject(object *objectv1.Object) data.ScopeFunc {
 		return db.Where("object_id = ?", object.GetId()).
 			Where("object_type = ?", object.GetType())
 	}
+}
+
+func genLikeKey(objectID int64, objectType objectv1.ObjectType) string {
+	return fmt.Sprintf("like:%s:%d", objectType.Format(), objectID)
 }
 
 func (r *LikeRepo) ObjectLikeCount(ctx context.Context, object *objectv1.Object) (*entitylike.LikeCount, error) {
@@ -58,7 +63,7 @@ func (r *LikeRepo) ListObjectLikeCount(ctx context.Context, objectIDs []int64, o
 func (r *LikeRepo) AddLikeCount(ctx context.Context, object *objectv1.Object, count int64) error {
 	err := r.data.DB(ctx).Model(&polike.LikeCount{}).
 		Scopes(byObject(object)).
-		UpdateColumn("counts", gorm.Expr("counts + ?", 1)).Error
+		UpdateColumn("counts", gorm.Expr("counts + ?", count)).Error
 	if err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
 	}

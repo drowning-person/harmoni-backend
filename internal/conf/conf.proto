@@ -57,3 +57,13 @@ message Server {
     HTTP http = 1;
     GRPC grpc = 2;
 }
+
+message Redis {
+    string ip = 1;
+    int32 port = 2;
+    string password = 3;
+    int32 database = 4;
+    int32 pool_size = 5;
+    google.protobuf.Duration read_timeout = 6;
+    google.protobuf.Duration write_timeout = 7;
+}
