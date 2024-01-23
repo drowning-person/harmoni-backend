@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	v1 "harmoni/api/common/object/v1"
 	entitylike "harmoni/app/like/internal/entity/like"
 	polike "harmoni/app/like/internal/infrastructure/po/like"
 	reasonlike "harmoni/app/like/internal/pkg/reason"
@@ -39,9 +40,9 @@ func withTargetUserID(targetUserID int64) data.ScopeFunc {
 	}
 }
 
-func withLikeType(likeType entitylike.LikeType) data.ScopeFunc {
+func withObjectType(objectType v1.ObjectType) data.ScopeFunc {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("like_type = ?", likeType)
+		return db.Where("object_type = ?", objectType)
 	}
 }
 
@@ -56,7 +57,7 @@ func findLike(like *entitylike.Like) data.ScopeFunc {
 		return db.Scopes(
 			withUserID(like.User.GetId()),
 			withTargetUserID(like.TargetUser.GetId()),
-			withLikeType(like.LikeType),
+			withObjectType(like.ObjectType),
 			withObjectID(like.ObjectID),
 		)
 	}
@@ -78,6 +79,10 @@ func NewLikeRepo(
 }
 
 func (r *LikeRepo) Save(ctx context.Context, like *entitylike.Like, isCancel bool) error {
+	err := r.rdb.Incr(ctx, genLikeCountKey(like.ObjectID, like.ObjectType)).Err()
+	if err != nil {
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
 	return r.data.DB(ctx).Transaction(func(tx *gorm.DB) error {
 		if isCancel {
 			err := tx.Scopes(findLike(like)).
@@ -144,7 +149,7 @@ func (r *LikeRepo) ListLikeObjectByUserID(ctx context.Context, query *entitylike
 	likeList := make([]*polike.Like, 0, query.Size)
 	err := r.data.DB(ctx).Scopes(
 		withUserID(query.UserID),
-		withLikeType(query.LikeType),
+		withObjectType(query.ObjectType),
 	).Find(&likeList).Error
 	if err != nil {
 		r.logger.Error(err)
@@ -154,7 +159,7 @@ func (r *LikeRepo) ListLikeObjectByUserID(ctx context.Context, query *entitylike
 	var count int64
 	err = r.data.DB(ctx).Model(&polike.Like{}).Scopes(
 		withUserID(query.UserID),
-		withLikeType(query.LikeType),
+		withObjectType(query.ObjectType),
 	).Count(&count).Error
 	if err != nil {
 		r.logger.Error(err)
@@ -175,7 +180,7 @@ func (r *LikeRepo) ListObjectLikedUserByObjectID(
 	likeList := make([]*polike.Like, 0, query.Size)
 	err := r.data.DB(ctx).Scopes(
 		withObjectID(query.ObjectID),
-		withLikeType(query.LikeType),
+		withObjectType(query.ObjectType),
 	).Find(&likeList).Error
 	if err != nil {
 		r.logger.Error(err)
@@ -185,7 +190,7 @@ func (r *LikeRepo) ListObjectLikedUserByObjectID(
 	var count int64
 	err = r.data.DB(ctx).Scopes(
 		withObjectID(query.ObjectID),
-		withLikeType(query.LikeType),
+		withObjectType(query.ObjectType),
 	).Count(&count).Error
 	if err != nil {
 		return nil, 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()

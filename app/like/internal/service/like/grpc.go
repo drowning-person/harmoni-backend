@@ -33,7 +33,7 @@ func (s *LikeService) Like(ctx context.Context, req *pb.LikeRequest) (*pb.LikeRe
 	err := s.lu.Like(ctx, &like.LikeRequest{
 		UserID:         req.GetUserID(),
 		TargetUserID:   req.GetTargetUserID(),
-		LikeType:       entitylike.LikeType(req.GetLikeType()),
+		ObjectType:     req.GetObjectType(),
 		TargetObjectID: req.GetObjectID(),
 		IsCancel:       req.IsCancel,
 	})
@@ -50,8 +50,8 @@ func (s *LikeService) UserLikeList(ctx context.Context, req *pb.UserLikeListRequ
 			Num:  req.GetPageRequest().GetNum(),
 			Size: req.GetPageRequest().GetSize(),
 		},
-		UserID:   req.GetUserID(),
-		LikeType: entitylike.LikeType(req.GetLikeType()),
+		UserID:     req.GetUserID(),
+		ObjectType: req.GetObjectType(),
 	})
 	if err != nil {
 		s.logger.Error(err)

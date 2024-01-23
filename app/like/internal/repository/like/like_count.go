@@ -2,7 +2,10 @@ package like
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
+	"time"
 
 	objectv1 "harmoni/api/common/object/v1"
 	entitylike "harmoni/app/like/internal/entity/like"
@@ -10,7 +13,9 @@ import (
 	"harmoni/internal/pkg/data"
 	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/reason"
+	"harmoni/internal/types/consts"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
@@ -22,20 +27,62 @@ func byObject(object *objectv1.Object) data.ScopeFunc {
 	}
 }
 
-func genLikeKey(objectID int64, objectType objectv1.ObjectType) string {
+func genLikeCountKey(objectID int64, objectType objectv1.ObjectType) string {
 	return fmt.Sprintf("like:%s:%d", objectType.Format(), objectID)
 }
 
-func (r *LikeRepo) ObjectLikeCount(ctx context.Context, object *objectv1.Object) (*entitylike.LikeCount, error) {
-	lc := &polike.LikeCount{}
-	err := r.data.DB(ctx).Model(lc).
+const (
+	likeCountKeyTTL = 3600 * time.Second
+)
+
+func genLikeCountKeyTTL() time.Duration {
+	return likeCountKeyTTL
+}
+
+func (r *LikeRepo) getObjectLikeCountFromDB(ctx context.Context, object *objectv1.Object) (int64, error) {
+	count := 0
+	err := r.data.DB(ctx).Model(&polike.LikeCount{}).
+		Select("counts").
 		Scopes(byObject(object)).
-		First(lc).Error
+		First(&count).Error
 	if err != nil {
-		return nil, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		return 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	return int64(count), nil
+}
+
+func (r *LikeRepo) getObjectLikeCountFromCache(ctx context.Context, object *objectv1.Object) (int64, error) {
+	key := genLikeCountKey(object.GetId(), object.GetType())
+	countStr, err := r.rdb.Get(ctx, key).Result()
+	switch {
+	case errors.Is(err, redis.Nil):
+		count, err := r.getObjectLikeCountFromDB(ctx, object)
+		if err != nil {
+			return 0, err
+		}
+		err = r.rdb.Set(ctx, key, count, genLikeCountKeyTTL()).Err()
+		if err != nil {
+			return 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		}
+		return count, nil
+	case err != nil:
+		return 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	default:
+		count, err := strconv.ParseInt(countStr, consts.BaseDecimal, consts.BitSize64)
+		if err != nil {
+			return 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		}
+		return count, nil
+	}
+}
+
+func (r *LikeRepo) ObjectLikeCount(ctx context.Context, object *objectv1.Object) (*entitylike.LikeCount, error) {
+	count, err := r.getObjectLikeCountFromCache(ctx, object)
+	if err != nil {
+		return nil, err
 	}
 	return &entitylike.LikeCount{
-		Count:  lc.Counts,
+		Count:  count,
 		Object: object,
 	}, nil
 }

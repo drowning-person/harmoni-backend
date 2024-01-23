@@ -9,6 +9,7 @@ package main
 import (
 	"github.com/go-kratos/kratos/v2"
 	"harmoni/app/like/internal/conf"
+	data2 "harmoni/app/like/internal/infrastructure/data"
 	"harmoni/app/like/internal/repository/like"
 	"harmoni/app/like/internal/server"
 	"harmoni/app/like/internal/server/mq"
@@ -27,7 +28,7 @@ import (
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(conf3 *conf.Conf, appConf *conf2.App, dataConf *conf2.DB, etcdConf *conf2.ETCD, serverConf *conf2.Server, logConf *conf2.Log, mqConf *conf2.MessageQueue) (*kratos.App, func(), error) {
+func wireApp(conf3 *conf.Conf, appConf *conf2.App, dataConf *conf2.DB, etcdConf *conf2.ETCD, serverConf *conf2.Server, logConf *conf2.Log, mqConf *conf2.MessageQueue, redisConf *conf2.Redis) (*kratos.App, func(), error) {
 	zapLogger, err := logger.NewZapLogger(logConf)
 	if err != nil {
 		return nil, nil, err
@@ -43,9 +44,15 @@ func wireApp(conf3 *conf.Conf, appConf *conf2.App, dataConf *conf2.DB, etcdConf 
 		return nil, nil, err
 	}
 	dataDB := data.NewDB(db)
-	likeRepo := like.NewLikeRepo(uniqueIDRepo, dataDB, loggerLogger)
+	client, cleanup2, err := data2.NewRedis(redisConf)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	likeRepo := like.NewLikeRepo(uniqueIDRepo, dataDB, client, loggerLogger)
 	messagePublisher, err := mq.NewPublisher(mqConf, loggerLogger)
 	if err != nil {
+		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
@@ -53,15 +60,17 @@ func wireApp(conf3 *conf.Conf, appConf *conf2.App, dataConf *conf2.DB, etcdConf 
 	likeUsecase := like2.NewLikeUsecase(likeRepo, jsonPublisher, loggerLogger)
 	likeService := like3.NewLikeService(likeUsecase, loggerLogger)
 	grpcServer := server.NewGRPCServer(serverConf, likeService, loggerLogger)
-	likeEventsHandler := events.NewLikeEventsHandler(likeRepo, loggerLogger)
+	likeEventsHandler := events.NewLikeEventsHandler(likeRepo, dataDB, loggerLogger)
 	router, err := mq.NewMQRouter(mqConf, likeEventsHandler, loggerLogger)
 	if err != nil {
+		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
 	mqServer := server2.NewMQServer(router)
 	app := newApp(loggerLogger, grpcServer, mqServer)
 	return app, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }

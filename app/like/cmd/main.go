@@ -79,7 +79,9 @@ func main() {
 		conf.GetEtcd(),
 		conf.GetServer(),
 		conf.GetLog(),
-		conf.GetMessageQueue())
+		conf.GetMessageQueue(),
+		conf.GetRedis(),
+	)
 	if err != nil {
 		panic(err)
 	}

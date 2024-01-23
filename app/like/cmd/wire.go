@@ -7,6 +7,7 @@ package main
 
 import (
 	"harmoni/app/like/internal/conf"
+	"harmoni/app/like/internal/infrastructure/data"
 	"harmoni/app/like/internal/repository"
 	"harmoni/app/like/internal/server"
 	"harmoni/app/like/internal/service"
@@ -32,11 +33,13 @@ func wireApp(
 	serverConf *commonconf.Server,
 	logConf *commonconf.Log,
 	mqConf *commonconf.MessageQueue,
+	redisConf *commonconf.Redis,
 ) (*kratos.App, func(), error) {
 	panic(wire.Build(
 		logger.ProviderSetLogger,
 		publisher.ProviderSetPublisher,
 		commondata.ProviderSet,
+		data.ProviderSet,
 		commonrepo.ProviderSet,
 		snowflakex.NewSnowflakeNode,
 		// etcdx.NewETCDClient,

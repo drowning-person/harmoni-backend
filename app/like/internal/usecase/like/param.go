@@ -1,13 +1,13 @@
 package like
 
 import (
-	entitylike "harmoni/app/like/internal/entity/like"
+	v1 "harmoni/api/common/object/v1"
 )
 
 type LikeRequest struct {
 	UserID         int64
 	TargetUserID   int64
-	LikeType       entitylike.LikeType
+	ObjectType     v1.ObjectType
 	TargetObjectID int64
 	IsCancel       bool
 }

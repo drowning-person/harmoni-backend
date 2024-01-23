@@ -37,7 +37,7 @@ func (u *LikeUsecase) Like(ctx context.Context, req *LikeRequest) error {
 	}
 	like := &entitylike.Like{
 		User:       &v1.UserBasic{Id: req.UserID},
-		LikeType:   req.LikeType,
+		ObjectType: req.ObjectType,
 		TargetUser: &v1.UserBasic{Id: req.TargetUserID},
 		ObjectID:   req.TargetObjectID,
 	}

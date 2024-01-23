@@ -30,33 +30,24 @@ func NewLikeEventsHandler(
 	}
 }
 
-func FromEventLikeType(likeType v1.LikeType) entitylike.LikeType {
-	switch likeType {
-	case v1.LikeType_LikePost:
-		return entitylike.LikePost
-	case v1.LikeType_LikeComment:
-		return entitylike.LikeComment
-	case v1.LikeType_LikeUser:
-		return entitylike.LikeUser
-	}
-	return entitylike.LikePost
-}
-
 func (h *LikeEventsHandler) HandleLikeCreated(ctx context.Context, msg *v1.LikeCreatedMessage) error {
 	return h.txMgr.ExecTx(ctx, func(ctx context.Context) error {
 		err := h.likeRepo.Save(ctx, &entitylike.Like{
-			LikingID:   msg.LikingID,
-			LikeType:   FromEventLikeType(msg.BaseMessage.LikeType),
-			User:       &apiuser.UserBasic{Id: msg.UserID},
-			TargetUser: &apiuser.UserBasic{Id: msg.TargetUserID},
-			ObjectID:   msg.ObjectID,
+			LikingID:   msg.GetLikingId(),
+			ObjectType: msg.BaseMessage.GetObjectType(),
+			User:       &apiuser.UserBasic{Id: msg.GetUserId()},
+			TargetUser: &apiuser.UserBasic{Id: msg.GetTargetUserId()},
+			ObjectID:   msg.GetObjectId(),
 		}, msg.IsCancel)
 		if err != nil {
 			return err
 		}
-		return h.likeRepo.AddLikeCount(ctx, &objectv1.Object{
-			Id:   msg.TargetUserID,
-			Type: objectv1.ObjectType_OBJECT_TYPE_USER,
-		}, 1)
+		if entitylike.ShouldAddUserLikeCount(msg.BaseMessage.GetObjectType()) {
+			return h.likeRepo.AddLikeCount(ctx, &objectv1.Object{
+				Id:   msg.GetTargetUserId(),
+				Type: objectv1.ObjectType_OBJECT_TYPE_USER,
+			}, 1)
+		}
+		return nil
 	})
 }

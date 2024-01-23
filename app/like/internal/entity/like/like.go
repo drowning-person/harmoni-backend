@@ -11,39 +11,27 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type LikeType uint8
-
-const (
-	LikePost LikeType = iota + 1
-	LikeComment
-	LikeUser
-)
-
 type Like struct {
 	LikingID   int64
 	User       *v1.UserBasic
-	LikeType   LikeType
 	TargetUser *v1.UserBasic
 	ObjectID   int64
+	ObjectType objectv1.ObjectType
 }
 
 func (l *Like) ToLikeCreateMessage(isCancel bool) *mqlike.LikeCreatedMessage {
 	return &mqlike.LikeCreatedMessage{
 		BaseMessage: &mqlike.BaseMessage{
-			LikeType:  mqlike.LikeType(l.LikeType),
-			CreatedAt: timestamppb.Now(),
+			ObjectType: l.ObjectType,
+			CreatedAt:  timestamppb.Now(),
 		},
-		LikingID:     l.LikingID,
-		UserID:       l.User.GetId(),
-		TargetUserID: l.TargetUser.GetId(),
-		ObjectID:     l.ObjectID,
+		LikingId:     l.LikingID,
+		UserId:       l.User.GetId(),
+		TargetUserId: l.TargetUser.GetId(),
+		ObjectId:     l.ObjectID,
 		IsCancel:     isCancel,
 	}
 }
-
-var (
-	LikeTypeList = []LikeType{LikeUser, LikePost, LikeComment}
-)
 
 type QueryType int8
 
@@ -54,14 +42,18 @@ const (
 
 type ListLikeObjectQuery struct {
 	paginator.PageRequest
-	UserID   int64
-	LikeType LikeType
+	UserID     int64
+	ObjectType objectv1.ObjectType
 }
 
 type ListObjectLikedUserQuery struct {
 	paginator.PageRequest
-	ObjectID int64
-	LikeType LikeType
+	ObjectID   int64
+	ObjectType objectv1.ObjectType
+}
+
+func ShouldAddUserLikeCount(objectType objectv1.ObjectType) bool {
+	return objectType == objectv1.ObjectType_OBJECT_TYPE_POST
 }
 
 type LikeRepository interface {

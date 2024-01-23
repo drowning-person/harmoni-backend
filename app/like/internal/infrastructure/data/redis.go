@@ -9,7 +9,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var CacheProvider = wire.NewSet(
+var ProviderSet = wire.NewSet(
 	NewRedis,
 	wire.Bind(new(redis.UniversalClient), new(*redis.Client)),
 )
