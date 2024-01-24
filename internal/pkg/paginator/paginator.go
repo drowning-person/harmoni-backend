@@ -27,6 +27,14 @@ func NewPageReply(num int64, size int64, total int64) *PageRely {
 	return &reply
 }
 
+func (p *PageRequest) Start() int64 {
+	return (p.GetNum() - 1) * p.GetSize()
+}
+
+func (p *PageRequest) End() int64 {
+	return (p.GetNum()-1)*p.GetSize() + p.GetSize() - 1
+}
+
 // 标准分页结构体，接收最原始的DO
 // 建议在外部再建一个字段一样的结构体，用以将DO转换成DTO或VO
 type Page[T any] struct {
