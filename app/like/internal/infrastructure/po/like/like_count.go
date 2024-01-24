@@ -9,5 +9,5 @@ type LikeCount struct {
 	persistence.BaseModelWithSoftDeleteUnix
 	Counts     int64               `gorm:"not null;"`
 	ObjectID   int64               `gorm:"not null;"`
-	OjbectType objectv1.ObjectType `gorm:"not null;type:TINYINT UNSIGNED"`
+	ObjectType objectv1.ObjectType `gorm:"not null;type:TINYINT UNSIGNED"`
 }

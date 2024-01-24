@@ -17,4 +17,6 @@ const (
 	DatabaseError = "base.database_error"
 	// ServerError server error
 	ServerError = "base.server_error"
+	// DataNotFound data not found
+	DataNotFoundError = "base.data_not_found_err"
 )

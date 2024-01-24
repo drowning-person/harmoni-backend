@@ -45,8 +45,8 @@ func (r *LikeRepo) getObjectLikeCountFromDB(ctx context.Context, object *objectv
 		Select("counts").
 		Scopes(byObject(object)).
 		First(&count).Error
-	if err != nil {
-		return 0, errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	if err := data.ReturnErr(err); err != nil {
+		return 0, err
 	}
 	return int64(count), nil
 }
@@ -101,14 +101,27 @@ func (r *LikeRepo) ListObjectLikeCount(ctx context.Context, objectIDs []int64, o
 			Count: lc.Counts,
 			Object: &objectv1.Object{
 				Id:   lc.ObjectID,
-				Type: lc.OjbectType,
+				Type: lc.ObjectType,
 			},
 		}
 	}), nil
 }
 
 func (r *LikeRepo) AddLikeCount(ctx context.Context, object *objectv1.Object, count int64) error {
-	err := r.data.DB(ctx).Model(&polike.LikeCount{}).
+	_, err := r.ObjectLikeCount(ctx, object)
+	r.logger.Debug(errorx.FromError(err))
+	if errorx.IsNotFound(errorx.FromError(err)) {
+		err = r.data.DB(ctx).Create(&polike.LikeCount{
+			ObjectID:   object.GetId(),
+			ObjectType: object.GetType(),
+			Counts:     count,
+		}).Error
+		if err != nil {
+			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		}
+		return nil
+	}
+	err = r.data.DB(ctx).Model(&polike.LikeCount{}).
 		Scopes(byObject(object)).
 		UpdateColumn("counts", gorm.Expr("counts + ?", count)).Error
 	if err != nil {

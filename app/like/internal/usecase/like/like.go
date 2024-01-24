@@ -2,6 +2,7 @@ package like
 
 import (
 	"context"
+
 	objectv1 "harmoni/api/common/object/v1"
 	v1 "harmoni/app/harmoni/api/grpc/v1/user"
 	entitylike "harmoni/app/like/internal/entity/like"
@@ -32,14 +33,15 @@ func NewLikeUsecase(
 }
 
 func (u *LikeUsecase) Like(ctx context.Context, req *LikeRequest) error {
-	if req.UserID == req.TargetUserID {
-		return errorx.BadRequest(reason.DisallowLikeYourSelf)
-	}
 	like := &entitylike.Like{
 		User:       &v1.UserBasic{Id: req.UserID},
 		ObjectType: req.ObjectType,
 		TargetUser: &v1.UserBasic{Id: req.TargetUserID},
 		ObjectID:   req.TargetObjectID,
+	}
+	err := like.Validate()
+	if err != nil {
+		return err
 	}
 	exist, err := u.likeRepo.IsExist(ctx, like)
 	if err != nil {

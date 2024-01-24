@@ -5,7 +5,10 @@ import (
 
 	objectv1 "harmoni/api/common/object/v1"
 	mqlike "harmoni/api/like/mq/v1"
+	userv1 "harmoni/api/user/v1"
 	v1 "harmoni/app/harmoni/api/grpc/v1/user"
+	"harmoni/app/like/internal/pkg/reason"
+	"harmoni/internal/pkg/errorx"
 	"harmoni/internal/pkg/paginator"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -54,6 +57,20 @@ type ListObjectLikedUserQuery struct {
 
 func ShouldAddUserLikeCount(objectType objectv1.ObjectType) bool {
 	return objectType == objectv1.ObjectType_OBJECT_TYPE_POST
+}
+
+func (l *Like) Validate() error {
+	if l.User == nil || l.TargetUser == nil {
+		return errorx.NotFound(userv1.UserNotFound)
+	}
+	if l.User.GetId() == l.TargetUser.GetId() {
+		return errorx.BadRequest(reason.DisallowLikeYourSelf)
+	}
+	if l.ObjectType != objectv1.ObjectType_OBJECT_TYPE_POST &&
+		l.ObjectType != objectv1.ObjectType_OBJECT_TYPE_COMMENT {
+		return errorx.BadRequest(reason.LikeUnknownType)
+	}
+	return nil
 }
 
 type LikeRepository interface {

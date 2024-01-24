@@ -1,7 +1,10 @@
 package data
 
 import (
+	"errors"
 	"harmoni/internal/conf"
+	"harmoni/internal/pkg/errorx"
+	"harmoni/internal/pkg/reason"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -10,6 +13,17 @@ import (
 	"gorm.io/gorm/logger"
 	"moul.io/zapgorm2"
 )
+
+func ReturnErr(err error) error {
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		return errorx.NotFound(reason.DataNotFoundError)
+	case err != nil:
+		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	default:
+		return nil
+	}
+}
 
 type ScopeFunc func(*gorm.DB) *gorm.DB
 
