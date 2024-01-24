@@ -78,10 +78,43 @@ func NewLikeRepo(
 	}
 }
 
-func (r *LikeRepo) Save(ctx context.Context, like *entitylike.Like, isCancel bool) error {
-	err := r.rdb.Incr(ctx, genLikeCountKey(like.ObjectID, like.ObjectType)).Err()
+func (r *LikeRepo) saveLikeCountToCache(
+	ctx context.Context,
+	object *v1.Object,
+	isCancel bool,
+	count int64,
+) error {
+	key := genLikeCountKey(object)
+	if isCancel {
+		err := r.rdb.DecrBy(ctx, key, count).Err()
+		if err != nil {
+			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		}
+		return nil
+	}
+	incrValue, err := r.rdb.IncrBy(ctx,
+		genLikeCountKey(object),
+		count).Result()
 	if err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	// when incrValue == 1, it means the first like
+	if incrValue == count {
+		err = r.rdb.Expire(ctx, key, genLikeCountKeyTTL()).Err()
+		if err != nil {
+			return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+		}
+	}
+	return nil
+}
+
+func (r *LikeRepo) Save(ctx context.Context, like *entitylike.Like, isCancel bool) error {
+	err := r.saveLikeCountToCache(ctx, &v1.Object{
+		Id:   like.ObjectID,
+		Type: like.ObjectType,
+	}, isCancel, 1)
+	if err != nil {
+		return err
 	}
 	return r.data.DB(ctx).Transaction(func(tx *gorm.DB) error {
 		if isCancel {

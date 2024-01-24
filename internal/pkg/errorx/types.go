@@ -37,6 +37,9 @@ func NotFound(reason string) *Error {
 
 // IsNotFound determines if err is NotFound error.
 func IsNotFound(err *Error) bool {
+	if err == nil {
+		return false
+	}
 	return err.Code == 404
 }
 

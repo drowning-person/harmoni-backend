@@ -27,8 +27,10 @@ func byObject(object *objectv1.Object) data.ScopeFunc {
 	}
 }
 
-func genLikeCountKey(objectID int64, objectType objectv1.ObjectType) string {
-	return fmt.Sprintf("like:%s:%d", objectType.Format(), objectID)
+func genLikeCountKey(object *objectv1.Object) string {
+	return fmt.Sprintf("like:%s:%d",
+		object.GetType().Format(),
+		object.GetId())
 }
 
 const (
@@ -52,7 +54,7 @@ func (r *LikeRepo) getObjectLikeCountFromDB(ctx context.Context, object *objectv
 }
 
 func (r *LikeRepo) getObjectLikeCountFromCache(ctx context.Context, object *objectv1.Object) (int64, error) {
-	key := genLikeCountKey(object.GetId(), object.GetType())
+	key := genLikeCountKey(object)
 	countStr, err := r.rdb.Get(ctx, key).Result()
 	switch {
 	case errors.Is(err, redis.Nil):
@@ -107,9 +109,8 @@ func (r *LikeRepo) ListObjectLikeCount(ctx context.Context, objectIDs []int64, o
 	}), nil
 }
 
-func (r *LikeRepo) AddLikeCount(ctx context.Context, object *objectv1.Object, count int64) error {
+func (r *LikeRepo) saveLikeCountToDB(ctx context.Context, object *objectv1.Object, count int64) error {
 	_, err := r.ObjectLikeCount(ctx, object)
-	r.logger.Debug(errorx.FromError(err))
 	if errorx.IsNotFound(errorx.FromError(err)) {
 		err = r.data.DB(ctx).Create(&polike.LikeCount{
 			ObjectID:   object.GetId(),
@@ -126,6 +127,14 @@ func (r *LikeRepo) AddLikeCount(ctx context.Context, object *objectv1.Object, co
 		UpdateColumn("counts", gorm.Expr("counts + ?", count)).Error
 	if err != nil {
 		return errorx.InternalServer(reason.DatabaseError).WithError(err).WithStack()
+	}
+	return nil
+}
+
+func (r *LikeRepo) AddLikeCount(ctx context.Context, object *objectv1.Object, count int64) error {
+	err := r.saveLikeCountToCache(ctx, object, false, count)
+	if err != nil {
+		return err
 	}
 	return nil
 }
