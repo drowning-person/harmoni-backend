@@ -40,13 +40,18 @@ func (h *LikeEventsHandler) HandleLikeCreated(ctx context.Context, msg *v1.LikeC
 			ObjectID:   msg.GetObjectId(),
 		}, msg.IsCancel)
 		if err != nil {
+			h.logger.Error(err)
 			return err
 		}
 		if entitylike.ShouldAddUserLikeCount(msg.BaseMessage.GetObjectType()) {
+			count := 1
+			if msg.IsCancel {
+				count = -1
+			}
 			return h.likeRepo.AddLikeCount(ctx, &objectv1.Object{
 				Id:   msg.GetTargetUserId(),
 				Type: objectv1.ObjectType_OBJECT_TYPE_USER,
-			}, 1)
+			}, int64(count))
 		}
 		return nil
 	})
